@@ -28,9 +28,8 @@ import adds.Out.LEVEL;
 import builders.FoxFontBuilder;
 import builders.ResManager;
 import games.FoxCursor;
-import resourses.IOMs;
 import resourses.Registry;
-import ru.dejavu.MainClass;
+import door.MainClass;
 
 
 @SuppressWarnings("serial")

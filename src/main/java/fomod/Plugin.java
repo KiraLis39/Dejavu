@@ -6,8 +6,8 @@ public interface Plugin {
 	void init(MOD_TYPE type, String name, String version, String autor, String descript);
 	void start();
 	
-	void setID(int modID);
-	int getID();
+	void setId(int id);
+	int getId();
 	
 	void setType(MOD_TYPE modType);
 	MOD_TYPE getType();
@@ -18,9 +18,9 @@ public interface Plugin {
 	void setVersion(String modVerse);
 	String getVersion();
 	
-	void setAutor(String modAutor);
-	String getAutor();
+	void setAuthor(String modAuthor);
+	String getAuthor();
 	
-	void setDescript(String modDescript);
-	String getDescript();
+	void setDescription(String modDescription);
+	String getDescription();
 }

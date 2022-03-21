@@ -40,7 +40,6 @@ import games.FoxCursor;
 import games.FoxSpritesCombiner;
 import logic.Scenario;
 import media.Media;
-import resourses.IOMs;
 import resourses.Registry;
 import secondGUI.SaveGame;
 

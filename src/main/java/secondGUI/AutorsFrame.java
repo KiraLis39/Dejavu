@@ -26,7 +26,6 @@ import adds.Out.LEVEL;
 import builders.FoxFontBuilder;
 import builders.ResManager;
 import games.FoxCursor;
-import resourses.IOMs;
 
 
 @SuppressWarnings("serial")

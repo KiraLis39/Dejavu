@@ -6,6 +6,9 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
+        <module name="FoxOut" />
+        <module name="FoxGUI" />
+        <module name="FoxGames" />
         <module name="Dejavu_2019" />
       </profile>
     </annotationProcessing>
