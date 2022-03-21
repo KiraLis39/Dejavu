@@ -1,0 +1,40 @@
+package resourses;
+
+public class IOMs {
+	public enum CONFIG {
+		USER_NAME,
+		USER_SEX,
+		USER_AGE,
+		
+		USE_MODS,
+		AUTO_SAVE_ON, 
+		SKIP_READED,
+		
+		AVATAR_INDEX,
+		FULLSCREEN,
+		
+		MUSIC_MUTE,
+		SOUND_MUTE,
+		BACKG_MUTE,
+		VOICE_MUTE,
+		
+		MUSIC_VOL,
+		SOUND_VOL,
+		BACKG_VOL,
+		VOICE_VOL,
+		
+		KARMA_ANN, 
+		KARMA_DMI, 
+		KARMA_KUR, 
+		KARMA_MAR, 
+		KARMA_MSH, 
+		KARMA_OKS, 
+		KARMA_OLG, 
+		KARMA_OLE, 
+		KARMA_LIS, 
+		
+		KARMA_POS, 
+		KARMA_NEG, 
+		CYCLE_COUNTER
+	}
+}

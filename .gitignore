@@ -1,0 +1,8 @@
+*.class
+*.png
+*.mp3
+*.ini
+*.jar
+*.zip
+*.docx
+/data/db
