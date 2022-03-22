@@ -145,6 +145,8 @@ public class MainMenu extends JFrame implements MouseListener, MouseMotionListen
                 MainMenu.this.add(buildBasePane());
             }
         }
+
+        userConf.setFullScreen(!userConf.isFullScreen());
     }
 
 
@@ -653,7 +655,7 @@ public class MainMenu extends JFrame implements MouseListener, MouseMotionListen
                 break;
 
             case "about":
-                new AutorsFrame();
+                new AuthorsFrame();
                 break;
 
             default:

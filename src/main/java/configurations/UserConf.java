@@ -15,9 +15,10 @@ public class UserConf implements JConfigurable {
     public enum USER_SEX {MALE, FEMALE}
     USER_SEX userSex;
     String userName;
-    int userAge;
-    int avatarIndex;
-    boolean fullScreen;
+    int userAge = 14;
+    int avatarIndex = 0;
+    int cycleCount = 0;
+    boolean fullScreen = false;
 
     @Override
     public void setSource(Path path) {

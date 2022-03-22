@@ -36,4 +36,7 @@ public class Registry {
 	public static Font f5 = FoxFontBuilder.setFoxFont(FoxFontBuilder.FONT.CONSTANTIA, 28, true);
 	public static Font f6 = FoxFontBuilder.setFoxFont(FoxFontBuilder.FONT.CONSOLAS, 28, true);
 	public static Font f7 = FoxFontBuilder.setFoxFont(FoxFontBuilder.FONT.ARIAL_NARROW, 22, true);
+	public static Font f8 = FoxFontBuilder.setFoxFont(FoxFontBuilder.FONT.MONOTYPE_CORSIVA, 24, true);
+	public static Font fontDialog = FoxFontBuilder.setFoxFont(FoxFontBuilder.FONT.CONSOLAS, 22, false);
+	public static Font fontName = FoxFontBuilder.setFoxFont(FoxFontBuilder.FONT.CAMBRIA, 22, true);
 }

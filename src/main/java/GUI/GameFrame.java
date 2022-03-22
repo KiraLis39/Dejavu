@@ -1,590 +1,623 @@
 package GUI;
 
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Font;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.Point;
-import java.awt.Rectangle;
-import java.awt.Toolkit;
-import java.awt.event.ActionEvent;
-import java.awt.event.KeyEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-import java.awt.event.MouseMotionListener;
+import fox.FoxCursor;
+import fox.FoxFontBuilder;
+import fox.InputAction;
+import fox.Out;
+import images.FoxSpritesCombiner;
+import logic.Scenario;
+import lombok.Data;
+import registry.Registry;
+import render.FoxRender;
+import secondGUI.SaveGame;
+import tools.Media;
+import tools.MediaCache;
+
+import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import java.awt.*;
+import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import javax.swing.AbstractAction;
-import javax.swing.DefaultListModel;
-import javax.swing.JFrame;
-import javax.swing.JList;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.ListSelectionModel;
-import javax.swing.WindowConstants;
-import javax.swing.border.EmptyBorder;
-import logic.Scenario;
-import tools.Media;
-import registry.Registry;
-import secondGUI.SaveGame;
 
+import static fox.Out.*;
+import static registry.Registry.userConf;
 
-@SuppressWarnings("serial")
+@Data
 public class GameFrame extends JFrame implements MouseListener, MouseMotionListener {
 	public enum modSides {UP, DOWN, LEFT, RIGHT}
 
+	private static MediaCache cashe = MediaCache.getInstance();
 	private static Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
+	private int FRAME_WIDTH = (int) (screen.getWidth() * 0.75D);
+	private int FRAME_HEIGHT = (int) (screen.getHeight() * 1.0D);
 
-	private static Map<String, File> answerBlocksMap = new HashMap<>(); 
-	private static DefaultListModel<String> dlm;	
+	private static Map<String, File> answerBlocksMap = new HashMap<>();
+	private static DefaultListModel<String> dlm;
 	private static JList<String> answerList;
-	
+
 	private static Thread textDynamicThread;
-	
-	private static BufferedImage npcImage, heroAvatar, picSceneImage = ResManager.getBImage("blackpane");
-	private BufferedImage picGamepane;
-	private BufferedImage[] backButton;
-	
-	private Rectangle heroAvatarRect, backButtonRect, centerPicRect;
-	private static Rectangle dialogTextRect, choseVariantRect;
-	
-	private Point mouseNow, frameWas, mouseWasOnScreen;
-	
-	private static JPanel basePane;
-	
-	private static Boolean isStoryPlayed = false, backButOver = false, backButPressed = false, bicubic = false, isPaused = false;
-	private Boolean isFullscreen = IOM.getBoolean(IOM.HEADERS.CONFIG, IOMs.CONFIG.FULLSCREEN);
-	private static Boolean isDialogAnimated = false;
-	
-	private static String blockExt = ".json", lastText, imageExt = ".png", heroName;
 
-	private int FRAME_WIDTH = (int) (screen.getWidth() * 0.75D), shift;
-	private int FRAME_HEIGHT = (int) (screen.getHeight() * 0.75D);
-	private static int n = 0;
-	
-	private static double charWidth = 12.2D;
-	private static char[] dialogChars;
-	private static long dialogDelaySpeed = 64;
+    private static BufferedImage npcImage, heroAvatar, picSceneImage;
+    private BufferedImage picGamepane;
+    private BufferedImage[] backButton;
 
-	private Font dialogFont = FoxFontBuilder.setFoxFont(FoxFontBuilder.FONT.CONSOLAS, 22, false);
-	private Font nameFont = FoxFontBuilder.setFoxFont(FoxFontBuilder.FONT.CAMBRIA, 22, true);
-	private Font f0 = FoxFontBuilder.setFoxFont(FoxFontBuilder.FONT.MONOTYPE_CORSIVA, 24, true);
+    private Rectangle heroAvatarRect, backButtonRect, centerPicRect;
+    private static Rectangle dialogTextRect, choseVariantRect;
 
+    private Point mouseNow, frameWas, mouseWasOnScreen;
 
-	@Override
-	public void paint(Graphics g) {
-		Graphics2D g2D = (Graphics2D) g;
- 		Registry.render(g2D, bicubic);
+    private static JPanel basePane;
 
- 		drawBase(g2D);
-		drawAvatar(g2D);
-		drawBackButton(g2D);	
-		drawAutoDialog(g2D); // поместить в FoxLib
+    private static Boolean isStoryPlayed = false, backButOver = false, backButPressed = false, bicubic = false, isPaused = false;
+    private static Boolean isDialogAnimated = false;
 
-		g2D.setColor(Color.GRAY);		g2D.drawRoundRect(dialogTextRect.x, dialogTextRect.y, dialogTextRect.width, dialogTextRect.height, 16, 16);
-		g2D.setColor(Color.GRAY);		g2D.drawRoundRect(choseVariantRect.x, choseVariantRect.y, choseVariantRect.width, choseVariantRect.height, 8, 8);
-		
+    private static String blockExt = ".json", lastText, imageExt = ".png", heroName;
+
+    private static int n = 0, shift = 0;
+
+    private static double charWidth = 12.2D;
+    private static char[] dialogChars;
+    private static long dialogDelaySpeed = 64;
+
+    @Override
+    public void paint(Graphics g) {
+        Graphics2D g2D = (Graphics2D) g;
+        FoxRender.setMedRender(g2D);
+
+        drawBase(g2D);
+        drawAvatar(g2D);
+        drawBackButton(g2D);
+        drawAutoDialog(g2D); // поместить в FoxLib
+
+        g2D.setColor(Color.GRAY);
+        g2D.drawRoundRect(dialogTextRect.x, dialogTextRect.y, dialogTextRect.width, dialogTextRect.height, 16, 16);
+        g2D.setColor(Color.GRAY);
+        g2D.drawRoundRect(choseVariantRect.x, choseVariantRect.y, choseVariantRect.width, choseVariantRect.height, 8, 8);
+
 //		g2D.setColor(Color.YELLOW);g2D.drawRect(backButtonRect.x, backButtonRect.y, backButtonRect.width, backButtonRect.height);
 
-		super.paintComponents(g2D);
-	}
-	
-	private void drawBase(Graphics2D g2D) {
-		try {
-			picSceneImage.getWidth();
-			g2D.drawImage(picSceneImage, this.centerPicRect.x, this.centerPicRect.y, this.centerPicRect.width, this.centerPicRect.height, this);
-		} catch (Exception e) {
-			g2D.setColor(Color.DARK_GRAY);
-			g2D.fillRect(16, 16, getWidth() - 32, getHeight() - 32);
-			g2D.setColor(Color.RED);
-			g2D.drawString("NO IMAGE", (int) (getWidth() / 2 - FoxFontBuilder.getStringBounds(g2D, "NO IMAGE").getWidth() / 2), getHeight() / 2 - 96);
+        super.paintComponents(g2D);
+    }
+
+    private void drawBase(Graphics2D g2D) {
+		if (picSceneImage == null) {
+			picSceneImage = (BufferedImage) cashe.get("blackpane");
 		}
-		
-		drawNPC(g2D);
+        try {
+            picSceneImage.getWidth();
+            g2D.drawImage(picSceneImage, this.centerPicRect.x, this.centerPicRect.y, this.centerPicRect.width, this.centerPicRect.height, this);
+        } catch (Exception e) {
+            g2D.setColor(Color.DARK_GRAY);
+            g2D.fillRect(16, 16, getWidth() - 32, getHeight() - 32);
+            g2D.setColor(Color.RED);
+            g2D.drawString("NO IMAGE", (int) (getWidth() / 2 - FoxFontBuilder.getStringBounds(g2D, "NO IMAGE").getWidth() / 2), getHeight() / 2 - 96);
+        }
 
-		g2D.drawImage(this.picGamepane, 0, 0, getWidth(), getHeight(), this);		
-	}
+        drawNPC(g2D);
 
-	private void drawNPC(Graphics2D g2D) {
-		if (npcImage == null) {return;}
-		// draw NPC:
-		g2D.drawImage(npcImage, 0, 0, npcImage.getWidth(), npcImage.getHeight(), this);
-	}
+        g2D.drawImage(this.picGamepane, 0, 0, getWidth(), getHeight(), this);
+    }
 
-	private void drawAvatar(Graphics2D g2D) {
-		// draw hero avatar:
-		g2D.drawImage(heroAvatar, heroAvatarRect.x, heroAvatarRect.y, heroAvatarRect.width, heroAvatarRect.height, this);
-	}
-	
-	private void drawBackButton(Graphics2D g2D) {
-		if (backButOver) {
-			if (backButPressed) {g2D.drawImage(backButton[1], backButtonRect.x, backButtonRect.y, backButtonRect.width, backButtonRect.height, this);
-			} else {g2D.drawImage(backButton[2], backButtonRect.x, backButtonRect.y, backButtonRect.width, backButtonRect.height, this);}
-		} else {g2D.drawImage(backButton[0], backButtonRect.x, backButtonRect.y, backButtonRect.width, backButtonRect.height, this);}
-	}
-	
-	private void drawAutoDialog(Graphics2D g2D) {
-		if (dialogChars != null) {
-			// hero name:
-			g2D.setFont(nameFont);
-			g2D.setColor(Color.BLACK);
-			g2D.drawString(heroName, (int) (dialogTextRect.x + 4), dialogTextRect.y + 21);
-			g2D.setColor(Color.ORANGE);
-			g2D.drawString(heroName, (int) (dialogTextRect.x + 5), dialogTextRect.y + 20);
-			
-			// draw hero dialog:
-			g2D.setFont(dialogFont);
-			charWidth = g2D.getFontMetrics().getMaxCharBounds(g2D).getWidth();
-			
-			g2D.setColor(Color.GREEN);
-			int mem = 0, line = 1;
-			W: while (true) {
-					shift = 0;
-					line++;
-					
-					for (int i = mem; i < dialogChars.length; i++) {
-						if (dialogChars[i] == 10) {mem = i + 1;	break;} // next line marker detector (\n)
-						
-						g2D.drawString(String.valueOf(dialogChars[i]), 
-								(int) (dialogTextRect.x + 5 + (charWidth * shift)), 
-								(dialogTextRect.y + 18) + 25 * (line - 1));
-						
-						shift++;
-						if (i >= dialogChars.length - 1) {break W;}
-					}
-				}
-		}
-	}
+    private void drawNPC(Graphics2D g2D) {
+        if (npcImage == null) {
+            return;
+        }
+        // draw NPC:
+        g2D.drawImage(npcImage, 0, 0, npcImage.getWidth(), npcImage.getHeight(), this);
+    }
 
-	
-	public GameFrame() {	
-		initialization();
-		
-		setUndecorated(true);
-		setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
-		setCursor(FoxCursor.createCursor("curAnyCursor"));
-		setBackground(new Color(0.0f, 0.0f, 0.0f, 0.0f));
-		
-		basePane = new JPanel() {
-			{
-				setOpaque(false);
-				setFocusable(true);
-				setSize(GameFrame.this.getWidth(), GameFrame.this.getHeight());
-				setLayout(null);
-				
-				addMouseListener(GameFrame.this);
-				addMouseMotionListener(GameFrame.this);
-				
-				dlm = new DefaultListModel<String>();
-				answerList = new JList<String>(dlm) {
-					@Override
+    private void drawAvatar(Graphics2D g2D) {
+        // draw hero avatar:
+        g2D.drawImage(heroAvatar, heroAvatarRect.x, heroAvatarRect.y, heroAvatarRect.width, heroAvatarRect.height, this);
+    }
+
+    private void drawBackButton(Graphics2D g2D) {
+        if (backButOver) {
+            if (backButPressed) {
+                g2D.drawImage(backButton[1], backButtonRect.x, backButtonRect.y, backButtonRect.width, backButtonRect.height, this);
+            } else {
+                g2D.drawImage(backButton[2], backButtonRect.x, backButtonRect.y, backButtonRect.width, backButtonRect.height, this);
+            }
+        } else {
+            g2D.drawImage(backButton[0], backButtonRect.x, backButtonRect.y, backButtonRect.width, backButtonRect.height, this);
+        }
+    }
+
+    private void drawAutoDialog(Graphics2D g2D) {
+        if (dialogChars != null) {
+            // hero name:
+            g2D.setFont(Registry.fontName);
+            g2D.setColor(Color.BLACK);
+            g2D.drawString(heroName, (int) (dialogTextRect.x + 4), dialogTextRect.y + 21);
+            g2D.setColor(Color.ORANGE);
+            g2D.drawString(heroName, (int) (dialogTextRect.x + 5), dialogTextRect.y + 20);
+
+            // draw hero dialog:
+            g2D.setFont(Registry.fontDialog);
+            charWidth = g2D.getFontMetrics().getMaxCharBounds(g2D).getWidth();
+
+            g2D.setColor(Color.GREEN);
+            int mem = 0, line = 1;
+            W:
+            while (true) {
+                shift = 0;
+                line++;
+
+                for (int i = mem; i < dialogChars.length; i++) {
+                    if (dialogChars[i] == 10) {
+                        mem = i + 1;
+                        break;
+                    } // next line marker detector (\n)
+
+                    g2D.drawString(String.valueOf(dialogChars[i]),
+                            (int) (dialogTextRect.x + 5 + (charWidth * shift)),
+                            (dialogTextRect.y + 18) + 25 * (line - 1));
+
+                    shift++;
+                    if (i >= dialogChars.length - 1) {
+                        break W;
+                    }
+                }
+            }
+        }
+    }
+
+
+    public GameFrame() {
+        initialization();
+
+        setUndecorated(true);
+        setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
+        setCursor(FoxCursor.createCursor((BufferedImage) cashe.get("curAnyCursor"), "anyCursor"));
+        setBackground(new Color(0.0f, 0.0f, 0.0f, 0.0f));
+
+        basePane = new JPanel() {
+            {
+                setOpaque(false);
+                setFocusable(true);
+                setSize(GameFrame.this.getWidth(), GameFrame.this.getHeight());
+                setLayout(null);
+
+                addMouseListener(GameFrame.this);
+                addMouseMotionListener(GameFrame.this);
+
+                dlm = new DefaultListModel<>();
+                answerList = new JList<>(dlm) {
+                    @Override
                     public int locationToIndex(Point location) {
                         int index = super.locationToIndex(location);
-                        if (index != -1 && !getCellBounds(index, index).contains(location)) {return -1;
-                        } else {return index;}
+                        if (index != -1 && !getCellBounds(index, index).contains(location)) {
+                            return -1;
+                        } else {
+                            return index;
+                        }
                     }
-					
-					{
-						setForeground(Color.WHITE);
-						setBackground(new Color(0.5f, 0.5f, 1.0f, 0.1f));
-						setBorder(new EmptyBorder(3, 3, 3, 3));
-						setFont(f0);
-						setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-						setSelectionBackground(new Color(1.0f, 1.0f, 1.0f, 0.2f));
-						setSelectionForeground(new Color(1.0f, 1.0f, 0.0f, 1.0f));
-						setVisibleRowCount(5);
-						
-						addMouseListener(new MouseAdapter() {							
-							@Override
-							public void mouseReleased(MouseEvent e) {
+
+                    {
+                        setForeground(Color.WHITE);
+                        setBackground(new Color(0.5f, 0.5f, 1.0f, 0.1f));
+                        setBorder(new EmptyBorder(3, 3, 3, 3));
+                        setFont(Registry.fontDialog);
+                        setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+                        setSelectionBackground(new Color(1.0f, 1.0f, 1.0f, 0.2f));
+                        setSelectionForeground(new Color(1.0f, 1.0f, 0.0f, 1.0f));
+                        setVisibleRowCount(5);
+
+                        addMouseListener(new MouseAdapter() {
+                            @Override
+                            public void mouseReleased(MouseEvent e) {
 //								System.out.println("locationToIndex(): " + locationToIndex(e.getPoint()));
-								if (locationToIndex(e.getPoint()) != -1) {
-									Out.Print(GameFrame.class, LEVEL.INFO, "Был выбран вариант " + answerList.getSelectedValue());
-									if (isDialogAnimated) {dialogDelaySpeed = 0;}
-									Scenario.step(answerList.getSelectedIndex());
-									resetVariantsList();
-								}
-							}
-						});
-					
-						setFocusable(false);
-						setCursor(FoxCursor.createCursor(ResManager.getBImage("curTextCursor"), "ansC"));
-					}
-				};
-				
-				add(answerList);
-			}
-		};
+                                if (locationToIndex(e.getPoint()) != -1) {
+                                    Print(GameFrame.class, LEVEL.INFO, "Был выбран вариант " + answerList.getSelectedValue());
+                                    if (isDialogAnimated) {
+                                        dialogDelaySpeed = 0;
+                                    }
+                                    Scenario.step(answerList.getSelectedIndex());
+                                    resetVariantsList();
+                                }
+                            }
+                        });
 
-		add(basePane);
-		
-		setInAc();
-		
-		setFullscreen();
-		
-		// loading First block:
-		Scenario.load(new File(Registry.blockPath + "/00NewStart" + blockExt));
-		Scenario.step(-1);
-		
-		setVisible(true);
-		
-		answerList.setSize(choseVariantRect.width, choseVariantRect.height);
-		answerList.setLocation(choseVariantRect.x, choseVariantRect.y);
-		
-		Media.stopMusic();
-		Media.stopBackg();
-		
-		isStoryPlayed = true;		
-		new Thread(new Runnable() {
-			@Override
-			public void run() {
+                        setFocusable(false);
+                        setCursor(FoxCursor.createCursor((BufferedImage) cashe.get("curTextCursor"), "textCursor"));
+                    }
+                };
 
-				while (isStoryPlayed) {
-					if (isPaused) {
-						Thread.yield();
-						continue;
-					}
-					
-					repaint();
-					try {Thread.sleep(64);} catch (InterruptedException e) {e.printStackTrace();}
+                add(answerList);
+            }
+        };
+
+        add(basePane);
+
+        setInAc();
+
+        setFullscreen();
+
+        // loading First block:
+        Scenario.load(new File(Registry.blockPath + "/00NewStart" + blockExt));
+        Scenario.step(-1);
+
+        setVisible(true);
+
+        answerList.setSize(choseVariantRect.width, choseVariantRect.height);
+        answerList.setLocation(choseVariantRect.x, choseVariantRect.y);
+
+        Media.stopMusic();
+        Media.stopBackg();
+
+        isStoryPlayed = true;
+        new Thread(() -> {
+			while (isStoryPlayed) {
+				if (isPaused) {
+					Thread.yield();
+					continue;
+				}
+
+				repaint();
+				try {
+					Thread.sleep(64);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
 				}
 			}
 		}).start();
-	
-		addAnswer("Далее...");
-	}
 
-	private void initialization() {
-		backButton = FoxSpritesCombiner.addSpritelist("picBackButBig", ResManager.getBImage("picBackButBig", true), 3, 1);
+        addAnswer("Далее...");
+    }
 
-		picGamepane = ResManager.getBImage("picGamepane");
+    private void initialization() {
+        backButton = FoxSpritesCombiner.addSpritelist("picBackButBig", (BufferedImage) cashe.get("picBackButBig"), 3, 1);
+        picGamepane = (BufferedImage) cashe.get("picGamepane");
 
-		setCenterImage("blackpane");
-		
-		if (IOM.getInt(IOM.HEADERS.CONFIG, IOMs.CONFIG.CYCLE_COUNTER) == -1) {
-			IOM.set(IOM.HEADERS.CONFIG, IOMs.CONFIG.CYCLE_COUNTER, "0");
-			IOM.save(IOM.HEADERS.CONFIG.name());
-		}
-	}
-	
-	private void setInAc() {
-		InputAction.add("game", this);
-		
-		InputAction.set("game", "close", KeyEvent.VK_ESCAPE	, 0, new AbstractAction() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				int closeQ = JOptionPane.showConfirmDialog(null,
-						"Уверен? Прекратить текущую игру и вернуться в меню? Нет - сохранение и загрузка.",
-						"Подтверждение:",
-						JOptionPane.YES_NO_OPTION);
-				
-					switch(closeQ) {
-						case 0:
-							isStoryPlayed = false;
-							dispose();
-							new MainMenu();
-							break;
-							
-						case 1: 
-							new SaveGame(); 
-							isPaused = false;
-							break;
-							
-						default: 
-							setVisible(true);
-					}
-			}
-		});
-		InputAction.set("game", "fullscreen", KeyEvent.VK_F	, 0, new AbstractAction() {
-			@Override
-			public void actionPerformed(ActionEvent e) {/* setFullscreen() */}
-		});
-		
-		InputAction.set("game", "next", KeyEvent.VK_SPACE	, 0, new AbstractAction() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				if (isDialogAnimated) {dialogDelaySpeed = 0; return;}
-				Scenario.step(-1);
-				answerList.clearSelection();
-			}
-		});
-		InputAction.set("game", "answer_1", KeyEvent.VK_1, 0, new AbstractAction() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				if (dlm.size() < 1) {return;}
-				answerList.setSelectedIndex(0);
-				Scenario.step(0);
-				resetVariantsList();
-			}
-		});
-		InputAction.set("game", "answer_2", KeyEvent.VK_2, 0, new AbstractAction() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				if (dlm.size() < 2) {return;}
-				answerList.setSelectedIndex(1);
-				Scenario.step(1);
-				resetVariantsList();
-			}
-		});
-		InputAction.set("game", "answer_3", KeyEvent.VK_3, 0, new AbstractAction() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				if (dlm.size() < 3) {return;}
-				answerList.setSelectedIndex(2);
-				Scenario.step(2);
-				resetVariantsList();
-			}
-		});
-		InputAction.set("game", "answer_4", KeyEvent.VK_4, 0, new AbstractAction() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				if (dlm.size() < 4) {return;}
-				answerList.setSelectedIndex(3);
-				Scenario.step(3);
-				resetVariantsList();
-			}
-		});
-		InputAction.set("game", "answer_5", KeyEvent.VK_5, 0, new AbstractAction() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				if (dlm.size() < 5) {return;}
-				answerList.setSelectedIndex(4);
-				Scenario.step(4);
-				resetVariantsList();
-			}
-		});
-		
-		InputAction.set("game", "keyLeft", KeyEvent.VK_LEFT, 0, new AbstractAction() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				
-			}
-		});
-		InputAction.set("game", "keyRight", KeyEvent.VK_RIGHT, 0, new AbstractAction() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-}
-		});
-	}
+        setCenterImage(null);
+    }
 
-	// changing center background image:
-	public static void setCenterImage(String sceneName) {
-		System.out.println("Try to read the image: '" + Registry.scenesDir + "/" + sceneName + imageExt + "'...");
-		picSceneImage = ResManager.getBImage(sceneName.replace(imageExt, ""));
-		if (picSceneImage == null) {picSceneImage = ResManager.getBImage("blackpane");}
-	}
+    private void setInAc() {
+        InputAction.add("game", this);
 
-	// changing down left hero avatar:
-	public static void setHeroAvatar(String avatarName) {
-//		Out.Print(GameFrame.class, 1, "setHeroAvatar: Try set hero`s avatar by avatar-name: '" + avatarName + "'");
-		if (avatarName == null) {
-			heroAvatar = ResManager.getBImage("0");
-			return;
-		}
-		
-		try {
-			Integer.parseInt(avatarName);
-			heroAvatar = ResManager.getBImage(avatarName);
-		} catch (Exception e) {
-			heroAvatar = ResManager.getBImage(convertNpcName(avatarName));
-		}
-	}
+        InputAction.set("game", "close", KeyEvent.VK_ESCAPE, 0, new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                int closeQ = JOptionPane.showConfirmDialog(null,
+                        "Уверен? Прекратить текущую игру и вернуться в меню? Нет - сохранение и загрузка.",
+                        "Подтверждение:",
+                        JOptionPane.YES_NO_OPTION);
 
-	private static String convertNpcName(String avatarName) {
-		switch (avatarName) {
-			case "Аня": return "Ann";
-			case "Дмитрий": return "Dmitrii";
-			case "Куро": return "Kuro";
-			case "Лисса": return "Lissa";
-			case "Мари": return "Mary";
-			case "Мишка": return "Mishka";
-			case "Оксана": return "Oksana";
-			case "Олег": return "Oleg";
-			case "Ольга": return "Olga";
-				
-			default: return "0";
-		}
-	}
+                switch (closeQ) {
+                    case 0:
+                        isStoryPlayed = false;
+                        dispose();
+                        new MainMenu();
+                        break;
 
-	// changing down left hero name:
-	public static void setHeroName(String _heroName) {heroName = _heroName;}
-	
-	// changing dialog text:
-	public static void setDialogText(String text, ArrayList<String> answers) {
-		if (textDynamicThread != null) {dialogDelaySpeed = 0; textDynamicThread.interrupt();}
-		if (text == null && answers == null) {
-			System.out.println("Waiting for choise!..");
+                    case 1:
+                        new SaveGame();
+                        isPaused = false;
+                        break;
+
+                    default:
+                        setVisible(true);
+                }
+            }
+        });
+        InputAction.set("game", "fullscreen", KeyEvent.VK_F, 0, new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {/* setFullscreen() */}
+        });
+
+        InputAction.set("game", "next", KeyEvent.VK_SPACE, 0, new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (isDialogAnimated) {
+                    dialogDelaySpeed = 0;
+                    return;
+                }
+                Scenario.step(-1);
+                answerList.clearSelection();
+            }
+        });
+        InputAction.set("game", "answer_1", KeyEvent.VK_1, 0, new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (dlm.size() < 1) {
+                    return;
+                }
+                answerList.setSelectedIndex(0);
+                Scenario.step(0);
+                resetVariantsList();
+            }
+        });
+        InputAction.set("game", "answer_2", KeyEvent.VK_2, 0, new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (dlm.size() < 2) {
+                    return;
+                }
+                answerList.setSelectedIndex(1);
+                Scenario.step(1);
+                resetVariantsList();
+            }
+        });
+        InputAction.set("game", "answer_3", KeyEvent.VK_3, 0, new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (dlm.size() < 3) {
+                    return;
+                }
+                answerList.setSelectedIndex(2);
+                Scenario.step(2);
+                resetVariantsList();
+            }
+        });
+        InputAction.set("game", "answer_4", KeyEvent.VK_4, 0, new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (dlm.size() < 4) {
+                    return;
+                }
+                answerList.setSelectedIndex(3);
+                Scenario.step(3);
+                resetVariantsList();
+            }
+        });
+        InputAction.set("game", "answer_5", KeyEvent.VK_5, 0, new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (dlm.size() < 5) {
+                    return;
+                }
+                answerList.setSelectedIndex(4);
+                Scenario.step(4);
+                resetVariantsList();
+            }
+        });
+
+        InputAction.set("game", "keyLeft", KeyEvent.VK_LEFT, 0, new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+
+            }
+        });
+        InputAction.set("game", "keyRight", KeyEvent.VK_RIGHT, 0, new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+            }
+        });
+    }
+
+    // changing center background image:
+    public static void setCenterImage(String sceneName) {
+		if (sceneName == null) {
+			picSceneImage = (BufferedImage) cashe.get("blackpane");
 			return;
 		}
 
-		System.out.println("Income data " + ++n + ": " + text + "; " + answers);
-		textDynamicThread = new Thread(new Runnable() {
-			@Override
-			public void run() {
-				if (text != null && !text.equals(lastText)) {
-					lastText = text;
-					
-					isDialogAnimated = true;
-					dialogDelaySpeed = 64;
-					
-					StringBuilder sb = new StringBuilder(text);
-					dialogChars = new char[text.length()];
-					
-					int shift = 0;
-					for (int i = 0; i < text.length(); i++) {
-						shift++;
-						if (charWidth * shift > dialogTextRect.getWidth() - charWidth * 2 + 4) {
-							for(int k = i; k > 0; k--) {
-								if ((int) dialogChars[k] == 32) {
-									sb.setCharAt(k, (char) 10);
-									break;
-								}				
-							}
-							shift = 0;
-						}
-						try {sb.getChars(0, i + 1, dialogChars, 0);} catch (Exception e) {/* IGNORE */;}
-						
-						try {Thread.sleep(dialogDelaySpeed);} catch (InterruptedException e) {/* IGNORE */}
-					}
-				}
+        System.out.println("Try to read the image: '" + Registry.scenesDir + "/" + sceneName + imageExt + "'...");
+        picSceneImage = (BufferedImage) cashe.get(sceneName.replace(imageExt, ""));
+        if (picSceneImage == null) {
+            picSceneImage = (BufferedImage) cashe.get("blackpane");
+        }
+    }
 
-				if (answers != null) {			
-					dlm.clear();
-					for (String a : answers) {addAnswer(a);}
-				}
-				isDialogAnimated = false;
-			}
-		});
-		textDynamicThread.start();
+    // changing down left hero avatar:
+    public static void setHeroAvatar(int avatarIndex) {
+		Print(GameFrame.class, LEVEL.INFO, "setHeroAvatar: Try to set hero`s avatar #" + avatarIndex);
+        if (avatarIndex == 0) {
+            heroAvatar = (BufferedImage) cashe.get("0");
+            return;
+        }
+		heroAvatar = (BufferedImage) cashe.get(avatarIndex + "");
+    }
+
+	public static void setHeroName(String heroName) {
+		throw new RuntimeException("GameFrame.setHeroName is empty method");
 	}
-	
-	// changing NPC center image:
-	public static void setNpcImage(BufferedImage image) {npcImage = image;}
-	
-	// handle add new answers (use setDialogText(dialogText, answers[])):
-	private static void addAnswer(String answer) {
-		System.out.println("#: addAnswer: " + answer);
-		dlm.addElement(dlm.size() + 1 + ": " + answer.split("%")[0]);
-		if (answer.split("%").length > 1) {fileMapAdd(answer);}
-	}
-	
-	private static void resetVariantsList() {
-		dlm.clear();
-		if (isDialogAnimated) {dialogDelaySpeed = 0;}
-		addAnswer("Далее...");
-	}
-	
-	private static void fileMapAdd(String answer) {
+
+    public static void setNpcImage(BufferedImage npcImage) {
+        throw new RuntimeException("GameFrame.setNpcImage is empty method");
+    }
+
+    // changing dialog text:
+    public static void setDialogText(String text, ArrayList<String> answers) {
+        if (textDynamicThread != null) {
+            dialogDelaySpeed = 0;
+            textDynamicThread.interrupt();
+        }
+        if (text == null && answers == null) {
+            System.out.println("Waiting for choise!..");
+            return;
+        }
+
+        System.out.println("Income data " + ++n + ": " + text + "; " + answers);
+        textDynamicThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                if (text != null && !text.equals(lastText)) {
+                    lastText = text;
+
+                    isDialogAnimated = true;
+                    dialogDelaySpeed = 64;
+
+                    StringBuilder sb = new StringBuilder(text);
+                    dialogChars = new char[text.length()];
+
+                    int shift = 0;
+                    for (int i = 0; i < text.length(); i++) {
+                        shift++;
+                        if (charWidth * shift > dialogTextRect.getWidth() - charWidth * 2 + 4) {
+                            for (int k = i; k > 0; k--) {
+                                if ((int) dialogChars[k] == 32) {
+                                    sb.setCharAt(k, (char) 10);
+                                    break;
+                                }
+                            }
+                            shift = 0;
+                        }
+                        try {
+                            sb.getChars(0, i + 1, dialogChars, 0);
+                        } catch (Exception e) {/* IGNORE */
+                            ;
+                        }
+
+                        try {
+                            Thread.sleep(dialogDelaySpeed);
+                        } catch (InterruptedException e) {/* IGNORE */}
+                    }
+                }
+
+                if (answers != null) {
+                    dlm.clear();
+                    for (String a : answers) {
+                        addAnswer(a);
+                    }
+                }
+                isDialogAnimated = false;
+            }
+        });
+        textDynamicThread.start();
+    }
+
+    // handle add new answers (use setDialogText(dialogText, answers[])):
+    private static void addAnswer(String answer) {
+        System.out.println("#: addAnswer: " + answer);
+        dlm.addElement(dlm.size() + 1 + ": " + answer.split("%")[0]);
+        if (answer.split("%").length > 1) {
+            fileMapAdd(answer);
+        }
+    }
+
+    private static void resetVariantsList() {
+        dlm.clear();
+        if (isDialogAnimated) {
+            dialogDelaySpeed = 0;
+        }
+        addAnswer("Далее...");
+    }
+
+    private static void fileMapAdd(String answer) {
 //		System.out.println("#: fileMapAdd: " + answer);
-		answerBlocksMap.put(
-				answer.split("%")[0], 
-				new File(Registry.blockPath + "/" + answer.split("%")[1] + blockExt)
-		);
-		
+        answerBlocksMap.put(
+                answer.split("%")[0],
+                new File(Registry.blockPath + "/" + answer.split("%")[1] + blockExt)
+        );
+
 //		System.out.println("\nAnswers map now: " + Arrays.asList(answerBlocksMap.entrySet()));
-	}
+    }
 
-	public static File getScenario(int answerIndex) {
+    public static File getScenario(int answerIndex) {
 //		System.out.println("\nЗапрашиваем индекс #" + answerIndex);
-		return getScenario(answerList.getSelectedValue());
-	}
-	public static File getScenario(String fileName) {
-		if (fileName == null) {return null;}
-		fileName = fileName.split(":")[1].trim();
+        return getScenario(answerList.getSelectedValue());
+    }
+
+    public static File getScenario(String fileName) {
+        if (fileName == null) {
+            return null;
+        }
+        fileName = fileName.split(":")[1].trim();
 //		System.out.println("\nВозвращаем файл '" + fileName + "'.");
-		return answerBlocksMap.get(fileName);
-	}
-	
+        return answerBlocksMap.get(fileName);
+    }
 
-	private void stopGame() {
-		isStoryPlayed = false;		
-		if (textDynamicThread != null) {textDynamicThread.interrupt();}
-		
-		dispose();
-		new MainMenu();
-	}
-	
-	private void reloadRectangles() {
-		this.centerPicRect = new Rectangle(0, 0, FRAME_WIDTH, (int) (FRAME_HEIGHT * 0.75D));		
-		this.heroAvatarRect = new Rectangle((int) (FRAME_WIDTH * 0.01D), (int) (FRAME_HEIGHT * 0.74D), (int) (FRAME_WIDTH * 0.148D), (int) (FRAME_HEIGHT * 0.23D));
-		this.backButtonRect = new Rectangle((int) (FRAME_WIDTH * 0.895D), (int) (FRAME_HEIGHT * 0.734D), (int) (FRAME_WIDTH * 0.0832D), (int) (FRAME_HEIGHT * 0.19D));
-		
-		dialogTextRect = new Rectangle((int) (FRAME_WIDTH * 0.167D), (int) (FRAME_HEIGHT * 0.74D), (int) (FRAME_WIDTH * 0.565D), (int) (FRAME_HEIGHT * 0.225D));
-		choseVariantRect = new Rectangle((int) (FRAME_WIDTH * 0.735D), (int) (FRAME_HEIGHT * 0.74D), (int) (FRAME_WIDTH * 0.1485D), (int) (FRAME_HEIGHT * 0.225D));
-		
-		setSize(FRAME_WIDTH, FRAME_HEIGHT);
-		basePane.setSize(FRAME_WIDTH, FRAME_HEIGHT);
-	}
+    private void stopGame() {
+        isStoryPlayed = false;
+        if (textDynamicThread != null) {
+            textDynamicThread.interrupt();
+        }
 
-	private void setFullscreen() {
-		if (!isFullscreen) {
-			FRAME_WIDTH = (int) (screen.getWidth() * 0.75D);
-			FRAME_HEIGHT = (int) (screen.getHeight() * 0.75D);
-		} else {FRAME_WIDTH = Toolkit.getDefaultToolkit().getScreenSize().width; FRAME_HEIGHT = Toolkit.getDefaultToolkit().getScreenSize().height;}
-		reloadRectangles();
-		GameFrame.this.setLocationRelativeTo(null);
-		isFullscreen = !isFullscreen;
-	}
+        dispose();
+        new MainMenu();
+    }
 
-	
-	@Override
-	public void mousePressed(MouseEvent e) {
-		mouseWasOnScreen = new Point(e.getXOnScreen(), e.getYOnScreen());
-		frameWas = getLocation();
-		
-		if (backButOver) {backButPressed = true;} else {backButPressed = false;}
-	}
-	@Override
-	public void mouseReleased(MouseEvent e) {
-		if (backButOver) {
-			backButPressed = false;
-			isPaused = true;
-			
-			int closeQ = JOptionPane.showConfirmDialog(null,
-				"Уверен? Прекратить текущую игру и вернуться в меню? Нет - сохранение и загрузка.",
-				"Подтверждение:",
-				JOptionPane.YES_NO_OPTION);
-		
-			switch(closeQ) {
-				case 0: 
-					stopGame();	
-					break;
-					
-				case 1: 
-					new SaveGame(); 
-					isPaused = false; 
-					break;
-					
-				default:
-			}
-		}
-	}
+    private void reloadRectangles() {
+        this.centerPicRect = new Rectangle(0, 0, FRAME_WIDTH, (int) (FRAME_HEIGHT * 0.75D));
+        this.heroAvatarRect = new Rectangle((int) (FRAME_WIDTH * 0.01D), (int) (FRAME_HEIGHT * 0.74D), (int) (FRAME_WIDTH * 0.148D), (int) (FRAME_HEIGHT * 0.23D));
+        this.backButtonRect = new Rectangle((int) (FRAME_WIDTH * 0.895D), (int) (FRAME_HEIGHT * 0.734D), (int) (FRAME_WIDTH * 0.0832D), (int) (FRAME_HEIGHT * 0.19D));
 
-	@Override
-	public void mouseDragged(MouseEvent e) {
-		if (isFullscreen) {
-			GameFrame.this.setLocation(
-					(int) (frameWas.getX() - (mouseWasOnScreen.getX() - e.getXOnScreen())), 
-					(int) (frameWas.getY() - (mouseWasOnScreen.getY() - e.getYOnScreen())));
-		}
-	}
-	@Override
-	public void mouseMoved(MouseEvent e) {
-		mouseNow = e.getPoint();
-		
-		if (backButtonRect.contains(mouseNow)) {backButOver = true;} else {backButOver = false;}
-	}
+        dialogTextRect = new Rectangle((int) (FRAME_WIDTH * 0.167D), (int) (FRAME_HEIGHT * 0.74D), (int) (FRAME_WIDTH * 0.565D), (int) (FRAME_HEIGHT * 0.225D));
+        choseVariantRect = new Rectangle((int) (FRAME_WIDTH * 0.735D), (int) (FRAME_HEIGHT * 0.74D), (int) (FRAME_WIDTH * 0.1485D), (int) (FRAME_HEIGHT * 0.225D));
 
-	public void mouseEntered(MouseEvent e) {}
-	public void mouseExited(MouseEvent e) {}
-	public void mouseClicked(MouseEvent e) {}
+        setSize(FRAME_WIDTH, FRAME_HEIGHT);
+        basePane.setSize(FRAME_WIDTH, FRAME_HEIGHT);
+    }
+
+    private void setFullscreen() {
+        if (!userConf.isFullScreen()) {
+            FRAME_WIDTH = (int) (screen.getWidth() * 0.75D);
+            FRAME_HEIGHT = (int) (screen.getHeight() * 1.0D);
+        } else {
+            FRAME_WIDTH = Toolkit.getDefaultToolkit().getScreenSize().width;
+            FRAME_HEIGHT = Toolkit.getDefaultToolkit().getScreenSize().height;
+        }
+        reloadRectangles();
+        GameFrame.this.setLocationRelativeTo(null);
+		userConf.setFullScreen(!userConf.isFullScreen());
+    }
+
+    @Override
+    public void mousePressed(MouseEvent e) {
+        mouseWasOnScreen = new Point(e.getXOnScreen(), e.getYOnScreen());
+        frameWas = getLocation();
+
+        if (backButOver) {
+            backButPressed = true;
+        } else {
+            backButPressed = false;
+        }
+    }
+    @Override
+    public void mouseReleased(MouseEvent e) {
+        if (backButOver) {
+            backButPressed = false;
+            isPaused = true;
+
+            int closeQ = JOptionPane.showConfirmDialog(null,
+                    "Уверен? Прекратить текущую игру и вернуться в меню? Нет - сохранение и загрузка.",
+                    "Подтверждение:",
+                    JOptionPane.YES_NO_OPTION);
+
+            switch (closeQ) {
+                case 0:
+                    stopGame();
+                    break;
+
+                case 1:
+                    new SaveGame();
+                    isPaused = false;
+                    break;
+
+                default:
+            }
+        }
+    }
+    @Override
+    public void mouseDragged(MouseEvent e) {
+        if (!userConf.isFullScreen()) {
+            GameFrame.this.setLocation(
+                    (int) (frameWas.getX() - (mouseWasOnScreen.getX() - e.getXOnScreen())),
+                    (int) (frameWas.getY() - (mouseWasOnScreen.getY() - e.getYOnScreen())));
+        }
+    }
+    @Override
+    public void mouseMoved(MouseEvent e) {
+        mouseNow = e.getPoint();
+
+        if (backButtonRect.contains(mouseNow)) {
+            backButOver = true;
+        } else {
+            backButOver = false;
+        }
+    }
+    public void mouseEntered(MouseEvent e) {
+    }
+    public void mouseExited(MouseEvent e) {
+    }
+    public void mouseClicked(MouseEvent e) {
+    }
 }
-
 //Choice choice = new Choice();
 //choice.addItem("First");
 //choice.addItem("Second");
