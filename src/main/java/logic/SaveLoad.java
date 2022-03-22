@@ -22,7 +22,7 @@ public class SaveLoad {
     }
 
     private static void runAutoSaving() {
-        String autoSavePath = Registry.userSaveDir + "/autosave.tmp";
+        String autoSavePath = Registry.usersSaveDir + "/autosave.tmp";
         Path autoSave = Paths.get(autoSavePath);
         Out.Print(SaveLoad.class, LEVEL.ACCENT, "Работа с автосохранением " + autoSave);
 

@@ -158,7 +158,7 @@ public class GenderFrame extends JFrame implements ListSelectionListener, MouseL
                 } else {
                     Out.Print(GenderFrame.class, LEVEL.ACCENT, "\nПроверка разрешения на использование модов...");
                     if (configuration.isUseMods()) {
-                        new ModsLoader(new File("./mod/"));
+                        new ModsLoader(Registry.modsDir);
                     } else {
                         Out.Print(GenderFrame.class, LEVEL.ACCENT, "Моды отключены в опциях. Продолжаем без них...\n");
                     }

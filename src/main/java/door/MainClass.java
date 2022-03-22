@@ -28,18 +28,23 @@ public class MainClass {
     private static boolean isLogEnabled = true;
     private static FoxLogo fl;
 
-    public static void main(String[] args) {
+    private static void preInit() {
         Out.setEnabled(isLogEnabled);
         Out.setErrorLevel(Out.LEVEL.INFO);
         Out.setLogsCountAllow(3);
 
-        try {configuration = JIOM.fileToDto(Registry.globalConfigDir, Configuration.class);
+        try {configuration = JIOM.fileToDto(Registry.globalConfigFile, Configuration.class);
         } catch (Exception e) {
             e.printStackTrace();
         }
 
-        Out.Print(MainClass.class, Out.LEVEL.INFO, "Подготовка программы...\nКодировка системы: " + Charset.defaultCharset());
-        Out.Print(MainClass.class, Out.LEVEL.INFO, "Кодировка программы: " + StandardCharsets.UTF_8);
+        Out.Print(MainClass.class, Out.LEVEL.INFO,
+                "\nКодировка системы: " + Charset.defaultCharset() +
+                "\nКодировка программы: " + Registry.charset + "\n");
+    }
+
+    public static void main(String[] args) {
+        preInit();
 
         if (configuration.isShowLogo()) {
             fl = new FoxLogo();
@@ -54,12 +59,12 @@ public class MainClass {
         }
 
         existingDirectoriesCheck();
-        buildIOM();
+        configurator();
 
         loadImages();
         loadAudio();
 
-//        connectMods();
+        connectMods();
 
         if (fl != null) {
             try {
@@ -80,7 +85,7 @@ public class MainClass {
 
         Path[] scanFiles = new Path[]{
                 Registry.usersDir,
-                Registry.userSaveDir,
+//                Registry.usersSaveDir,
                 Registry.modsDir,
                 Registry.picDir,
                 Registry.curDir,
@@ -91,8 +96,8 @@ public class MainClass {
                 Registry.personasDir
         };
         for (Path p : scanFiles) {
-            if (!Files.notExists(p)) {
-                Out.Print(MainClass.class, Out.LEVEL.ACCENT, "Не найден путь " + p + "! Попытка создания...");
+            if (Files.notExists(p)) {
+                Out.Print(MainClass.class, Out.LEVEL.ACCENT, "Не найден путь '" + p + "' -> Попытка создания...");
                 try {
                     Files.createDirectories(p);
                 } catch (Exception e) {
@@ -101,18 +106,23 @@ public class MainClass {
             }
         }
 
-        Out.Print(MainClass.class, Out.LEVEL.INFO, "Проверка наличия необходимых директорий завершена.");
+        Out.Print(MainClass.class, Out.LEVEL.INFO, "Проверка наличия необходимых директорий завершена.\n");
     }
 
-    private static void buildIOM() {
+    private static void configurator() {
         // имя последнего игрока:
         int luHash = configuration.getLastUserHash();
         if (luHash == 0) {
             luHash = "newEmptyUser".hashCode();
-            configuration.setLastUserHash(luHash);
+            // настраиваем пользователя:
+            configuration.setLastUserName("newEmptyUser");
+            configuration.calcUserHash();
+            Registry.usersSaveDir = Paths.get(Registry.usersDir + "/" + configuration.getLastUserHash() + "/");
         }
 
-        try {userConf = JIOM.fileToDto(Paths.get(Registry.usersDir + "luHash"), UserConf.class);
+        try {
+            userConf = JIOM.fileToDto(Paths.get(Registry.usersDir + "/"+ configuration.getLastUserHash() + "/config.dto"), UserConf.class);
+            userConf.setUserName(configuration.getLastUserName());
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -127,6 +137,13 @@ public class MainClass {
         }
 
         loadAudioSettings();
+
+        try {
+            JIOM.dtoToFile(configuration);
+            JIOM.dtoToFile(userConf);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     static void loadAudioSettings() {
@@ -144,6 +161,7 @@ public class MainClass {
         if (userConf.getVoiceVolume() == null) {
             userConf.setVoiceVolume(0.75f);
         }
+        Out.Print(MainClass.class, Out.LEVEL.INFO, "Аудио сконфигурировано.");
     }
 
 
@@ -226,7 +244,7 @@ public class MainClass {
         try {
             return ImageIO.read(new File(path + Registry.picExtension));
         } catch (IOException e) {
-            e.printStackTrace();
+            Out.Print(MainClass.class, Out.LEVEL.WARN, "Ошибка чтения медиа '" + path + "': " + e.getMessage());
         }
         return null;
     }
@@ -247,10 +265,12 @@ public class MainClass {
         }
     }
 
-    void connectMods() {
+    static void connectMods() {
+        if (!configuration.isUseMods()) {return;}
+
         Out.Print(MainClass.class, Out.LEVEL.INFO, "Сканирование папки mods...");
         try {
-            new ModsLoader(new File("./mod/"));
+            new ModsLoader(Registry.modsDir);
             if (ModsLoader.getReadyModsCount() > 0) {
                 Out.Print(MainClass.class, Out.LEVEL.ACCENT, "Обнаружены возможные моды в количестве шт: " + ModsLoader.getReadyModsCount());
             } else {

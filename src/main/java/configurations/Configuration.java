@@ -12,7 +12,8 @@ public class Configuration implements JConfigurable {
     Path source;
 
     boolean showLogo = true;
-    int lastUserHash;
+    static int lastUserHash;
+    String lastUserName;
     boolean useMods = false;
 
     @Override
@@ -23,5 +24,13 @@ public class Configuration implements JConfigurable {
     @Override
     public Path getSource() {
         return source;
+    }
+
+    public void calcUserHash() {
+        lastUserHash = lastUserName.hashCode();
+    }
+
+    public int getLastUserHash() {
+        return lastUserHash;
     }
 }

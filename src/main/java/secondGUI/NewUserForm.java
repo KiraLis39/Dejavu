@@ -17,6 +17,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
+import java.nio.file.Paths;
 
 import static registry.Registry.configuration;
 import static registry.Registry.userConf;
@@ -221,7 +222,11 @@ public class NewUserForm extends JDialog implements Cached {
                                 } else {
                                     if (!userConf.getUserName().equals(nameField.getText().trim())) {
                                         userConf.setUserName(nameField.getText().trim());
-                                        configuration.setLastUserHash(userConf.getUserName().hashCode());
+
+                                        // настраиваем пользователя:
+                                        configuration.setLastUserName(userConf.getUserName());
+                                        configuration.calcUserHash();
+                                        Registry.usersSaveDir = Paths.get(Registry.usersDir + "/" + configuration.getLastUserHash() + "/");
 
                                         userConf.setUserSex(maleBox.isSelected() ? UserConf.USER_SEX.MALE : UserConf.USER_SEX.FEMALE);
                                         userConf.setUserAge(Integer.parseInt(ageField.getText()));

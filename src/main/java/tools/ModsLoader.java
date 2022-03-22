@@ -24,8 +24,8 @@ public class ModsLoader extends ClassLoader {
     private Path modsFolder;
     // Все моды (имя модов) должны кончаться на "Mod.jar"
 
-    public ModsLoader(File modsDir) {
-        this.modsFolder = modsDir.toPath();
+    public ModsLoader(Path modsDir) {
+        this.modsFolder = modsDir;
         preparing(this.modsFolder);
 
         File[] filesArray = this.modsFolder.toFile().listFiles();
