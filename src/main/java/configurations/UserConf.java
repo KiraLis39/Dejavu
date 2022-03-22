@@ -19,6 +19,8 @@ public class UserConf implements JConfigurable {
     int avatarIndex = 0;
     int cycleCount = 0;
     boolean fullScreen = false;
+    boolean autoSaveOn = true;
+    boolean autoSkipping = false;
 
     Float musicVolume;
     boolean musicMuted = false;

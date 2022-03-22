@@ -17,13 +17,14 @@ import java.util.Map;
 
 import static fox.Out.LEVEL;
 import static fox.Out.Print;
+import static registry.Registry.userConf;
 
 public class Media extends EQFunction {
     private static Thread musicThread, backgThread;
-    private static Map<String, File> musicMap = new LinkedHashMap<>();
-    private static Map<String, File> soundMap = new LinkedHashMap<>();
-    private static Map<String, File> voicesMap = new LinkedHashMap<>();
-    private static Map<String, File> backgMap = new LinkedHashMap<>();
+    private static final Map<String, File> musicMap = new LinkedHashMap<>();
+    private static final Map<String, File> soundMap = new LinkedHashMap<>();
+    private static final Map<String, File> voicesMap = new LinkedHashMap<>();
+    private static final Map<String, File> backgMap = new LinkedHashMap<>();
 
     private static JavaSoundAudioDevice auDevMusic;
     private static AdvancedPlayer musicPlayer;
@@ -53,7 +54,7 @@ public class Media extends EQFunction {
     }
 
     public static void playSound(@NonNull String trackName) {
-        if (Registry.configuration.isSoundMuted()) {
+        if (userConf.isSoundMuted()) {
             return;
         }
 
@@ -63,7 +64,7 @@ public class Media extends EQFunction {
             new Thread(() -> {
                 auDevSound = new JavaSoundAudioDevice();
                 try (InputStream potok = new FileInputStream(soundMap.get(trackName))) {
-                    auDevSound.setLineGain(Registry.configuration.getSoundVolume());
+                    auDevSound.setLineGain(userConf.getSoundVolume());
                     soundPlayer = new AdvancedPlayer(potok, auDevSound);
                     PlaybackListener listener = new PlaybackListener() {
                         @Override
@@ -110,7 +111,7 @@ public class Media extends EQFunction {
     }
 
     public static void playMusic(@NonNull String trackName, boolean rep) {
-        if (Registry.configuration.isMusicMuted()) {
+        if (userConf.isMusicMuted()) {
             return;
         }
 
@@ -137,7 +138,7 @@ public class Media extends EQFunction {
                 auDevMusic = new JavaSoundAudioDevice();
                 try (InputStream potok = new FileInputStream(musicMap.get(trackName))) {
                     lastMusic = trackName;
-                    auDevMusic.setLineGain(Registry.configuration.getMusicVolume());
+                    auDevMusic.setLineGain(userConf.getMusicVolume());
                     musicPlayer = new AdvancedPlayer(potok, auDevMusic);
                     PlaybackListener listener = new PlaybackListener() {
                         @Override
@@ -195,7 +196,7 @@ public class Media extends EQFunction {
     }
 
     public static void playBackg(@NonNull String trackName) {
-        if (Registry.configuration.isBackgMuted()) {
+        if (userConf.isBackgMuted()) {
             return;
         }
 
@@ -222,7 +223,7 @@ public class Media extends EQFunction {
                 auDevBackg = new JavaSoundAudioDevice();
                 try (InputStream potok = new FileInputStream(backgMap.get(trackName))) {
                     lastBackg = trackName;
-                    auDevBackg.setLineGain(Registry.configuration.getBackgVolume());
+                    auDevBackg.setLineGain(userConf.getBackgVolume());
                     backgPlayer = new AdvancedPlayer(potok, auDevBackg);
                     PlaybackListener listener = new PlaybackListener() {
                         @Override
@@ -276,7 +277,7 @@ public class Media extends EQFunction {
     }
 
     public static void playVoice(@NonNull String trackName) {
-        if (Registry.configuration.isVoiceMuted()) {
+        if (userConf.isVoiceMuted()) {
             return;
         }
 
@@ -285,7 +286,7 @@ public class Media extends EQFunction {
                 auDevVoice = new JavaSoundAudioDevice();
                 try (InputStream potok = new FileInputStream(voicesMap.get(trackName))) {
                     voicePlayer = new AdvancedPlayer(potok, auDevVoice);
-                    auDevVoice.setLineGain(Registry.configuration.getVoiceVolume());
+                    auDevVoice.setLineGain(userConf.getVoiceVolume());
                     voicePlayer.play();
                 } catch (Exception err) {
                     err.printStackTrace();
@@ -306,7 +307,7 @@ public class Media extends EQFunction {
 
 
     public static void soundMute(boolean mute) {
-        Registry.configuration.setSoundMuted(mute);
+        userConf.setSoundMuted(mute);
         if (mute && soundPlayer != null) {
             try {
                 soundPlayer.stop();
@@ -315,7 +316,7 @@ public class Media extends EQFunction {
     }
 
     public static void musicMute(boolean mute) {
-        Registry.configuration.setMusicMuted(mute);
+        userConf.setMusicMuted(mute);
         if (mute && musicPlayer != null) {
             stopMusic();
         } else {
@@ -324,7 +325,7 @@ public class Media extends EQFunction {
     }
 
     public static void backgMute(boolean mute) {
-        Registry.configuration.setBackgMuted(mute);
+        userConf.setBackgMuted(mute);
         if (mute && backgPlayer != null) {
             stopBackg();
         } else {
@@ -333,7 +334,7 @@ public class Media extends EQFunction {
     }
 
     public static void voiceMute(boolean mute) {
-        Registry.configuration.setVoiceMuted(mute);
+        userConf.setVoiceMuted(mute);
         if (mute && voicePlayer != null) {
             try {
                 voicePlayer.stop();
@@ -343,30 +344,30 @@ public class Media extends EQFunction {
 
 
     public static void setMusicVolume(float volume) {
-        Registry.configuration.setMusicVolume((float) (Math.log(volume) / Math.log(2) * 6.0f));
+        userConf.setMusicVolume((float) (Math.log(volume) / Math.log(2) * 6.0f));
         if (auDevMusic != null) {
-            auDevMusic.setLineGain(Registry.configuration.getMusicVolume());
+            auDevMusic.setLineGain(userConf.getMusicVolume());
         }
     }
 
     public static void setSoundVolume(float volume) {
-        Registry.configuration.setSoundVolume((float) (Math.log(volume) / Math.log(2) * 6.0f));
+        userConf.setSoundVolume((float) (Math.log(volume) / Math.log(2) * 6.0f));
         if (auDevSound != null) {
-            auDevSound.setLineGain(Registry.configuration.getSoundVolume());
+            auDevSound.setLineGain(userConf.getSoundVolume());
         }
     }
 
     public static void setBackgVolume(float volume) {
-        Registry.configuration.setBackgVolume((float) (Math.log(volume) / Math.log(2) * 6.0f));
+        userConf.setBackgVolume((float) (Math.log(volume) / Math.log(2) * 6.0f));
         if (auDevBackg != null) {
-            auDevBackg.setLineGain(Registry.configuration.getBackgVolume());
+            auDevBackg.setLineGain(userConf.getBackgVolume());
         }
     }
 
     public static void setVoiceVolume(float volume) {
-        Registry.configuration.setVoiceVolume((float) (Math.log(volume) / Math.log(2) * 6.0f));
+        userConf.setVoiceVolume((float) (Math.log(volume) / Math.log(2) * 6.0f));
         if (auDevVoice != null) {
-            auDevVoice.setLineGain(Registry.configuration.getVoiceVolume());
+            auDevVoice.setLineGain(userConf.getVoiceVolume());
         }
     }
 }

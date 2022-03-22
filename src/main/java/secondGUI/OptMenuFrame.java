@@ -19,12 +19,13 @@ import java.awt.font.TextLayout;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 
+import static registry.Registry.configuration;
 import static registry.Registry.userConf;
 
 public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotionListener, MouseListener, Cached {
     private final int WIDTH = 400, HEIGHT = 600;
     private final Double widthPercent = WIDTH / 100D, heightPercent = HEIGHT / 100D, horizontalCenter = WIDTH / 2D;
-
+    private final int[] scrollsSize = new int[]{(int) (widthPercent * 90D), (int) (heightPercent * 10D)};
     private final String stringValueSound = "Заглушить звук:";
     private final String stringValueMusic = "Заглушить музыку:";
     private final String stringValueBackg = "Заглушить эффекты:";
@@ -33,22 +34,62 @@ public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotion
     private final String stringAutoSaving = "Автосохранение:";
     private final String stringUseMods = "Искать моды:";
     private final String stringAutoSkipping = "Автопрокрутка:";
-
-    private BufferedImage baseBuffer;
-
-    private Boolean isSoundMute = false, isSoundMuteOver = false, isMusicMute = false, isMusicMuteOver = false, isBackgMute = false, isBackgMuteOver = false, isVoiceMute = false, isVoiceMuteOver = false,
-            isFullscreen = false, isFullscreenOver = false, isModEnabled = false, isModEnabledOver = false, isAutoSave = false, isAutoSaveOver = false, isAutoSkipping = false, isAutoSkippingOver = false;
-    private JSlider volumeOfMusicSlider, volumeOfSoundSlider, volumeOfBackgSlider, volumeOfVoiceSlider;
-
-    private Point mouseNow, titlePoint, musTitlePoint, soundTitlePoint, backgTitlePoint, voiceTitlePoint, down0Point, down1Point, down2Point, down3Point, downChecker0, downChecker1, downChecker2, downChecker3;
     private final Rectangle musicMuteRect;
     private final Rectangle soundMuteRect;
     private final Rectangle backgMuteRect;
     private final Rectangle voiceMuteRect;
     private final Rectangle downBackFonRect;
-
     private final int[] polygonsDot;
-    private final int[] scrollsSize = new int[]{(int) (widthPercent * 90D), (int) (heightPercent * 10D)};
+    private BufferedImage baseBuffer;
+    private Boolean isSoundMuteOver = false, isMusicMuteOver = false, isBackgMuteOver = false, isVoiceMuteOver = false,
+            isFullscreenOver = false, isModEnabledOver = false, isAutoSaveOver = false, isAutoSkippingOver = false;
+    private JSlider volumeOfMusicSlider, volumeOfSoundSlider, volumeOfBackgSlider, volumeOfVoiceSlider;
+    private Point mouseNow, titlePoint, musTitlePoint, soundTitlePoint, backgTitlePoint, voiceTitlePoint,
+            down0Point, down1Point, down2Point, down3Point, downChecker0, downChecker1, downChecker2, downChecker3;
+
+    public OptMenuFrame() {
+        this(0);
+    }
+
+    public OptMenuFrame(int code) {
+        Out.Print(OptMenuFrame.class, LEVEL.INFO, "Вход в опции!");
+
+        setModalExclusionType(Dialog.ModalExclusionType.NO_EXCLUDE);
+        setUndecorated(true);
+        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+        setCursor(FoxCursor.createCursor((BufferedImage) cache.get("curOtherCursor"), "otherCursor"));
+        setMinimumSize(new Dimension(WIDTH, HEIGHT));
+        setLayout(null);
+
+        polygonsDot = new int[]{(int) (widthPercent * 84D), (int) (widthPercent * 87D), (int) (widthPercent * 89D), (int) (widthPercent * 87D)};
+
+        soundMuteRect = new Rectangle((int) (widthPercent * 85D), (int) (heightPercent * 12D), 15, 15);
+        musicMuteRect = new Rectangle((int) (widthPercent * 85D), (int) (heightPercent * 27D), 15, 15);
+        backgMuteRect = new Rectangle((int) (widthPercent * 85D), (int) (heightPercent * 41D), 15, 15);
+        voiceMuteRect = new Rectangle((int) (widthPercent * 85D), (int) (heightPercent * 55D), 15, 15);
+
+        downBackFonRect = new Rectangle((int) (widthPercent * 3D), (int) (heightPercent * 71D), (int) (widthPercent * 94D), (int) (heightPercent * 26D));
+
+        buildVolumeSliders();
+        addInAction();
+
+        add(volumeOfSoundSlider);
+        add(volumeOfMusicSlider);
+        add(volumeOfBackgSlider);
+        add(volumeOfVoiceSlider);
+
+        addMouseListener(this);
+        addMouseMotionListener(this);
+
+        pack();
+        setLocationRelativeTo(null);
+
+        setModal(true);
+        setVisible(true);
+        repaint();
+
+        Out.Print(OptMenuFrame.class, LEVEL.INFO, "Окно опций OptMenuFrame отображено успешно.");
+    }
 
     @Override
     public void paint(Graphics g) {
@@ -131,7 +172,7 @@ public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotion
         g2D.drawRoundRect(backgMuteRect.x - 2, backgMuteRect.y + 2, backgMuteRect.width, backgMuteRect.height, 6, 6);
         g2D.drawRoundRect(voiceMuteRect.x - 2, voiceMuteRect.y + 2, voiceMuteRect.width, voiceMuteRect.height, 6, 6);
 
-        if (isSoundMute) {
+        if (userConf.isSoundMuted()) {
             if (isSoundMuteOver) {
                 g2D.setColor(Color.orange);
             } else {
@@ -149,7 +190,7 @@ public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotion
             g2D.drawRoundRect(soundMuteRect.x, soundMuteRect.y, soundMuteRect.width, soundMuteRect.height, 6, 6);
         }
 
-        if (isMusicMute) {
+        if (userConf.isMusicMuted()) {
             if (isMusicMuteOver) {
                 g2D.setColor(Color.ORANGE);
             } else {
@@ -167,7 +208,7 @@ public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotion
             g2D.drawRoundRect(musicMuteRect.x, musicMuteRect.y, musicMuteRect.width, musicMuteRect.height, 6, 6);
         }
 
-        if (isBackgMute) {
+        if (userConf.isBackgMuted()) {
             if (isBackgMuteOver) {
                 g2D.setColor(Color.ORANGE);
             } else {
@@ -185,7 +226,7 @@ public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotion
             g2D.drawRoundRect(backgMuteRect.x, backgMuteRect.y, backgMuteRect.width, backgMuteRect.height, 6, 6);
         }
 
-        if (isVoiceMute) {
+        if (userConf.isVoiceMuted()) {
             if (isVoiceMuteOver) {
                 g2D.setColor(Color.ORANGE);
             } else {
@@ -207,7 +248,7 @@ public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotion
     private void drawDownMenu(Graphics2D g2D) {
         downSettingsPrepare(g2D);
 
-        if (isFullscreen) {
+        if (userConf.isFullScreen()) {
             if (isFullscreenOver) {
                 g2D.setColor(Color.ORANGE);
             } else {
@@ -217,7 +258,7 @@ public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotion
                     new int[]{downChecker0.y, downChecker0.y + 9, downChecker0.y - 9, downChecker0.y + 3}, 4));
         }
 
-        if (isModEnabled) {
+        if (configuration.isUseMods()) {
             if (isModEnabledOver) {
                 g2D.setColor(Color.ORANGE);
             } else {
@@ -227,7 +268,7 @@ public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotion
                     new int[]{downChecker1.y, downChecker1.y + 9, downChecker1.y - 9, downChecker1.y + 3}, 4));
         }
 
-        if (isAutoSave) {
+        if (userConf.isAutoSaveOn()) {
             if (isAutoSaveOver) {
                 g2D.setColor(Color.ORANGE);
             } else {
@@ -237,7 +278,7 @@ public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotion
                     new int[]{downChecker2.y, downChecker2.y + 9, downChecker2.y - 9, downChecker2.y + 3}, 4));
         }
 
-        if (isAutoSkipping) {
+        if (userConf.isAutoSkipping()) {
             if (isAutoSkippingOver) {
                 g2D.setColor(Color.ORANGE);
             } else {
@@ -297,52 +338,6 @@ public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotion
         g2D.drawString(stringAutoSkipping, down3Point.x, down3Point.y);
     }
 
-
-    public OptMenuFrame() {
-        this(0);
-    }
-
-    public OptMenuFrame(int code) {
-        Out.Print(OptMenuFrame.class, LEVEL.INFO, "Вход в опции!");
-
-        setModalExclusionType(Dialog.ModalExclusionType.NO_EXCLUDE);
-        setUndecorated(true);
-        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-        setCursor(FoxCursor.createCursor((BufferedImage) cache.get("curOtherCursor"), "otherCursor"));
-        setMinimumSize(new Dimension(WIDTH, HEIGHT));
-        setLayout(null);
-
-        polygonsDot = new int[]{(int) (widthPercent * 84D), (int) (widthPercent * 87D), (int) (widthPercent * 89D), (int) (widthPercent * 87D)};
-
-        soundMuteRect = new Rectangle((int) (widthPercent * 85D), (int) (heightPercent * 12D), 15, 15);
-        musicMuteRect = new Rectangle((int) (widthPercent * 85D), (int) (heightPercent * 27D), 15, 15);
-        backgMuteRect = new Rectangle((int) (widthPercent * 85D), (int) (heightPercent * 41D), 15, 15);
-        voiceMuteRect = new Rectangle((int) (widthPercent * 85D), (int) (heightPercent * 55D), 15, 15);
-
-        downBackFonRect = new Rectangle((int) (widthPercent * 3D), (int) (heightPercent * 71D), (int) (widthPercent * 94D), (int) (heightPercent * 26D));
-
-        buildVolumeSliders();
-        checkConditions();
-        addInAction();
-
-        add(volumeOfSoundSlider);
-        add(volumeOfMusicSlider);
-        add(volumeOfBackgSlider);
-        add(volumeOfVoiceSlider);
-
-        addMouseListener(this);
-        addMouseMotionListener(this);
-
-        pack();
-        setLocationRelativeTo(null);
-
-        setModal(true);
-        setVisible(true);
-        repaint();
-
-        Out.Print(OptMenuFrame.class, LEVEL.INFO, "Окно опций OptMenuFrame отображено успешно.");
-    }
-
     private void addInAction() {
         InputAction.add("options", this);
         InputAction.set("options", "close", KeyEvent.VK_ESCAPE, 0, new AbstractAction() {
@@ -356,21 +351,14 @@ public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotion
     private void buildVolumeSliders() {
         Out.Print(OptMenuFrame.class, LEVEL.INFO, "Построение слайдеров громкости....");
 
-        volumeOfSoundSlider = getSlider("volumeOfSound");
-        volumeOfMusicSlider = getSlider("volumeOfMusic");
-        volumeOfBackgSlider = getSlider("volumeOfBackg");
-        volumeOfVoiceSlider = getSlider("volumeOfVoice");
+        volumeOfSoundSlider = getSlider("volumeOfSound", (int) (userConf.getSoundVolume() * 100f));
+        volumeOfMusicSlider = getSlider("volumeOfMusic", (int) (userConf.getMusicVolume() * 100f));
+        volumeOfBackgSlider = getSlider("volumeOfBackg", (int) (userConf.getBackgVolume() * 100f));
+        volumeOfVoiceSlider = getSlider("volumeOfVoice", (int) (userConf.getVoiceVolume() * 100f));
     }
 
-    private JSlider getSlider(String name) {
-        return new JSlider(0, 100) {
-            @Override
-            protected void paintComponent(Graphics g) {
-                g.setColor(Color.DARK_GRAY);
-                g.fillRect(0, 0, getWidth(), getHeight());
-                super.paintComponent(g);
-            }
-
+    private JSlider getSlider(String name, int value) {
+        return new JSlider(0, 100, value) {
             {
                 setName(name);
                 setForeground(Color.ORANGE.brighter());
@@ -382,6 +370,13 @@ public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotion
                 setOpaque(false);
                 setIgnoreRepaint(true);
                 addChangeListener(OptMenuFrame.this);
+            }
+
+            @Override
+            protected void paintComponent(Graphics g) {
+                g.setColor(Color.DARK_GRAY);
+                g.fillRect(0, 0, getWidth(), getHeight());
+                super.paintComponent(g);
             }
         };
     }
@@ -395,27 +390,6 @@ public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotion
         userConf.setVoiceVolume(volumeOfVoiceSlider.getValue() / 100f);
 
         dispose();
-    }
-
-    private void checkConditions() {
-        Out.Print(OptMenuFrame.class, LEVEL.ACCENT, "Установка опций...");
-
-        isSoundMute = IOM.getBoolean(IOM.HEADERS.CONFIG, IOMs.CONFIG.SOUND_MUTE);
-        isMusicMute = IOM.getBoolean(IOM.HEADERS.CONFIG, IOMs.CONFIG.MUSIC_MUTE);
-        isBackgMute = IOM.getBoolean(IOM.HEADERS.CONFIG, IOMs.CONFIG.BACKG_MUTE);
-        isVoiceMute = IOM.getBoolean(IOM.HEADERS.CONFIG, IOMs.CONFIG.VOICE_MUTE);
-
-        isFullscreen = IOM.getBoolean(IOM.HEADERS.CONFIG, IOMs.CONFIG.FULLSCREEN);
-        isAutoSave = IOM.getBoolean(IOM.HEADERS.CONFIG, IOMs.CONFIG.AUTO_SAVE_ON);
-        isAutoSkipping = IOM.getBoolean(IOM.HEADERS.CONFIG, IOMs.CONFIG.SKIP_READED);
-        isModEnabled = IOM.getBoolean(IOM.HEADERS.CONFIG, IOMs.CONFIG.USE_MODS);
-
-        volumeOfMusicSlider.setValue((int) (IOM.getDouble(IOM.HEADERS.CONFIG, IOMs.CONFIG.MUSIC_VOL) * 100f));
-        volumeOfSoundSlider.setValue((int) (IOM.getDouble(IOM.HEADERS.CONFIG, IOMs.CONFIG.SOUND_VOL) * 100f));
-        volumeOfBackgSlider.setValue((int) (IOM.getDouble(IOM.HEADERS.CONFIG, IOMs.CONFIG.BACKG_VOL) * 100f));
-        volumeOfVoiceSlider.setValue((int) (IOM.getDouble(IOM.HEADERS.CONFIG, IOMs.CONFIG.VOICE_VOL) * 100f));
-
-        Out.Print(OptMenuFrame.class, LEVEL.INFO, "Проверка опций успешно завершена.");
     }
 
 
@@ -470,47 +444,39 @@ public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotion
     @Override
     public void mousePressed(MouseEvent e) {
         if (isSoundMuteOver) {
-            isSoundMute = !isSoundMute;
-            Media.setSoundEnabled(!isSoundMute);
-            IOM.set(IOM.HEADERS.CONFIG, IOMs.CONFIG.SOUND_MUTE, isSoundMute);
+            userConf.setSoundMuted(!userConf.isSoundMuted());
+            Media.soundMute(userConf.isSoundMuted());
         }
 
         if (isMusicMuteOver) {
-            isMusicMute = !isMusicMute;
-            Media.setMusicEnabled(!isMusicMute);
-            IOM.set(IOM.HEADERS.CONFIG, IOMs.CONFIG.MUSIC_MUTE, isMusicMute);
+            userConf.setMusicMuted(!userConf.isMusicMuted());
+            Media.musicMute(userConf.isMusicMuted());
         }
 
         if (isBackgMuteOver) {
-            isBackgMute = !isBackgMute;
-            Media.setBackgEnabled(!isBackgMute);
-            IOM.set(IOM.HEADERS.CONFIG, IOMs.CONFIG.BACKG_MUTE, isBackgMute);
+            userConf.setBackgMuted(!userConf.isBackgMuted());
+            Media.backgMute(userConf.isBackgMuted());
         }
 
         if (isVoiceMuteOver) {
-            isVoiceMute = !isVoiceMute;
-            Media.setVoiceEnabled(!isVoiceMute);
-            IOM.set(IOM.HEADERS.CONFIG, IOMs.CONFIG.VOICE_MUTE, isVoiceMute);
+            userConf.setVoiceMuted(!userConf.isVoiceMuted());
+            Media.voiceMute(userConf.isVoiceMuted());
         }
 
         if (isFullscreenOver) {
-            isFullscreen = !isFullscreen;
-            IOM.set(IOM.HEADERS.CONFIG, IOMs.CONFIG.FULLSCREEN, isFullscreen);
+            userConf.setFullScreen(!userConf.isFullScreen());
         }
 
         if (isModEnabledOver) {
-            isModEnabled = !isModEnabled;
-            IOM.set(IOM.HEADERS.CONFIG, IOMs.CONFIG.USE_MODS, isModEnabled);
+            configuration.setUseMods(!configuration.isUseMods());
         }
 
         if (isAutoSaveOver) {
-            isAutoSave = !isAutoSave;
-            IOM.set(IOM.HEADERS.CONFIG, IOMs.CONFIG.AUTO_SAVE_ON, isAutoSave);
+            userConf.setAutoSaveOn(!userConf.isAutoSaveOn());
         }
 
         if (isAutoSkippingOver) {
-            isAutoSkipping = !isAutoSkipping;
-            IOM.set(IOM.HEADERS.CONFIG, IOMs.CONFIG.SKIP_READED, isAutoSkipping);
+            userConf.setAutoSkipping(!userConf.isAutoSkipping());
         }
 
         Media.playSound("check");
