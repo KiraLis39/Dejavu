@@ -1,0 +1,19 @@
+{
+  "source" : "file:///D:/JavaProj/MyWorkspace/Dejavu_2019/users/1138020175/config.dto",
+  "userSex" : "MALE",
+  "userName" : "KiraLis39",
+  "userAge" : 32,
+  "avatarIndex" : 0,
+  "cycleCount" : 0,
+  "fullScreen" : true,
+  "autoSaveOn" : true,
+  "autoSkipping" : false,
+  "musicVolume" : 0.75,
+  "musicMuted" : false,
+  "soundVolume" : 0.5,
+  "soundMuted" : false,
+  "backgVolume" : 0.5,
+  "backgMuted" : false,
+  "voiceVolume" : 0.75,
+  "voiceMuted" : false
+}

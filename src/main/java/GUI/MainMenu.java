@@ -1,5 +1,6 @@
 package GUI;
 
+import components.FOptionPane;
 import components.FoxConsole;
 import components.FoxTipsEngine;
 import door.Exit;
@@ -114,7 +115,7 @@ public class MainMenu extends JFrame implements MouseListener, MouseMotionListen
         Print(MainMenu.class, LEVEL.INFO, "A newbie test...");
 
         if (userConf.getUserName().equals("newEmptyUser")) {
-            Print(MainMenu.class, LEVEL.ACCENT, "Open NewUserForm to change name by " + userConf.getUserName());
+            Print(MainMenu.class, LEVEL.ACCENT, "Open NewUserForm to change name " + userConf.getUserName());
             new NewUserForm();
         }
 
@@ -650,7 +651,9 @@ public class MainMenu extends JFrame implements MouseListener, MouseMotionListen
                 break;
 
             case "exit":
-                int exit = JOptionPane.showConfirmDialog(null, "Точно закрыть игру и выйти?", "Подтверждение:", JOptionPane.YES_NO_OPTION);
+                int exit = new FOptionPane(
+                        "Подтверждение:", "Точно закрыть игру и выйти?",
+                        FOptionPane.TYPE.YES_NO_TYPE, null, true).get();
                 if (exit == 0) {
                     Exit.exit(0);
                 }

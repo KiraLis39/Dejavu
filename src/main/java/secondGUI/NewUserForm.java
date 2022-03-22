@@ -17,6 +17,8 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Paths;
 
 import static registry.Registry.configuration;
@@ -221,21 +223,11 @@ public class NewUserForm extends JDialog implements Cached {
                                             JOptionPane.ERROR_MESSAGE);
                                 } else {
                                     if (!userConf.getUserName().equals(nameField.getText().trim())) {
-                                        userConf.setUserName(nameField.getText().trim());
-
-                                        // настраиваем пользователя:
-                                        configuration.setLastUserName(userConf.getUserName());
-                                        configuration.calcUserHash();
-                                        Registry.usersSaveDir = Paths.get(Registry.usersDir + "/" + configuration.getLastUserHash() + "/");
-
-                                        userConf.setUserSex(maleBox.isSelected() ? UserConf.USER_SEX.MALE : UserConf.USER_SEX.FEMALE);
-                                        userConf.setUserAge(Integer.parseInt(ageField.getText()));
-
                                         try {
-                                            Out.Print(NewUserForm.class, LEVEL.ACCENT,
-                                                    "Создан успешно игрок:\n" +
-                                                            JIOM.getMapper().writerWithDefaultPrettyPrinter().writeValueAsString(userConf));
-                                        } catch (JsonProcessingException ex) {
+                                            MainClass.createNewUser(nameField.getText().trim(),
+                                                    maleBox.isSelected() ? UserConf.USER_SEX.MALE : UserConf.USER_SEX.FEMALE,
+                                                    Integer.parseInt(ageField.getText()));
+                                        } catch (Exception ex) {
                                             ex.printStackTrace();
                                         }
                                     }

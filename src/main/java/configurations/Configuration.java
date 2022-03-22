@@ -3,6 +3,8 @@ package configurations;
 import fox.interfaces.JConfigurable;
 import lombok.AccessLevel;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.experimental.FieldDefaults;
 import java.nio.file.Path;
 
@@ -12,7 +14,7 @@ public class Configuration implements JConfigurable {
     Path source;
 
     boolean showLogo = true;
-    static int lastUserHash;
+    int lastUserHash;
     String lastUserName;
     boolean useMods = false;
 
@@ -28,9 +30,5 @@ public class Configuration implements JConfigurable {
 
     public void calcUserHash() {
         lastUserHash = lastUserName.hashCode();
-    }
-
-    public int getLastUserHash() {
-        return lastUserHash;
     }
 }

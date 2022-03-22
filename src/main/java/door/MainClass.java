@@ -4,6 +4,7 @@ import GUI.MainMenu;
 import fox.FoxLogo;
 import fox.JIOM;
 import fox.Out;
+import secondGUI.NewUserForm;
 import tools.Media;
 import tools.ModsLoader;
 import configurations.Configuration;
@@ -15,8 +16,8 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -59,6 +60,7 @@ public class MainClass {
         }
 
         existingDirectoriesCheck();
+
         configurator();
 
         loadImages();
@@ -110,40 +112,52 @@ public class MainClass {
     }
 
     private static void configurator() {
-        // имя последнего игрока:
-        int luHash = configuration.getLastUserHash();
-        if (luHash == 0) {
-            // настраиваем пользователя:
-            configuration.setLastUserName("newEmptyUser");
-            configuration.calcUserHash();
-        }
-
-        // настраиваем папку сохранений игрока:
-        Registry.usersSaveDir = Paths.get(Registry.usersDir + "/" + configuration.getLastUserHash() + "/");
-
+        // настраиваем пользователя:
         try {
-            userConf = JIOM.fileToDto(Paths.get(Registry.usersSaveDir + "/config.dto"), UserConf.class);
-            userConf.setUserName(configuration.getLastUserName());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        Out.Print(MainClass.class, Out.LEVEL.INFO, "Приветствуем игрока " + userConf.getUserName() + "!");
+            int luHash = configuration.getLastUserHash();
+            if (luHash == 0) {
+                createNewUser("newEmptyUser", UserConf.USER_SEX.MALE, 14);
+            } else {
+                Registry.usersSaveDir = Paths.get(Registry.usersDir + "/" + luHash + "/");
+                userConf = JIOM.fileToDto(Paths.get(Registry.usersSaveDir + "/config.dto"), UserConf.class);
+                loadAudioSettings();
+            }
 
-        if (userConf.getUserSex() == null) {
-            userConf.setUserSex(UserConf.USER_SEX.MALE);
-        }
-
-        if (userConf.getUserAge() <= 0 || userConf.getUserAge() > 120) {
-            userConf.setUserAge(14);
-        }
-
-        loadAudioSettings();
-
-        try {
             JIOM.dtoToFile(configuration);
             JIOM.dtoToFile(userConf);
         } catch (Exception e) {
-            e.printStackTrace();
+            Out.Print(MainClass.class, Out.LEVEL.ERROR, "Failed user save: " + e.getMessage());
+        }
+    }
+
+    public static void createNewUser(String name, UserConf.USER_SEX sex, int age) throws Exception {
+        try {
+            if (userConf != null) {
+            // сохраняем предыдущего пользователя:
+                JIOM.dtoToFile(userConf);
+            }
+
+            // Настраиваем глобальную конфигурацию:
+            configuration.setLastUserName(name);
+            configuration.calcUserHash();
+            JIOM.dtoToFile(configuration);
+
+            // настраиваем нового пользователя:
+            Registry.usersSaveDir = Paths.get(Registry.usersDir + "/" + configuration.getLastUserHash() + "/");
+            userConf = JIOM.fileToDto(Paths.get(Registry.usersSaveDir + "/config.dto"), UserConf.class);
+            userConf.setUserName(configuration.getLastUserName());
+            userConf.setUserSex(sex);
+            userConf.setUserAge(age);
+            if (userConf.getUserAge() <= 0 || userConf.getUserAge() > 120) {
+                userConf.setUserAge(14);
+            }
+            JIOM.dtoToFile(userConf);
+
+            loadAudioSettings();
+
+            Out.Print(MainClass.class, Out.LEVEL.INFO, "Приветствуем игрока " + userConf.getUserName() + "!");
+        } catch (Exception e) {
+            throw e;
         }
     }
 
