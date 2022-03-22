@@ -7,6 +7,7 @@ import images.FoxSpritesCombiner;
 import interfaces.Cached;
 import logic.Scenario;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import registry.Registry;
 import render.FoxRender;
 import secondGUI.SaveGame;
@@ -26,6 +27,7 @@ import static fox.Out.*;
 import static registry.Registry.userConf;
 
 @Data
+@EqualsAndHashCode(callSuper = true)
 public class GameFrame extends JFrame implements MouseListener, MouseMotionListener, Cached {
 	public enum modSides {UP, DOWN, LEFT, RIGHT}
 

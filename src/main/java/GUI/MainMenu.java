@@ -1,8 +1,8 @@
 package GUI;
 
+import components.FoxConsole;
 import components.FoxTipsEngine;
 import door.Exit;
-import fox.FoxConsole;
 import fox.FoxCursor;
 import fox.FoxFontBuilder;
 import fox.InputAction;
@@ -80,15 +80,26 @@ public class MainMenu extends JFrame implements MouseListener, MouseMotionListen
     private void preLoading() {
         Print(MainMenu.class, LEVEL.INFO, "MainMenu preloading...");
 
-        startImages = FoxSpritesCombiner.addSpritelist("PlayButtonSprite", (BufferedImage) cache.get("picPlayButtonSprite"), 1, 3);
-        menuImages = FoxSpritesCombiner.addSpritelist("MenuButtonSprite", (BufferedImage) cache.get("picMenuButtonSprite"), 1, 3);
-        exitImages = FoxSpritesCombiner.addSpritelist("ExitButtonSprite", (BufferedImage) cache.get("picExitButtonSprite"), 1, 3);
+        try {
+            Print(MainMenu.class, LEVEL.DEBUG, "Preparing sprites...");
+            startImages = FoxSpritesCombiner.addSpritelist("PlayButtonSprite", (BufferedImage) cache.get("picPlayButtonSprite"), 1, 3);
+            menuImages = FoxSpritesCombiner.addSpritelist("MenuButtonSprite", (BufferedImage) cache.get("picMenuButtonSprite"), 1, 3);
+            exitImages = FoxSpritesCombiner.addSpritelist("ExitButtonSprite", (BufferedImage) cache.get("picExitButtonSprite"), 1, 3);
+        } catch (Exception e) {
+            Print(MainMenu.class, LEVEL.WARN, "Can`t load sprites: " + e.getMessage());
+        }
 
-        centerImage = (BufferedImage) cache.get("picMenuBase");
-        picMenuImage = (BufferedImage) cache.get("picMenupane");
+        try {
+            Print(MainMenu.class, LEVEL.DEBUG, "Preparing images...");
+            centerImage = (BufferedImage) cache.get("picMenuBase");
+            picMenuImage = (BufferedImage) cache.get("picMenupane");
+        } catch (Exception e) {
+            Print(MainMenu.class, LEVEL.WARN, "Can`t load images: " + e.getMessage());
+        }
 
         downText = "\u266B " + userConf.getUserName() + " \u266B";
 
+        Print(MainMenu.class, LEVEL.DEBUG, "Sets inAc...");
         InputAction.add("MainMenu", this);
         InputAction.set("MainMenu", "Ctrl+F4", KeyEvent.VK_F4, 512, new AbstractAction() {
             @Override
@@ -96,9 +107,12 @@ public class MainMenu extends JFrame implements MouseListener, MouseMotionListen
                 Exit.exit(0, "Exit by users 'Ctrl+F4'");
             }
         });
+        Print(MainMenu.class, LEVEL.INFO, "MainMenu preloading done.");
     }
 
     private static void testNewbie() {
+        Print(MainMenu.class, LEVEL.INFO, "A newbie test...");
+
         if (userConf.getUserName().equals("newEmptyUser")) {
             Print(MainMenu.class, LEVEL.ACCENT, "Open NewUserForm to change name by " + userConf.getUserName());
             new NewUserForm();
@@ -119,7 +133,7 @@ public class MainMenu extends JFrame implements MouseListener, MouseMotionListen
     }
 
     private void switchFullscreen() {
-        Print(MainMenu.class, LEVEL.INFO, "MainMenu fullscreen test...");
+        Print(MainMenu.class, LEVEL.INFO, "MainMenu fullscreen switch...");
 
         if (userConf.isFullScreen()) {
             setBackground(Color.BLACK);
@@ -146,10 +160,12 @@ public class MainMenu extends JFrame implements MouseListener, MouseMotionListen
         }
 
         userConf.setFullScreen(!userConf.isFullScreen());
+        Print(MainMenu.class, LEVEL.INFO, "MainMenu fullscreen switched.");
     }
 
 
     private JComponent buildBasePane() {
+        Print(MainMenu.class, LEVEL.INFO, "Building the BasePane...");
         basePane = new JPanel(new BorderLayout((int) (wPercent * 2.6f), (int) (hPercent * 2.0f))) {
             @Override
             protected void paintComponent(Graphics g) {

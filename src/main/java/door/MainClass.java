@@ -30,7 +30,7 @@ public class MainClass {
 
     private static void preInit() {
         Out.setEnabled(isLogEnabled);
-        Out.setErrorLevel(Out.LEVEL.INFO);
+        Out.setErrorLevel(Out.LEVEL.DEBUG);
         Out.setLogsCountAllow(3);
 
         try {configuration = JIOM.fileToDto(Registry.globalConfigFile, Configuration.class);
@@ -113,15 +113,16 @@ public class MainClass {
         // имя последнего игрока:
         int luHash = configuration.getLastUserHash();
         if (luHash == 0) {
-            luHash = "newEmptyUser".hashCode();
             // настраиваем пользователя:
             configuration.setLastUserName("newEmptyUser");
             configuration.calcUserHash();
-            Registry.usersSaveDir = Paths.get(Registry.usersDir + "/" + configuration.getLastUserHash() + "/");
         }
 
+        // настраиваем папку сохранений игрока:
+        Registry.usersSaveDir = Paths.get(Registry.usersDir + "/" + configuration.getLastUserHash() + "/");
+
         try {
-            userConf = JIOM.fileToDto(Paths.get(Registry.usersDir + "/"+ configuration.getLastUserHash() + "/config.dto"), UserConf.class);
+            userConf = JIOM.fileToDto(Paths.get(Registry.usersSaveDir + "/config.dto"), UserConf.class);
             userConf.setUserName(configuration.getLastUserName());
         } catch (Exception e) {
             e.printStackTrace();
