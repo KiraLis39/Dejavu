@@ -1,6 +1,14 @@
 package secondGUI;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import configurations.UserConf;
 import door.MainClass;
+import fox.FoxCursor;
+import fox.FoxFontBuilder;
+import fox.JIOM;
+import fox.Out;
+import fox.Out.LEVEL;
+import interfaces.Cached;
 import registry.Registry;
 
 import javax.swing.*;
@@ -8,12 +16,16 @@ import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.image.BufferedImage;
 
-public class NewUserForm extends JDialog {
+import static registry.Registry.configuration;
+import static registry.Registry.userConf;
+
+public class NewUserForm extends JDialog implements Cached {
     private JTextField nameField, ageField;
 
     private final int WIDTH = 450;
-	private final int HEIGHT = 260;
+    private final int HEIGHT = 260;
     private JCheckBox maleBox, femaBox;
 
 
@@ -103,7 +115,7 @@ public class NewUserForm extends JDialog {
         setBackground(new Color(0, 0, 0, 0));
         setPreferredSize(new Dimension(this.WIDTH, this.HEIGHT));
         setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
-        setCursor(FoxCursor.createCursor(ResManager.getBImage("curOtherCursor"), "nhc"));
+        setCursor(FoxCursor.createCursor((BufferedImage) cache.get("curOtherCursor"), "nhc"));
         setModalExclusionType(Dialog.ModalExclusionType.NO_EXCLUDE);
         setIgnoreRepaint(true);
         getRootPane().setBorder(new EmptyBorder(45, 12, 15, 12));
@@ -120,7 +132,7 @@ public class NewUserForm extends JDialog {
                         setOpaque(false);
                         setForeground(Color.WHITE);
                         setHorizontalAlignment(CENTER);
-                        setText(IOM.getString(IOM.HEADERS.LAST_USER, "LUSER"));
+                        setText(userConf.getUserName());
                         setBorder(BorderFactory.createCompoundBorder(
                                 BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.BLACK, 1, true), "Имя:", 1, 0, Registry.f2, Color.BLACK),
                                 new EmptyBorder(-3, 0, 3, 0)
@@ -134,7 +146,7 @@ public class NewUserForm extends JDialog {
                         setOpaque(false);
                         setForeground(Color.WHITE);
                         setHorizontalAlignment(CENTER);
-                        setText(IOM.getString(IOM.HEADERS.CONFIG, IOMs.CONFIG.USER_AGE));
+                        setText(userConf.getUserAge() + "");
                         setBorder(BorderFactory.createCompoundBorder(
                                 BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.BLACK, 1, true), "Возраст:", 1, 0, Registry.f2, Color.BLACK),
                                 new EmptyBorder(-3, 0, 3, 0)
@@ -159,7 +171,7 @@ public class NewUserForm extends JDialog {
                                 setHorizontalAlignment(0);
                                 setFocusPainted(false);
                                 setForeground(Color.CYAN);
-                                setSelected(IOM.getString(IOM.HEADERS.CONFIG, IOMs.CONFIG.USER_SEX).equals("male"));
+                                setSelected(userConf.getUserSex() == UserConf.USER_SEX.MALE);
                             }
                         };
                         femaBox = new JCheckBox("Девушка") {
@@ -167,8 +179,9 @@ public class NewUserForm extends JDialog {
                                 setOpaque(false);
                                 setFont(Registry.f0);
                                 setHorizontalAlignment(0);
-                                setFocusPainted(!IOM.getString(IOM.HEADERS.CONFIG, IOMs.CONFIG.USER_SEX).equals("male"));
+                                setFocusPainted(false);
                                 setForeground(Color.MAGENTA.brighter());
+                                setSelected(userConf.getUserSex() == UserConf.USER_SEX.FEMALE);
                             }
                         };
 
@@ -206,31 +219,19 @@ public class NewUserForm extends JDialog {
                                             "Не введен ник персонажа!", "Ошибка:",
                                             JOptionPane.ERROR_MESSAGE);
                                 } else {
-                                    if (!IOM.getString(IOM.HEADERS.LAST_USER, "LUSER").equals(nameField.getText().trim())) {
-                                        IOM.set(IOM.HEADERS.LAST_USER, "LUSER", nameField.getText().trim());
-                                        IOM.save(IOM.HEADERS.LAST_USER.name());
+                                    if (!userConf.getUserName().equals(nameField.getText().trim())) {
+                                        userConf.setUserName(nameField.getText().trim());
+                                        configuration.setLastUserHash(userConf.getUserName().hashCode());
 
-                                        IOM.set(IOM.HEADERS.CONFIG, IOMs.CONFIG.USER_SEX, maleBox.isSelected() ? "male" : "fema");
-                                        IOM.set(IOM.HEADERS.CONFIG, IOMs.CONFIG.USER_AGE, ageField.getText());
-
-                                        IOM.set(IOM.HEADERS.CONFIG, IOMs.CONFIG.KARMA_ANN, 0);
-                                        IOM.set(IOM.HEADERS.CONFIG, IOMs.CONFIG.KARMA_DMI, 0);
-                                        IOM.set(IOM.HEADERS.CONFIG, IOMs.CONFIG.KARMA_KUR, 0);
-                                        IOM.set(IOM.HEADERS.CONFIG, IOMs.CONFIG.KARMA_MAR, 0);
-                                        IOM.set(IOM.HEADERS.CONFIG, IOMs.CONFIG.KARMA_MSH, 0);
-                                        IOM.set(IOM.HEADERS.CONFIG, IOMs.CONFIG.KARMA_OKS, 0);
-                                        IOM.set(IOM.HEADERS.CONFIG, IOMs.CONFIG.KARMA_OLG, 0);
-                                        IOM.set(IOM.HEADERS.CONFIG, IOMs.CONFIG.KARMA_OLE, 0);
-                                        IOM.set(IOM.HEADERS.CONFIG, IOMs.CONFIG.KARMA_LIS, 0);
-                                        IOM.set(IOM.HEADERS.CONFIG, IOMs.CONFIG.KARMA_POS, 0);
-                                        IOM.set(IOM.HEADERS.CONFIG, IOMs.CONFIG.KARMA_NEG, 0);
+                                        userConf.setUserSex(maleBox.isSelected() ? UserConf.USER_SEX.MALE : UserConf.USER_SEX.FEMALE);
+                                        userConf.setUserAge(Integer.parseInt(ageField.getText()));
 
                                         try {
-                                            MainClass.reloadUserData(nameField.getText(), maleBox.isSelected() ? "male" : "fema", Integer.parseInt(ageField.getText()));
-                                            Out.Print(NewUserForm.class, LEVEL.ACCENT, "Создан успешно игрок " + nameField.getText() + ", пол: " + (maleBox.isSelected() ? "male" : "fema") + ", age: " + ageField.getText());
-                                            IOM.saveAll();
-                                        } catch (Exception e2) {
-                                            e2.printStackTrace();
+                                            Out.Print(NewUserForm.class, LEVEL.ACCENT,
+                                                    "Создан успешно игрок:\n" +
+                                                            JIOM.getMapper().writerWithDefaultPrettyPrinter().writeValueAsString(userConf));
+                                        } catch (JsonProcessingException ex) {
+                                            ex.printStackTrace();
                                         }
                                     }
 

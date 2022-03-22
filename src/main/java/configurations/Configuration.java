@@ -13,14 +13,7 @@ public class Configuration implements JConfigurable {
 
     boolean showLogo = true;
     int lastUserHash;
-    Float musicVolume;
-    boolean musicMuted;
-    Float soundVolume;
-    boolean soundMuted;
-    Float backgVolume;
-    boolean backgMuted;
-    Float voiceVolume;
-    boolean voiceMuted;
+    boolean useMods = false;
 
     @Override
     public void setSource(Path path) {

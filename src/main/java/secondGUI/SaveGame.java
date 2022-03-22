@@ -1,38 +1,41 @@
 package secondGUI;
 
+import fox.FoxCursor;
+import fox.FoxFontBuilder;
+import fox.InputAction;
+import interfaces.Cached;
 import registry.Registry;
+import render.FoxRender;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
+import java.awt.image.BufferedImage;
 
-public class SaveGame extends JDialog {
+public class SaveGame extends JDialog implements Cached {
     private final Dimension toolk = Toolkit.getDefaultToolkit().getScreenSize();
     private final int WIDTH = (int) (this.toolk.getWidth() * 0.5D);
     private final int HEIGHT = (int) (toolk.getHeight() * 0.75D);
+    private final Double widthPercent = WIDTH / 100D;
+    private final Double heightPercent = HEIGHT / 100D;
+    private final Double buttonsWidth = widthPercent * 20D - 10D;
 
     private final Rectangle button0Rect;
     private final Rectangle button1Rect;
     private final Rectangle button2Rect;
-    private final Double widthPercent = WIDTH / 100D;
-    private final Double heightPercent = HEIGHT / 100D;
-    private final Double buttonsWidth = widthPercent * 20D - 10D;
+
     private final Boolean saveChosen = true;
-
-    private final Font f0 = FoxFontBuilder.setFoxFont(8, 20, true);
-    private final Font f1 = FoxFontBuilder.setFoxFont(9, 18, false);
-
 
     @Override
     public void paint(Graphics g) {
         Graphics2D g2D = (Graphics2D) g;
-        Registry.render(g2D, false);
+        FoxRender.setLowRender(g2D);
 
-        g2D.drawImage(ResManager.getBImage("picSaveLoad"), 0, 0, getWidth(), getHeight(), null);
+        g2D.drawImage((BufferedImage) cache.get("picSaveLoad"), 0, 0, getWidth(), getHeight(), null);
 
         g2D.setColor(Color.ORANGE);
-        g2D.setFont(f0);
+        g2D.setFont(Registry.f0);
         g2D.drawString("Загрузка и сохранение:", (int) (widthPercent * 4D), (int) (heightPercent * 3.5D));
 
         g2D.drawRect((int) (widthPercent * 67D), (int) (heightPercent * 6D), (int) (widthPercent * 30D), (int) (heightPercent * 5D));
@@ -46,7 +49,7 @@ public class SaveGame extends JDialog {
 //		g2D.drawRect((int) (widthPercent * 67D), (int) (heightPercent * 54D), (int) (widthPercent * 30D), (int) (heightPercent * 5D));
 
         if (saveChosen) {
-            g2D.setFont(f1);
+            g2D.setFont(Registry.f1);
             g2D.drawString("Info will be here soon...", (int) (widthPercent * 4D), (int) (heightPercent * 73D));
             g2D.drawString("Info will be here soon...", (int) (widthPercent * 4D), (int) (heightPercent * 77D));
             g2D.drawString("Info will be here soon...", (int) (widthPercent * 4D), (int) (heightPercent * 81D));
@@ -81,7 +84,7 @@ public class SaveGame extends JDialog {
         setSize(WIDTH, HEIGHT);
         setUndecorated(true);
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-        setCursor(FoxCursor.createCursor("curGaleryCursor"));
+        setCursor(FoxCursor.createCursor((BufferedImage) cache.get("curGaleryCursor"), "galeryCursor"));
 
         InputAction.add("save", this);
         InputAction.set("save", "close", KeyEvent.VK_ESCAPE, 0, new AbstractAction() {

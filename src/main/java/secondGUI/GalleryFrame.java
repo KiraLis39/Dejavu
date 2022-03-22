@@ -3,10 +3,9 @@ package secondGUI;
 import fox.FoxCursor;
 import fox.InputAction;
 import fox.Out.LEVEL;
+import interfaces.Cached;
 import registry.Registry;
 import render.FoxRender;
-import tools.MediaCache;
-
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
@@ -17,8 +16,7 @@ import static fox.Out.LEVEL.INFO;
 import static fox.Out.Print;
 import static registry.Registry.userConf;
 
-public class GalleryFrame extends JDialog implements MouseListener, MouseMotionListener {
-    private final MediaCache cashe = MediaCache.getInstance();
+public class GalleryFrame extends JDialog implements MouseListener, MouseMotionListener, Cached {
     private final Dimension toolk = Toolkit.getDefaultToolkit().getScreenSize();
 
     private int linePicturesCount, colPicturesCount, picWidth, picHeight;
@@ -36,7 +34,7 @@ public class GalleryFrame extends JDialog implements MouseListener, MouseMotionL
         FoxRender.setLowRender(g2D);
 
         g2D.drawImage(
-                (BufferedImage) cashe.get("picGallery"),
+                (BufferedImage) cache.get("picGallery"),
                 0, 0,
                 GalleryFrame.this.getWidth(), GalleryFrame.this.getHeight(),
                 GalleryFrame.this);
@@ -71,7 +69,7 @@ public class GalleryFrame extends JDialog implements MouseListener, MouseMotionL
 
         setUndecorated(true);
         setLayout(new BorderLayout());
-        setCursor(FoxCursor.createCursor((BufferedImage) cashe.get("curGalleryCursor"), "galleryCursor"));
+        setCursor(FoxCursor.createCursor((BufferedImage) cache.get("curGalleryCursor"), "galleryCursor"));
         if (userConf.isFullScreen()) {
             setPreferredSize(toolk.getSize());
         } else {

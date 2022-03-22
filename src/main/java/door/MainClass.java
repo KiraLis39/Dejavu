@@ -132,17 +132,17 @@ public class MainClass {
     static void loadAudioSettings() {
         // === Определение конфигурации аудио ===
         Out.Print(MainClass.class, Out.LEVEL.INFO, "Определение конфигурации аудио...");
-        if (configuration.getMusicVolume() == null) {
-            configuration.setMusicVolume(0.75f);
+        if (userConf.getMusicVolume() == null) {
+            userConf.setMusicVolume(0.75f);
         }
-        if (configuration.getSoundVolume() == null) {
-            configuration.setSoundVolume(0.5f);
+        if (userConf.getSoundVolume() == null) {
+            userConf.setSoundVolume(0.5f);
         }
-        if (configuration.getBackgVolume() == null) {
-            configuration.setBackgVolume(0.5f);
+        if (userConf.getBackgVolume() == null) {
+            userConf.setBackgVolume(0.5f);
         }
-        if (configuration.getVoiceVolume() == null) {
-            configuration.setVoiceVolume(0.75f);
+        if (userConf.getVoiceVolume() == null) {
+            userConf.setVoiceVolume(0.75f);
         }
     }
 

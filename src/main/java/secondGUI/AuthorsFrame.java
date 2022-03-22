@@ -3,8 +3,8 @@ package secondGUI;
 import fox.FoxCursor;
 import fox.FoxFontBuilder;
 import fox.InputAction;
+import interfaces.Cached;
 import registry.Registry;
-import tools.MediaCache;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -17,8 +17,7 @@ import static fox.Out.LEVEL;
 import static fox.Out.Print;
 import static registry.Registry.userConf;
 
-public class AuthorsFrame extends JDialog {
-    private static MediaCache cache = MediaCache.getInstance();
+public class AuthorsFrame extends JDialog implements Cached {
     private static Dimension toolk = Toolkit.getDefaultToolkit().getScreenSize();
     private static String aboutText = "\nИгра создана в 2022 г., "
             + "является моей первой более-менее серьёзной игрой, написанной на языке Java!"

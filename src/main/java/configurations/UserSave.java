@@ -16,4 +16,18 @@ public class UserSave implements JConfigurable {
     public Path getSource() {
         return source;
     }
+
+//    initNewSaveFile() {
+//        IOM.set(IOM.HEADERS.CONFIG, IOMs.CONFIG.KARMA_ANN, 0);
+//        IOM.set(IOM.HEADERS.CONFIG, IOMs.CONFIG.KARMA_DMI, 0);
+//        IOM.set(IOM.HEADERS.CONFIG, IOMs.CONFIG.KARMA_KUR, 0);
+//        IOM.set(IOM.HEADERS.CONFIG, IOMs.CONFIG.KARMA_MAR, 0);
+//        IOM.set(IOM.HEADERS.CONFIG, IOMs.CONFIG.KARMA_MSH, 0);
+//        IOM.set(IOM.HEADERS.CONFIG, IOMs.CONFIG.KARMA_OKS, 0);
+//        IOM.set(IOM.HEADERS.CONFIG, IOMs.CONFIG.KARMA_OLG, 0);
+//        IOM.set(IOM.HEADERS.CONFIG, IOMs.CONFIG.KARMA_OLE, 0);
+//        IOM.set(IOM.HEADERS.CONFIG, IOMs.CONFIG.KARMA_LIS, 0);
+//        IOM.set(IOM.HEADERS.CONFIG, IOMs.CONFIG.KARMA_POS, 0);
+//        IOM.set(IOM.HEADERS.CONFIG, IOMs.CONFIG.KARMA_NEG, 0);
+//    }
 }

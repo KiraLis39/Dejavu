@@ -7,9 +7,9 @@ import fox.FoxCursor;
 import fox.FoxFontBuilder;
 import fox.InputAction;
 import images.FoxSpritesCombiner;
+import interfaces.Cached;
 import tools.Media;
 import render.FoxRender;
-import tools.MediaCache;
 import registry.Registry;
 import secondGUI.*;
 
@@ -26,7 +26,7 @@ import static fox.Out.LEVEL;
 import static fox.Out.Print;
 import static registry.Registry.userConf;
 
-public class MainMenu extends JFrame implements MouseListener, MouseMotionListener, ActionListener {
+public class MainMenu extends JFrame implements MouseListener, MouseMotionListener, ActionListener, Cached {
     private static final Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
 
     private static BufferedImage centerImage, picMenuImage;
@@ -44,14 +44,13 @@ public class MainMenu extends JFrame implements MouseListener, MouseMotionListen
 
     private final FoxConsole cons;
     private FoxTipsEngine cd;
-    private final MediaCache cashe = MediaCache.getInstance();
 
 
     public MainMenu() {
         setUndecorated(true);
         setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
         setResizable(false);
-        setCursor(FoxCursor.createCursor((BufferedImage) cashe.get("curSimpleCursor"), "simpleCursor"));
+        setCursor(FoxCursor.createCursor((BufferedImage) cache.get("curSimpleCursor"), "simpleCursor"));
 
         preLoading();
         switchFullscreen();
@@ -81,12 +80,12 @@ public class MainMenu extends JFrame implements MouseListener, MouseMotionListen
     private void preLoading() {
         Print(MainMenu.class, LEVEL.INFO, "MainMenu preloading...");
 
-        startImages = FoxSpritesCombiner.addSpritelist("PlayButtonSprite", (BufferedImage) cashe.get("picPlayButtonSprite"), 1, 3);
-        menuImages = FoxSpritesCombiner.addSpritelist("MenuButtonSprite", (BufferedImage) cashe.get("picMenuButtonSprite"), 1, 3);
-        exitImages = FoxSpritesCombiner.addSpritelist("ExitButtonSprite", (BufferedImage) cashe.get("picExitButtonSprite"), 1, 3);
+        startImages = FoxSpritesCombiner.addSpritelist("PlayButtonSprite", (BufferedImage) cache.get("picPlayButtonSprite"), 1, 3);
+        menuImages = FoxSpritesCombiner.addSpritelist("MenuButtonSprite", (BufferedImage) cache.get("picMenuButtonSprite"), 1, 3);
+        exitImages = FoxSpritesCombiner.addSpritelist("ExitButtonSprite", (BufferedImage) cache.get("picExitButtonSprite"), 1, 3);
 
-        centerImage = (BufferedImage) cashe.get("picMenuBase");
-        picMenuImage = (BufferedImage) cashe.get("picMenupane");
+        centerImage = (BufferedImage) cache.get("picMenuBase");
+        picMenuImage = (BufferedImage) cache.get("picMenupane");
 
         downText = "\u266B " + userConf.getUserName() + " \u266B";
 

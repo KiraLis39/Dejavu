@@ -1,7 +1,14 @@
 package secondGUI;
 
 import GUI.GameFrame;
+import configurations.UserConf;
+import fox.FoxCursor;
+import fox.FoxFontBuilder;
+import fox.Out;
+import fox.Out.LEVEL;
+import interfaces.Cached;
 import registry.Registry;
+import render.FoxRender;
 import tools.ModsLoader;
 
 import javax.swing.*;
@@ -14,7 +21,10 @@ import java.awt.event.MouseMotionListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
 
-public class GenderFrame extends JFrame implements ListSelectionListener, MouseListener, MouseMotionListener {
+import static registry.Registry.configuration;
+import static registry.Registry.userConf;
+
+public class GenderFrame extends JFrame implements ListSelectionListener, MouseListener, MouseMotionListener, Cached {
     private final int WIDTH = 600, HEIGHT = 400;
 
     private BufferedImage baseBuffer;
@@ -23,7 +33,6 @@ public class GenderFrame extends JFrame implements ListSelectionListener, MouseL
     private final JList<String> avatarList;
     private Point mouseNow;
 
-
     @Override
     public void paint(Graphics g) {
         if (baseBuffer == null) {
@@ -31,6 +40,7 @@ public class GenderFrame extends JFrame implements ListSelectionListener, MouseL
         }
 
         Graphics2D g2D = (Graphics2D) g;
+        FoxRender.setLowRender(g2D);
         g2D.drawImage(baseBuffer, 0, 0, GenderFrame.this);
         g2D.dispose();
 
@@ -43,17 +53,9 @@ public class GenderFrame extends JFrame implements ListSelectionListener, MouseL
         baseBuffer = new BufferedImage(WIDTH, HEIGHT, BufferedImage.TYPE_INT_ARGB);
 
         Graphics2D g2D = (Graphics2D) baseBuffer.getGraphics();
+        FoxRender.setLowRender(g2D);
 
-        g2D.drawImage(ResManager.getBImage("picGender"), 0, 0, WIDTH, HEIGHT, GenderFrame.this);
-        g2D.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        g2D.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
-        g2D.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_NORMALIZE);
-//		g2D.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
-//		g2D.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-//		g2D.setRenderingHint(RenderingHints.KEY_ALPHA_INTERPOLATION, RenderingHints.VALUE_ALPHA_INTERPOLATION_QUALITY);
-//		g2D.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-//		g2D.setRenderingHint(RenderingHints.KEY_DITHERING, RenderingHints.VALUE_DITHER_ENABLE);
-
+        g2D.drawImage((BufferedImage) cache.get("picGender"), 0, 0, WIDTH, HEIGHT, GenderFrame.this);
         g2D.setColor(Color.ORANGE);
         g2D.setFont(Registry.f5);
         g2D.drawString("Настройка персонажа:", (int) (WIDTH / 2 - FoxFontBuilder.getStringBounds(g2D, "Настройка персонажа:").getWidth() / 2D), (int) (HEIGHT * 0.12D));
@@ -77,10 +79,7 @@ public class GenderFrame extends JFrame implements ListSelectionListener, MouseL
         g2D.setColor(Color.WHITE);
         g2D.drawString("OK", (int) (okButtonRect.getCenterX() - FoxFontBuilder.getStringBounds(g2D, "OK").getWidth() / 2D), (int) (okButtonRect.getCenterY() + 6D));
 
-        if (IOM.getInt(IOM.HEADERS.CONFIG, IOMs.CONFIG.AVATAR_INDEX) == -1) {
-            IOM.set(IOM.HEADERS.CONFIG, IOMs.CONFIG.AVATAR_INDEX, 0);
-        }
-        g2D.drawImage(ResManager.getBImage(IOM.getInt(IOM.HEADERS.CONFIG, IOMs.CONFIG.AVATAR_INDEX)),
+        g2D.drawImage((BufferedImage) cache.get(userConf.getAvatarIndex() + ""),
                 avatarRect.x, avatarRect.y,
                 avatarRect.width, avatarRect.height,
                 GenderFrame.this);
@@ -97,13 +96,13 @@ public class GenderFrame extends JFrame implements ListSelectionListener, MouseL
         setPreferredSize(new Dimension(WIDTH, HEIGHT));
         setUndecorated(true);
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-        setCursor(FoxCursor.createCursor("curAnyCursor"));
+        setCursor(FoxCursor.createCursor((BufferedImage) cache.get("curAnyCursor"), "anyCursor"));
         setLayout(null);
 
-        avatarList = new JList<String>(new String[]{"Аватар 1", "Аватар 2", "Аватар 3", "Аватар 4"}) {
+        avatarList = new JList<>(new String[]{"Аватар 1", "Аватар 2", "Аватар 3", "Аватар 4"}) {
             @Override
             protected void paintComponent(Graphics g) {
-                g.drawImage(ResManager.getBImage("picGameMenu"), 0, 0, getWidth(), getHeight(), this);
+                g.drawImage((BufferedImage) cache.get("picGameMenu"), 0, 0, getWidth(), getHeight(), this);
                 super.paintComponent(g);
             }
 
@@ -139,31 +138,30 @@ public class GenderFrame extends JFrame implements ListSelectionListener, MouseL
 
     @Override
     public void valueChanged(ListSelectionEvent e) {
-        IOM.set(IOM.HEADERS.CONFIG, IOMs.CONFIG.AVATAR_INDEX, IOM.getString(IOM.HEADERS.CONFIG, IOMs.CONFIG.USER_SEX).equals("fema") ? avatarList.getSelectedIndex() + 1 : avatarList.getSelectedIndex() + 5);
+        UserConf.USER_SEX sex = userConf.getUserSex();
+        userConf.setAvatarIndex(sex == UserConf.USER_SEX.FEMALE ? avatarList.getSelectedIndex() + 1 : avatarList.getSelectedIndex() + 5);
         reloadBuffer();
     }
 
 
     @Override
     public void mousePressed(MouseEvent e) {
-		okButtonPressed = okButtonOver;
+        okButtonPressed = okButtonOver;
     }
 
     @Override
     public void mouseReleased(MouseEvent e) {
         if (okButtonPressed) {
             try {
-                if (IOM.getInt(IOM.HEADERS.CONFIG, IOMs.CONFIG.AVATAR_INDEX) == 0) {
+                if (userConf.getAvatarIndex() == 0) {
                     JOptionPane.showMessageDialog(null, "Не выбран аватар.", "Внимание!", JOptionPane.OK_OPTION);
                 } else {
                     Out.Print(GenderFrame.class, LEVEL.ACCENT, "\nПроверка разрешения на использование модов...");
-                    if (IOM.getBoolean(IOM.HEADERS.CONFIG, IOMs.CONFIG.USE_MODS)) {
+                    if (configuration.isUseMods()) {
                         new ModsLoader(new File("./mod/"));
                     } else {
                         Out.Print(GenderFrame.class, LEVEL.ACCENT, "Моды отключены в опциях. Продолжаем без них...\n");
                     }
-
-                    IOM.save(IOM.HEADERS.CONFIG.name());
 
                     dispose();
 

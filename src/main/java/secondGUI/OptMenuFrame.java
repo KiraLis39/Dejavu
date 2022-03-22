@@ -1,6 +1,15 @@
 package secondGUI;
 
+import fox.FoxCursor;
+import fox.FoxFontBuilder;
+import fox.InputAction;
+import fox.Out;
+import fox.Out.LEVEL;
+import interfaces.Cached;
+import registry.Registry;
+import render.FoxRender;
 import tools.Media;
+
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -10,7 +19,9 @@ import java.awt.font.TextLayout;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 
-public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotionListener, MouseListener {
+import static registry.Registry.userConf;
+
+public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotionListener, MouseListener, Cached {
     private final int WIDTH = 400, HEIGHT = 600;
     private final Double widthPercent = WIDTH / 100D, heightPercent = HEIGHT / 100D, horizontalCenter = WIDTH / 2D;
 
@@ -39,10 +50,6 @@ public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotion
     private final int[] polygonsDot;
     private final int[] scrollsSize = new int[]{(int) (widthPercent * 90D), (int) (heightPercent * 10D)};
 
-    private final Font f0 = FoxFontBuilder.setFoxFont(FoxFontBuilder.FONT.ARIAL, 30, true);
-    private final Font f1 = FoxFontBuilder.setFoxFont(FoxFontBuilder.FONT.CANDARA, 20, true);
-
-
     @Override
     public void paint(Graphics g) {
         if (baseBuffer == null) {
@@ -64,15 +71,8 @@ public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotion
 
     private void reloadBaseBuffer() {
         Graphics2D g2D = baseBuffer.createGraphics();
-        g2D.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        g2D.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
-        g2D.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_NORMALIZE);
-//		g2D.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
-//		g2D.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-//		g2D.setRenderingHint(RenderingHints.KEY_ALPHA_INTERPOLATION, RenderingHints.VALUE_ALPHA_INTERPOLATION_QUALITY);
-//		g2D.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-//		g2D.setRenderingHint(RenderingHints.KEY_DITHERING, RenderingHints.VALUE_DITHER_ENABLE);
-        g2D.setFont(f0);
+        FoxRender.setMedRender(g2D);
+        g2D.setFont(Registry.f0);
 
         if (titlePoint == null) {
             titlePoint = new Point((int) (horizontalCenter - FoxFontBuilder.getStringBounds(g2D, "Настройки игры:").getWidth() / 2), (int) (heightPercent * 6D));
@@ -90,7 +90,7 @@ public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotion
 
         drawUpTitle(g2D);
 
-        g2D.setFont(f1);
+        g2D.setFont(Registry.f9);
         drawDownMenu(g2D);
         drawCenterMenu(g2D);
         drawCheckBox(g2D);
@@ -104,7 +104,7 @@ public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotion
         g2D.setColor(Color.WHITE);
 //		g2D.drawString("Настройки игры:", titlePoint.x, titlePoint.y);
 
-        TextLayout tLayout = new TextLayout("Настройки игры:", f0, g2D.getFontRenderContext());
+        TextLayout tLayout = new TextLayout("Настройки игры:", Registry.f0, g2D.getFontRenderContext());
         AffineTransform affTrans = new AffineTransform();
         affTrans.setToTranslation(titlePoint.x, titlePoint.y);
         g2D.draw(tLayout.getOutline(affTrans));
@@ -308,7 +308,7 @@ public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotion
         setModalExclusionType(Dialog.ModalExclusionType.NO_EXCLUDE);
         setUndecorated(true);
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-        setCursor(FoxCursor.createCursor("curOtherCursor"));
+        setCursor(FoxCursor.createCursor((BufferedImage) cache.get("curOtherCursor"), "otherCursor"));
         setMinimumSize(new Dimension(WIDTH, HEIGHT));
         setLayout(null);
 
@@ -389,12 +389,10 @@ public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotion
     private void saveAndClose() {
         Out.Print(OptMenuFrame.class, LEVEL.ACCENT, "Сохранение и закрытие опций....");
 
-        IOM.set(IOM.HEADERS.CONFIG, IOMs.CONFIG.SOUND_VOL, String.valueOf(volumeOfSoundSlider.getValue() / 100f));
-        IOM.set(IOM.HEADERS.CONFIG, IOMs.CONFIG.MUSIC_VOL, String.valueOf(volumeOfMusicSlider.getValue() / 100f));
-        IOM.set(IOM.HEADERS.CONFIG, IOMs.CONFIG.BACKG_VOL, String.valueOf(volumeOfBackgSlider.getValue() / 100f));
-        IOM.set(IOM.HEADERS.CONFIG, IOMs.CONFIG.VOICE_VOL, String.valueOf(volumeOfVoiceSlider.getValue() / 100f));
-
-        IOM.saveAll();
+        userConf.setSoundVolume(volumeOfSoundSlider.getValue() / 100f);
+        userConf.setMusicVolume(volumeOfMusicSlider.getValue() / 100f);
+        userConf.setBackgVolume(volumeOfBackgSlider.getValue() / 100f);
+        userConf.setVoiceVolume(volumeOfVoiceSlider.getValue() / 100f);
 
         dispose();
     }

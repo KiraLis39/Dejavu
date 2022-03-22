@@ -3,15 +3,14 @@ package GUI;
 import fox.FoxCursor;
 import fox.FoxFontBuilder;
 import fox.InputAction;
-import fox.Out;
 import images.FoxSpritesCombiner;
+import interfaces.Cached;
 import logic.Scenario;
 import lombok.Data;
 import registry.Registry;
 import render.FoxRender;
 import secondGUI.SaveGame;
 import tools.Media;
-import tools.MediaCache;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -27,10 +26,9 @@ import static fox.Out.*;
 import static registry.Registry.userConf;
 
 @Data
-public class GameFrame extends JFrame implements MouseListener, MouseMotionListener {
+public class GameFrame extends JFrame implements MouseListener, MouseMotionListener, Cached {
 	public enum modSides {UP, DOWN, LEFT, RIGHT}
 
-	private static MediaCache cashe = MediaCache.getInstance();
 	private static Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
 	private int FRAME_WIDTH = (int) (screen.getWidth() * 0.75D);
 	private int FRAME_HEIGHT = (int) (screen.getHeight() * 1.0D);
@@ -85,7 +83,7 @@ public class GameFrame extends JFrame implements MouseListener, MouseMotionListe
 
     private void drawBase(Graphics2D g2D) {
 		if (picSceneImage == null) {
-			picSceneImage = (BufferedImage) cashe.get("blackpane");
+			picSceneImage = (BufferedImage) cache.get("blackpane");
 		}
         try {
             picSceneImage.getWidth();
@@ -172,7 +170,7 @@ public class GameFrame extends JFrame implements MouseListener, MouseMotionListe
 
         setUndecorated(true);
         setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
-        setCursor(FoxCursor.createCursor((BufferedImage) cashe.get("curAnyCursor"), "anyCursor"));
+        setCursor(FoxCursor.createCursor((BufferedImage) cache.get("curAnyCursor"), "anyCursor"));
         setBackground(new Color(0.0f, 0.0f, 0.0f, 0.0f));
 
         basePane = new JPanel() {
@@ -223,7 +221,7 @@ public class GameFrame extends JFrame implements MouseListener, MouseMotionListe
                         });
 
                         setFocusable(false);
-                        setCursor(FoxCursor.createCursor((BufferedImage) cashe.get("curTextCursor"), "textCursor"));
+                        setCursor(FoxCursor.createCursor((BufferedImage) cache.get("curTextCursor"), "textCursor"));
                     }
                 };
 
@@ -270,8 +268,8 @@ public class GameFrame extends JFrame implements MouseListener, MouseMotionListe
     }
 
     private void initialization() {
-        backButton = FoxSpritesCombiner.addSpritelist("picBackButBig", (BufferedImage) cashe.get("picBackButBig"), 3, 1);
-        picGamepane = (BufferedImage) cashe.get("picGamepane");
+        backButton = FoxSpritesCombiner.addSpritelist("picBackButBig", (BufferedImage) cache.get("picBackButBig"), 3, 1);
+        picGamepane = (BufferedImage) cache.get("picGamepane");
 
         setCenterImage(null);
     }
@@ -392,14 +390,14 @@ public class GameFrame extends JFrame implements MouseListener, MouseMotionListe
     // changing center background image:
     public static void setCenterImage(String sceneName) {
 		if (sceneName == null) {
-			picSceneImage = (BufferedImage) cashe.get("blackpane");
+			picSceneImage = (BufferedImage) cache.get("blackpane");
 			return;
 		}
 
         System.out.println("Try to read the image: '" + Registry.scenesDir + "/" + sceneName + imageExt + "'...");
-        picSceneImage = (BufferedImage) cashe.get(sceneName.replace(imageExt, ""));
+        picSceneImage = (BufferedImage) cache.get(sceneName.replace(imageExt, ""));
         if (picSceneImage == null) {
-            picSceneImage = (BufferedImage) cashe.get("blackpane");
+            picSceneImage = (BufferedImage) cache.get("blackpane");
         }
     }
 
@@ -407,10 +405,10 @@ public class GameFrame extends JFrame implements MouseListener, MouseMotionListe
     public static void setHeroAvatar(int avatarIndex) {
 		Print(GameFrame.class, LEVEL.INFO, "setHeroAvatar: Try to set hero`s avatar #" + avatarIndex);
         if (avatarIndex == 0) {
-            heroAvatar = (BufferedImage) cashe.get("0");
+            heroAvatar = (BufferedImage) cache.get("0");
             return;
         }
-		heroAvatar = (BufferedImage) cashe.get(avatarIndex + "");
+		heroAvatar = (BufferedImage) cache.get(avatarIndex + "");
     }
 
 	public static void setHeroName(String heroName) {

@@ -20,6 +20,15 @@ public class UserConf implements JConfigurable {
     int cycleCount = 0;
     boolean fullScreen = false;
 
+    Float musicVolume;
+    boolean musicMuted = false;
+    Float soundVolume;
+    boolean soundMuted = false;
+    Float backgVolume;
+    boolean backgMuted = false;
+    Float voiceVolume;
+    boolean voiceMuted = false;
+
     @Override
     public void setSource(Path path) {
         source = path;
