@@ -33,7 +33,7 @@ import adds.Out;
 import adds.Out.LEVEL;
 import builders.FoxFontBuilder;
 import games.FoxCursor;
-import media.Media;
+import tools.Media;
 
 
 @SuppressWarnings("serial")

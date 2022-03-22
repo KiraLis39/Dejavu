@@ -1,4 +1,4 @@
-package fomod;
+package mod.fomod;
 
 import lombok.AccessLevel;
 import lombok.Data;

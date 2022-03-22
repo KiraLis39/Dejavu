@@ -26,8 +26,8 @@ import adds.Out.LEVEL;
 import builders.FoxFontBuilder;
 import builders.ResManager;
 import games.FoxCursor;
-import mods.ModsLoader;
-import resourses.Registry;
+import tools.ModsLoader;
+import registry.Registry;
 
 
 @SuppressWarnings("serial")
@@ -160,7 +160,7 @@ public class GenderFrame extends JFrame implements ListSelectionListener, MouseL
 					JOptionPane.showMessageDialog(null, "Не выбран аватар.", "Внимание!", JOptionPane.OK_OPTION);
 				} else {
 					Out.Print(GenderFrame.class, LEVEL.ACCENT, "\nПроверка разрешения на использование модов...");
-					if (IOM.getBoolean(IOM.HEADERS.CONFIG, IOMs.CONFIG.USE_MODS)) {new ModsLoader(new File("./mods/"));
+					if (IOM.getBoolean(IOM.HEADERS.CONFIG, IOMs.CONFIG.USE_MODS)) {new ModsLoader(new File("./mod/"));
 					} else {Out.Print(GenderFrame.class, LEVEL.ACCENT, "Моды отключены в опциях. Продолжаем без них...\n");}
 
 					IOM.save(IOM.HEADERS.CONFIG.name());

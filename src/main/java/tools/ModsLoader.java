@@ -1,6 +1,6 @@
-package mods;
+package tools;
 
-import fomod.ModExample;
+import mod.fomod.ModExample;
 import fox.Out;
 import fox.Out.LEVEL;
 

@@ -18,7 +18,7 @@ import adds.InputAction;
 import builders.FoxFontBuilder;
 import builders.ResManager;
 import games.FoxCursor;
-import resourses.Registry;
+import registry.Registry;
 
 
 

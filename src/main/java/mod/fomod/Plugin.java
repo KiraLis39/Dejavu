@@ -1,6 +1,6 @@
-package fomod;
+package mod.fomod;
 
-import fomod.ModExample.MOD_TYPE;
+import mod.fomod.ModExample.MOD_TYPE;
 
 public interface Plugin {
 	void init(MOD_TYPE type, String name, String version, String autor, String descript);

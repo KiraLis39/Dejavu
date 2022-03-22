@@ -2,10 +2,14 @@ package door;
 
 import GUI.MainMenu;
 import fox.FoxLogo;
+import fox.JIOM;
 import fox.Out;
-import media.Media;
-import mods.ModsLoader;
-import resourses.Registry;
+import tools.Media;
+import tools.ModsLoader;
+import configurations.Configuration;
+import tools.MediaCache;
+import registry.Registry;
+import configurations.UserConf;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -13,39 +17,49 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
+import static registry.Registry.configuration;
+import static registry.Registry.userConf;
 
 public class MainClass {
-    private static boolean showLogo = false, isLogEnabled = true, isIOMDebugEnabled = false, isRMDebugEnabled = false;
+    private static boolean isLogEnabled = true;
     private static FoxLogo fl;
 
     public static void main(String[] args) {
         Out.setEnabled(isLogEnabled);
-        Out.setErrorLevel(Out.LEVEL.ACCENT);
+        Out.setErrorLevel(Out.LEVEL.INFO);
         Out.setLogsCountAllow(3);
 
-        IOM.setConsoleOutOn(isIOMDebugEnabled);
-
-        ResManager.setDebugOn(isRMDebugEnabled);
+        try {configuration = JIOM.fileToDto(Registry.globalConfigDir, Configuration.class);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         Out.Print(MainClass.class, Out.LEVEL.INFO, "Подготовка программы...\nКодировка системы: " + Charset.defaultCharset());
         Out.Print(MainClass.class, Out.LEVEL.INFO, "Кодировка программы: " + StandardCharsets.UTF_8);
 
-        if (showLogo) {
+        if (configuration.isShowLogo()) {
             fl = new FoxLogo();
+            fl.setImStyle(FoxLogo.IMAGE_STYLE.WRAP);
+            fl.setBStyle(FoxLogo.BACK_STYLE.OPAQUE);
             try {
-                fl.start("Версия: " + Registry.version, new BufferedImage[]{ImageIO.read(new File("./resources/logo.png"))}, FoxLogo.IMAGE_STYLE.WRAP, FoxLogo.BACK_STYLE.OPAQUE);
+                fl.start("Версия: " + Registry.version,
+                        new BufferedImage[]{ImageIO.read(new File("./resources/logo.png"))});
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
 
-        existingFilesCheck();
+        existingDirectoriesCheck();
         buildIOM();
 
         loadImages();
         loadAudio();
 
-        connectMods();
+//        connectMods();
 
         if (fl != null) {
             try {
@@ -57,21 +71,30 @@ public class MainClass {
 
         Out.Print(MainClass.class, Out.LEVEL.ACCENT, "Запуск MainMenu...");
         new MainMenu();
-
-//		SystemInfo.printAll();
     }
 
-    private static void existingFilesCheck() {
-        if (!Registry.dataDir.exists()) {
+    private static void existingDirectoriesCheck() {
+        if (Files.notExists(Registry.dataDir)) {
             Exit.exit(14, "Error: Data directory is lost! Reinstall the game, please.");
         }
 
-        File[] scanFiles = new File[]{Registry.usersDir, Registry.modsDir, Registry.picDir, Registry.curDir, Registry.dataDir, Registry.scenesDir};
-        for (File f : scanFiles) {
-            if (!f.exists()) {
-                Out.Print(MainClass.class, Out.LEVEL.ACCENT, "Не найден путь " + f + "! Попытка создания...");
+        Path[] scanFiles = new Path[]{
+                Registry.usersDir,
+                Registry.userSaveDir,
+                Registry.modsDir,
+                Registry.picDir,
+                Registry.curDir,
+                Registry.dataDir,
+                Registry.scenesDir,
+                Registry.blockPath,
+                Registry.npcAvatarsDir,
+                Registry.personasDir
+        };
+        for (Path p : scanFiles) {
+            if (!Files.notExists(p)) {
+                Out.Print(MainClass.class, Out.LEVEL.ACCENT, "Не найден путь " + p + "! Попытка создания...");
                 try {
-                    f.mkdirs();
+                    Files.createDirectories(p);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -83,114 +106,107 @@ public class MainClass {
 
     private static void buildIOM() {
         // имя последнего игрока:
-        IOM.add(IOM.HEADERS.LAST_USER, Registry.lastUserFile);
-        if (IOM.getString(IOM.HEADERS.LAST_USER, "LUSER").equals("none")) {
-            IOM.set(IOM.HEADERS.LAST_USER, "LUSER", "newUser");
+        int luHash = configuration.getLastUserHash();
+        if (luHash == 0) {
+            luHash = "newEmptyUser".hashCode();
+            configuration.setLastUserHash(luHash);
         }
 
-        // файл для хранения конфигурации настроек игры текущего игрока:
-        reloadUserData(IOM.getString(IOM.HEADERS.LAST_USER, "LUSER"), null, 0);
+        try {userConf = JIOM.fileToDto(Paths.get(Registry.usersDir + "luHash"), UserConf.class);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        Out.Print(MainClass.class, Out.LEVEL.INFO, "Приветствуем игрока " + userConf.getUserName() + "!");
+
+        if (userConf.getUserSex() == null) {
+            userConf.setUserSex(UserConf.USER_SEX.MALE);
+        }
+
+        if (userConf.getUserAge() <= 0 || userConf.getUserAge() > 120) {
+            userConf.setUserAge(14);
+        }
+
+        loadAudioSettings();
     }
 
-    public static void reloadUserData(String userName, String userSex, int userAge) {
-        IOM.add(IOM.HEADERS.CONFIG, new File(Registry.usersDir + "/" + userName + ".conf"));
-        IOM.set(IOM.HEADERS.CONFIG, IOMs.CONFIG.USER_NAME, userName);
-
-        if (IOM.getString(IOM.HEADERS.CONFIG, IOMs.CONFIG.USER_SEX).equals("none")) {
-            if (userSex == null || userSex.equals("none")) {
-                IOM.set(IOM.HEADERS.CONFIG, IOMs.CONFIG.USER_SEX, "male");
-            } else {
-                IOM.set(IOM.HEADERS.CONFIG, IOMs.CONFIG.USER_SEX, userSex);
-            }
-        }
-
-        if (IOM.getString(IOM.HEADERS.CONFIG, IOMs.CONFIG.USER_AGE).equals("none")) {
-            if (userAge <= 0 || userAge > 120) {
-                IOM.set(IOM.HEADERS.CONFIG, IOMs.CONFIG.USER_AGE, "14");
-            } else {
-                IOM.set(IOM.HEADERS.CONFIG, IOMs.CONFIG.USER_AGE, userAge);
-            }
-        }
-
+    static void loadAudioSettings() {
         // === Определение конфигурации аудио ===
         Out.Print(MainClass.class, Out.LEVEL.INFO, "Определение конфигурации аудио...");
-        if (IOM.getDouble(IOM.HEADERS.CONFIG, IOMs.CONFIG.MUSIC_VOL) == -1) {
-            IOM.set(IOM.HEADERS.CONFIG, IOMs.CONFIG.MUSIC_VOL, "0.10");
+        if (configuration.getMusicVolume() == null) {
+            configuration.setMusicVolume(0.75f);
         }
-        if (IOM.getDouble(IOM.HEADERS.CONFIG, IOMs.CONFIG.SOUND_VOL) == -1) {
-            IOM.set(IOM.HEADERS.CONFIG, IOMs.CONFIG.SOUND_VOL, "0.25");
+        if (configuration.getSoundVolume() == null) {
+            configuration.setSoundVolume(0.5f);
         }
-        if (IOM.getDouble(IOM.HEADERS.CONFIG, IOMs.CONFIG.BACKG_VOL) == -1) {
-            IOM.set(IOM.HEADERS.CONFIG, IOMs.CONFIG.BACKG_VOL, "0.50");
+        if (configuration.getBackgVolume() == null) {
+            configuration.setBackgVolume(0.5f);
         }
-        if (IOM.getDouble(IOM.HEADERS.CONFIG, IOMs.CONFIG.VOICE_VOL) == -1) {
-            IOM.set(IOM.HEADERS.CONFIG, IOMs.CONFIG.VOICE_VOL, "0.75");
+        if (configuration.getVoiceVolume() == null) {
+            configuration.setVoiceVolume(0.75f);
         }
-
-        Out.Print(MainClass.class, Out.LEVEL.INFO, "Приветствуем игрока " + userName + "!");
-        IOM.saveAll();
     }
 
 
     private static void loadImages() {
+        MediaCache cashe = MediaCache.getInstance();
         // other:
         try {
-            ResManager.add("picExitButtonSprite", new File(Registry.picDir + "/buttons/exits" + Registry.picExtention));
-            ResManager.add("picPlayButtonSprite", new File(Registry.picDir + "/buttons/starts" + Registry.picExtention));
-            ResManager.add("picMenuButtonSprite", new File(Registry.picDir + "/buttons/menus" + Registry.picExtention));
+            cashe.add("picExitButtonSprite", toBImage(Registry.picDir + "/buttons/exits"));
+            cashe.add("picPlayButtonSprite", toBImage(Registry.picDir + "/buttons/starts"));
+            cashe.add("picMenuButtonSprite", toBImage(Registry.picDir + "/buttons/menus"));
 
-            ResManager.add("picBackButBig", new File(Registry.picDir + "/buttons/butListG" + Registry.picExtention));
-            ResManager.add("picMenuButtons", new File(Registry.picDir + "/buttons/butListM" + Registry.picExtention));
+            cashe.add("picBackButBig", toBImage(Registry.picDir + "/buttons/butListG"));
+            cashe.add("picMenuButtons", toBImage(Registry.picDir + "/buttons/butListM"));
 
-            ResManager.add("picGameIcon", new File(Registry.picDir + "/32" + Registry.picExtention));
+            cashe.add("picGameIcon", toBImage(Registry.picDir + "/32"));
         } catch (Exception e) {
             e.printStackTrace();
         }
 
         // cursors & backgrounds:
         try {
-            ResManager.add("curSimpleCursor", new File(Registry.curDir + "/01" + Registry.picExtention));
-            ResManager.add("curTextCursor", new File(Registry.curDir + "/02" + Registry.picExtention));
-            ResManager.add("curGaleryCursor", new File(Registry.curDir + "/03" + Registry.picExtention));
-            ResManager.add("curAnyCursor", new File(Registry.curDir + "/04" + Registry.picExtention));
-            ResManager.add("curOtherCursor", new File(Registry.curDir + "/05" + Registry.picExtention));
+            cashe.add("curSimpleCursor", toBImage(Registry.curDir + "/01"));
+            cashe.add("curTextCursor", toBImage(Registry.curDir + "/02"));
+            cashe.add("curGaleryCursor", toBImage(Registry.curDir + "/03"));
+            cashe.add("curAnyCursor", toBImage(Registry.curDir + "/04"));
+            cashe.add("curOtherCursor", toBImage(Registry.curDir + "/05"));
 
-            ResManager.add("picSaveLoad", new File(Registry.picDir + "/backgrounds/saveLoad" + Registry.picExtention));
-            ResManager.add("picMenuBase", new File(Registry.picDir + "/backgrounds/menuBase" + Registry.picExtention));
-            ResManager.add("picAurora", new File(Registry.picDir + "/backgrounds/aurora" + Registry.picExtention));
-            ResManager.add("picGallery", new File(Registry.picDir + "/backgrounds/gallery" + Registry.picExtention));
-            ResManager.add("picMenupane", new File(Registry.picDir + "/backgrounds/menupane" + Registry.picExtention));
-            ResManager.add("picGender", new File(Registry.picDir + "/backgrounds/gender" + Registry.picExtention));
-            ResManager.add("picGamepane", new File(Registry.picDir + "/backgrounds/gamepane" + Registry.picExtention));
-            ResManager.add("picAutrs", new File(Registry.picDir + "/backgrounds/autrs" + Registry.picExtention));
-            ResManager.add("picGameMenu", new File(Registry.picDir + "/backgrounds/gameMenu" + Registry.picExtention));
+            cashe.add("picSaveLoad", toBImage(Registry.picDir + "/backgrounds/saveLoad"));
+            cashe.add("picMenuBase", toBImage(Registry.picDir + "/backgrounds/menuBase"));
+            cashe.add("picAurora", toBImage(Registry.picDir + "/backgrounds/aurora"));
+            cashe.add("picGallery", toBImage(Registry.picDir + "/backgrounds/gallery"));
+            cashe.add("picMenupane", toBImage(Registry.picDir + "/backgrounds/menupane"));
+            cashe.add("picGender", toBImage(Registry.picDir + "/backgrounds/gender"));
+            cashe.add("picGamepane", toBImage(Registry.picDir + "/backgrounds/gamepane"));
+            cashe.add("picAutrs", toBImage(Registry.picDir + "/backgrounds/autrs"));
+            cashe.add("picGameMenu", toBImage(Registry.picDir + "/backgrounds/gameMenu"));
         } catch (Exception e) {
             e.printStackTrace();
         }
 
         // heroes:
         try {
-            ResManager.add("0", new File(Registry.picDir + "/hero/00" + Registry.picExtention));
+            cashe.add("0", new File(Registry.picDir + "/hero/00"));
 
             // fema:
-            ResManager.add("1", new File(Registry.picDir + "/hero/01" + Registry.picExtention));
-            ResManager.add("2", new File(Registry.picDir + "/hero/02" + Registry.picExtention));
-            ResManager.add("3", new File(Registry.picDir + "/hero/03" + Registry.picExtention));
-            ResManager.add("4", new File(Registry.picDir + "/hero/04" + Registry.picExtention));
+            cashe.add("1", new File(Registry.picDir + "/hero/01"));
+            cashe.add("2", new File(Registry.picDir + "/hero/02"));
+            cashe.add("3", new File(Registry.picDir + "/hero/03"));
+            cashe.add("4", new File(Registry.picDir + "/hero/04"));
 
             // male:
-            ResManager.add("5", new File(Registry.picDir + "/hero/05" + Registry.picExtention));
-            ResManager.add("6", new File(Registry.picDir + "/hero/06" + Registry.picExtention));
-            ResManager.add("7", new File(Registry.picDir + "/hero/07" + Registry.picExtention));
-            ResManager.add("8", new File(Registry.picDir + "/hero/08" + Registry.picExtention));
+            cashe.add("5", new File(Registry.picDir + "/hero/05"));
+            cashe.add("6", new File(Registry.picDir + "/hero/06"));
+            cashe.add("7", new File(Registry.picDir + "/hero/07"));
+            cashe.add("8", new File(Registry.picDir + "/hero/08"));
         } catch (Exception e) {
             e.printStackTrace();
         }
 
         // npc avatars:
         try {
-            for (File f : Registry.npcAvatarsDir.listFiles()) {
-                ResManager.add(f.getName().replace(Registry.picExtention, ""), f);
+            for (Path path : Registry.npcAvatarsDir) {
+                cashe.add(path.toFile().getName().replace(Registry.picExtension, ""), toBImage(path.toString()));
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -198,31 +214,43 @@ public class MainClass {
 
         // scenes load:
         try {
-            for (File f : Registry.scenesDir.listFiles()) {
-                ResManager.add(f.getName().replace(Registry.picExtention, ""), f);
+            for (Path path : Registry.scenesDir) {
+                cashe.add(path.toFile().getName().replace(Registry.picExtension, ""), toBImage(path.toString()));
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
+    private static BufferedImage toBImage(String path) {
+        try {
+            return ImageIO.read(new File(path + Registry.picExtension));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
     private static void loadAudio() {
         try {
             Media.loadSounds(new File("./resources/sound/").listFiles());
-            Media.loadVoices(new File("./resources/sound/voices/").listFiles());
-
             Media.loadMusics(new File("./resources/mus/musikThemes/").listFiles());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        try {
+            Media.loadVoices(new File("./resources/sound/voices/").listFiles());
             Media.loadBackgs(new File("./resources/mus/fonMusic/").listFiles());
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    static void connectMods() {
+    void connectMods() {
         Out.Print(MainClass.class, Out.LEVEL.INFO, "Сканирование папки mods...");
-
         try {
-            new ModsLoader(new File("./mods/"));
+            new ModsLoader(new File("./mod/"));
             if (ModsLoader.getReadyModsCount() > 0) {
                 Out.Print(MainClass.class, Out.LEVEL.ACCENT, "Обнаружены возможные моды в количестве шт: " + ModsLoader.getReadyModsCount());
             } else {

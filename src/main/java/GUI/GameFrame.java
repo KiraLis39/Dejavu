@@ -19,7 +19,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-
 import javax.swing.AbstractAction;
 import javax.swing.DefaultListModel;
 import javax.swing.JFrame;
@@ -29,18 +28,9 @@ import javax.swing.JPanel;
 import javax.swing.ListSelectionModel;
 import javax.swing.WindowConstants;
 import javax.swing.border.EmptyBorder;
-
-import adds.IOM;
-import adds.InputAction;
-import adds.Out;
-import adds.Out.LEVEL;
-import builders.FoxFontBuilder;
-import builders.ResManager;
-import games.FoxCursor;
-import games.FoxSpritesCombiner;
 import logic.Scenario;
-import media.Media;
-import resourses.Registry;
+import tools.Media;
+import registry.Registry;
 import secondGUI.SaveGame;
 
 

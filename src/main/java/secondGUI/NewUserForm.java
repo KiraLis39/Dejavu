@@ -28,7 +28,7 @@ import adds.Out.LEVEL;
 import builders.FoxFontBuilder;
 import builders.ResManager;
 import games.FoxCursor;
-import resourses.Registry;
+import registry.Registry;
 import door.MainClass;
 
 

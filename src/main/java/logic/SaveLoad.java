@@ -1,50 +1,49 @@
 package logic;
 
-import java.io.File;
-import java.io.FileInputStream;
+import fox.Out;
+import fox.Out.LEVEL;
+import registry.Registry;
+
 import java.io.IOException;
-import java.io.InputStreamReader;
-
-import adds.IOM;
-import adds.Out;
-import adds.Out.LEVEL;
-import resourses.Registry;
-
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 public class SaveLoad {
-	private static int saveCount = 0, saveTime = 60;
-	
-	
-	public static void Trigger() {
-		saveCount++;
-		if (saveCount >= saveTime) {runAutoSaving();}
-	}
-	
-	private static void runAutoSaving() {
-		Out.Print("Работа с автосохранением " + IOM.getString(IOM.HEADERS.USER_SAVE, Registry.usersDir + "/save/save.tmp"));
-		File autosavefile = new File((String) IOM.getString(IOM.HEADERS.USER_SAVE, Registry.usersDir + "/save/save.tmp"));
-		
-		if (!autosavefile.exists()) {
-			try {autosavefile.createNewFile();} catch (IOException e) {e.printStackTrace();}
-			saveEngine("AUTOSAVE", autosavefile);
-			saveCount = 0;
-			return;
-		}
-		
-		saveEngine("AUTOSAVE", autosavefile);
-		saveCount = 0;
-		
-		IOM.saveAll();
-	}
+    private static int saveCount = 0;
+    private static final int saveTicks = 60;
 
-	
-	public static void saveEngine(String savePropName, File autosave) {
-		Out.Print(SaveLoad.class, LEVEL.ACCENT, "Подготовка к созданию нового сохранения: " + savePropName);
-		
-		try (InputStreamReader isr = new InputStreamReader(new FileInputStream(autosave))) {
-			IOM.set(savePropName, IOMs.CONFIG.KARMA_POS, IOM.getInt(IOM.HEADERS.CONFIG, IOMs.CONFIG.KARMA_POS));
-			IOM.set(savePropName, IOMs.CONFIG.KARMA_NEG, IOM.getInt(IOM.HEADERS.CONFIG, IOMs.CONFIG.KARMA_NEG));
-			
+    public static void tick() {
+        saveCount++;
+        if (saveCount >= saveTicks) {
+            runAutoSaving();
+            saveCount = 0;
+        }
+    }
+
+    private static void runAutoSaving() {
+        String autoSavePath = Registry.userSaveDir + "/autosave.tmp";
+        Path autoSave = Paths.get(autoSavePath);
+        Out.Print(SaveLoad.class, LEVEL.ACCENT, "Работа с автосохранением " + autoSave);
+
+        if (Files.notExists(autoSave)) {
+            try {
+                Files.createFile(autoSave);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        saveEngine(autoSave);
+    }
+
+    public static void saveEngine(Path savePath) {
+        Out.Print(SaveLoad.class, LEVEL.ACCENT, "Подготовка к созданию нового сохранения: " + savePath);
+
+//        try (InputStreamReader isr = new InputStreamReader(new FileInputStream(autosave))) {
+//            IOM.set(savePropName, IOMs.CONFIG.KARMA_POS, IOM.getInt(IOM.HEADERS.CONFIG, IOMs.CONFIG.KARMA_POS));
+//            IOM.set(savePropName, IOMs.CONFIG.KARMA_NEG, IOM.getInt(IOM.HEADERS.CONFIG, IOMs.CONFIG.KARMA_NEG));
+
 //			IOM.setAnyValue(savePropName, "carmaAnn", IOM.getAnyValue("UCONF", "carmaAnn"));
 //			IOM.setAnyValue(savePropName, "carmaOleg", IOM.getAnyValue("UCONF", "carmaOleg"));
 //			IOM.setAnyValue(savePropName, "carmaDmitrii", IOM.getAnyValue("UCONF", "carmaDmitrii"));
@@ -55,26 +54,28 @@ public class SaveLoad {
 //			IOM.setAnyValue(savePropName, "carmaMishka", IOM.getAnyValue("UCONF", "carmaMishka"));
 //			IOM.setAnyValue(savePropName, "carmaLissa", IOM.getAnyValue("UCONF", "carmaLissa"));
 //			IOM.setAnyValue(savePropName, "rep", IOM.getAnyValue("UCONF", "rep"));
-			
+
 //			IOM.setAnyValue(savePropName, "iconWas", TextEngine.getIcon());
 //			IOM.setAnyValue(savePropName, "personWas", TextEngine.getPersona());
 //			IOM.setAnyValue(savePropName, "musicWas", TextEngine.getMus());
 //			IOM.setAnyValue(savePropName, "fonWas", TextEngine.getFon());
 //			IOM.setAnyValue(savePropName, "blockName", TextEngine.isBlockName());
 //			IOM.setAnyValue(savePropName, "dialogCount", String.valueOf(TextEngine.getCountDialogs()));
-		} catch (Exception ex) {ex.printStackTrace();}
-	}
+//        } catch (Exception ex) {
+//            ex.printStackTrace();
+//        }
+    }
 
-	public static void Loading(String userName) {
+    public static void Loading(String userName) {
 //		File save = new File(new File(IOM.get("AUTOSAVE", "propFile")).getParentFile().getPath() + "/" + loadName);
-		
+
 //		Out.Print(className, 1, "Загрузка сохранения: " + loadName + " в папке: " + new File(new File(IOM.getAnyValue("AUTOSAVE", "propFile")).getParent()).getPath());
 //		if (save.exists()) {Out.Print(className, 0, "Файл успешно найден: " + save.getName());
 //		} else {
 //			Out.Print(className, 3, "Файл НЕ найден: " + save.getName());
 //			return;
 //		}
-		
+
 //		try (InputStreamReader isrLoad = new InputStreamReader(new FileInputStream(save));) {
 //			IOM.addNewProperti("SAVE", save);
 //			IOM.loadCurrent("SAVE");
@@ -113,5 +114,5 @@ public class SaveLoad {
 //			
 //			NewGameFrame.turnOn();
 //		} catch (Exception e) {e.printStackTrace();}
-	}
+    }
 }

@@ -15,8 +15,8 @@ import GUI.GameFrame;
 import adds.IOM;
 import adds.Out;
 import adds.Out.LEVEL;
-import media.Media;
-import resourses.Registry;
+import tools.Media;
+import registry.Registry;
 
 
 public class Scenario {
