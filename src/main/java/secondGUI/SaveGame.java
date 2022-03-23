@@ -84,7 +84,7 @@ public class SaveGame extends JDialog implements Cached {
         setSize(WIDTH, HEIGHT);
         setUndecorated(true);
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-        setCursor(FoxCursor.createCursor((BufferedImage) cache.get("curGaleryCursor"), "galeryCursor"));
+        setCursor(FoxCursor.createCursor((BufferedImage) cache.get("curGalleryCursor"), "galleryCursor"));
 
         InputAction.add("save", this);
         InputAction.set("save", "close", KeyEvent.VK_ESCAPE, 0, new AbstractAction() {

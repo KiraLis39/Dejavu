@@ -1,5 +1,7 @@
 package tools;
 
+import lombok.NonNull;
+
 import java.util.HashMap;
 
 public class MediaCache {
@@ -15,11 +17,13 @@ public class MediaCache {
         return cache;
     }
 
-    public void add(String name, Object mustCached) {
-        map.put(name, mustCached);
+    public void add(@NonNull String name, Object mustCached) {
+        if (mustCached != null) {
+            map.put(name, mustCached);
+        }
     }
 
-    public Object get(String resourceName) {
+    public Object get(@NonNull String resourceName) {
         if (map.containsKey(resourceName)) {
             return map.get(resourceName);
         }

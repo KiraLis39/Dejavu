@@ -38,23 +38,24 @@ public class MainMenu extends JFrame implements MouseListener, MouseMotionListen
     private static String downText;
 
     private static JPanel basePane;
-    private static JButton optionsButton, galleryButton, saveLoadButton, playButton, aboutButton;
+    private static JButton optionsButton, galleryButton, saveLoadButton, exitButton, aboutButton;
     private static JLabel downTextLabel;
 
     private static float wPercent, hPercent;
+    private Graphics2D g2D;
 
     private final FoxConsole cons;
     private FoxTipsEngine cd;
 
-
     public MainMenu() {
+        Thread.currentThread().setName("=== MAIN THREAD ===");
+
         setUndecorated(true);
         setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
         setResizable(false);
         setCursor(FoxCursor.createCursor((BufferedImage) cache.get("curSimpleCursor"), "simpleCursor"));
 
         preLoading();
-        switchFullscreen();
 
         add(buildBasePane());
 
@@ -68,6 +69,7 @@ public class MainMenu extends JFrame implements MouseListener, MouseMotionListen
 
         Print(MainMenu.class, LEVEL.INFO, "MainMenu setts visible...");
         setVisible(true);
+        checkFullscreen();
 
         setStatusText(null);
 
@@ -75,7 +77,6 @@ public class MainMenu extends JFrame implements MouseListener, MouseMotionListen
         Media.playMusic("musMainMenu", true);
 
         cons = new FoxConsole(this);
-//        connectFoxConsole(cons);
     }
 
     private void preLoading() {
@@ -133,35 +134,38 @@ public class MainMenu extends JFrame implements MouseListener, MouseMotionListen
         }
     }
 
-    private void switchFullscreen() {
-        Print(MainMenu.class, LEVEL.INFO, "MainMenu fullscreen switch...");
+    private void checkFullscreen() {
+        Print(MainMenu.class, LEVEL.INFO, "\nMainMenu fullscreen switch...");
+
+        Double sw = screen.getWidth();
+        Double sh = screen.getHeight();
+
+        MainMenu.this.remove(basePane);
 
         if (userConf.isFullScreen()) {
             setBackground(Color.BLACK);
-            setPreferredSize(new Dimension((int) (screen.getWidth()), (int) (screen.getHeight())));
-            setSize(new Dimension((int) (screen.getWidth()), (int) (screen.getHeight())));
+            setPreferredSize(new Dimension(sw.intValue(), sh.intValue()));
+            setSize(new Dimension(sw.intValue(), sh.intValue()));
+            setState(MAXIMIZED_BOTH);
+            sw = screen.getWidth();
+            sh = screen.getHeight();
         } else {
             setBackground(new Color(0.0f, 0.0f, 0.0f, 0.5f));
-            setPreferredSize(new Dimension((int) (screen.width * 0.75f), (int) (screen.height * 0.75f)));
-            setSize(new Dimension((int) (screen.width * 0.75f), (int) (screen.height * 0.75f)));
+            setPreferredSize(new Dimension((int) (sw * 0.75d), (int) (sh * 0.75d)));
+            setSize(new Dimension((int) (sw * 0.75d), (int) (sh * 0.75d)));
+            setState(NORMAL);
+            sw = getWidth() * 1D;
+            sh = getHeight() * 1D;
         }
+//        pack();
         setLocationRelativeTo(null);
 
-        wPercent = getWidth() / 100f;
-        hPercent = getHeight() / 100f;
+        wPercent = sw.floatValue() / 100f;
+        hPercent = sh.floatValue() / 100f;
+        MainMenu.this.add(buildBasePane());
+        MainMenu.this.revalidate();
 
-        if (userConf.isFullScreen()) {
-            userConf.setFullScreen(false);
-            if (basePane != null) {
-                MainMenu.this.remove(basePane);
-                basePane = null;
-
-                MainMenu.this.add(buildBasePane());
-            }
-        }
-
-        userConf.setFullScreen(!userConf.isFullScreen());
-        Print(MainMenu.class, LEVEL.INFO, "MainMenu fullscreen switched.");
+        Print(MainMenu.class, LEVEL.INFO, "MainMenu fullscreen checked. Thread: " + Thread.currentThread().getName());
     }
 
 
@@ -170,7 +174,7 @@ public class MainMenu extends JFrame implements MouseListener, MouseMotionListen
         basePane = new JPanel(new BorderLayout((int) (wPercent * 2.6f), (int) (hPercent * 2.0f))) {
             @Override
             protected void paintComponent(Graphics g) {
-                Graphics2D g2D = (Graphics2D) g;
+                g2D = (Graphics2D) g;
                 FoxRender.setMedRender(g2D);
                 g2D.drawImage(picMenuImage, 0, 0, getWidth(), getHeight(), this);
             }
@@ -182,17 +186,23 @@ public class MainMenu extends JFrame implements MouseListener, MouseMotionListen
                     {
                         setOpaque(false);
 
-                        JButton playButton = new JButton("play game") {
+                        JButton playButton = new JButton() {
                             BufferedImage bImage = startImages[0];
 
                             @Override
                             public void paintComponent(Graphics g) {
                                 if (startImages != null) {
-                                    Graphics2D g2D = (Graphics2D) g;
-                                    FoxRender.setMedRender(g2D);
+                                    g2D = (Graphics2D) g;
+//                                    FoxRender.setMedRender(g2D);
 
                                     g2D.drawImage(bImage, 0, 0, getWidth(), getHeight(), null, null);
-                                    g2D.drawString(getName(), (int) (getWidth() / 2 - FoxFontBuilder.getStringBounds(g, getName()).getWidth() / 2D), getHeight() / 2 + 6);
+                                    if (bImage == startImages[1]) {
+                                        g2D.drawString(getName(),
+                                                (int) (getWidth() / 2 - FoxFontBuilder.getStringBounds(g, getName()).getWidth() / 2D) - 2,
+                                                getHeight() / 2 + 6 + 2);
+                                    } else {
+                                        g2D.drawString(getName(), (int) (getWidth() / 2 - FoxFontBuilder.getStringBounds(g, getName()).getWidth() / 2D),getHeight() / 2 + 6);
+                                    }
 //									g2D.dispose();
                                 } else {
                                     super.paintComponent(g);
@@ -200,7 +210,7 @@ public class MainMenu extends JFrame implements MouseListener, MouseMotionListen
                             }
 
                             {
-                                setName("playButton");
+                                setName("Играть");
                                 setPreferredSize(new Dimension(0, (int) (hPercent * 6.5f)));
                                 setFont(Registry.f5);
                                 setForeground(Color.BLACK);
@@ -243,19 +253,24 @@ public class MainMenu extends JFrame implements MouseListener, MouseMotionListen
                 JPanel rightButPane = new JPanel(new GridLayout(10, 0, 3, 3)) {
                     {
                         setOpaque(false);
-//						setBorder(new EmptyBorder(0, 0, 0, 6));
 
-                        optionsButton = new JButton("game options") {
+                        optionsButton = new JButton("Настройки") {
                             BufferedImage bImage = menuImages[0];
 
                             @Override
                             public void paintComponent(Graphics g) {
                                 if (menuImages != null) {
-                                    Graphics2D g2D = (Graphics2D) g;
-                                    FoxRender.setMedRender(g2D);
+                                    g2D = (Graphics2D) g;
+//                                    FoxRender.setMedRender(g2D);
 
                                     g2D.drawImage(bImage, 0, 0, getWidth(), getHeight(), this);
-                                    g2D.drawString(getName(), (int) (getWidth() / 2 - FoxFontBuilder.getStringBounds(g, getName()).getWidth() / 2D), getHeight() / 2 + 6);
+                                    if (bImage == menuImages[1]) {
+                                        g2D.drawString(getName(),
+                                                (int) (getWidth() / 2 - FoxFontBuilder.getStringBounds(g, getName()).getWidth() / 2D) - 2,
+                                                getHeight() / 2 + 6 + 2);
+                                    } else {
+                                        g2D.drawString(getName(), (int) (getWidth() / 2 - FoxFontBuilder.getStringBounds(g, getName()).getWidth() / 2D),getHeight() / 2 + 6);
+                                    }
 //									g2D.dispose();
                                 } else {
                                     super.paintComponent(g);
@@ -263,7 +278,7 @@ public class MainMenu extends JFrame implements MouseListener, MouseMotionListen
                             }
 
                             {
-                                setName("optionsButton");
+                                setName("Настройки");
                                 setPreferredSize(new Dimension((int) (wPercent * 28.55f), 50));
                                 setFont(Registry.f5);
                                 setForeground(Color.BLACK);
@@ -299,17 +314,23 @@ public class MainMenu extends JFrame implements MouseListener, MouseMotionListen
                             }
                         };
 
-                        saveLoadButton = new JButton("save/load") {
+                        saveLoadButton = new JButton("Сохранение/загрузка") {
                             BufferedImage bImage = menuImages[0];
 
                             @Override
                             public void paintComponent(Graphics g) {
                                 if (menuImages != null) {
-                                    Graphics2D g2D = (Graphics2D) g;
-                                    FoxRender.setMedRender(g2D);
+                                    g2D = (Graphics2D) g;
+//                                    FoxRender.setMedRender(g2D);
 
                                     g2D.drawImage(bImage, 0, 0, getWidth(), getHeight(), this);
-                                    g2D.drawString(getName(), (int) (getWidth() / 2 - FoxFontBuilder.getStringBounds(g, getName()).getWidth() / 2D), getHeight() / 2 + 6);
+                                    if (bImage == menuImages[1]) {
+                                        g2D.drawString(getName(),
+                                                (int) (getWidth() / 2 - FoxFontBuilder.getStringBounds(g, getName()).getWidth() / 2D) - 2,
+                                                getHeight() / 2 + 6 + 2);
+                                    } else {
+                                        g2D.drawString(getName(), (int) (getWidth() / 2 - FoxFontBuilder.getStringBounds(g, getName()).getWidth() / 2D),getHeight() / 2 + 6);
+                                    }
 //									g2D.dispose();
                                 } else {
                                     super.paintComponent(g);
@@ -317,7 +338,7 @@ public class MainMenu extends JFrame implements MouseListener, MouseMotionListen
                             }
 
                             {
-                                setName("saveLoadButton");
+                                setName("Сохранение/загрузка");
 //								setPreferredSize(new Dimension(410, 50));
                                 setFont(Registry.f5);
                                 setForeground(Color.BLACK);
@@ -353,17 +374,23 @@ public class MainMenu extends JFrame implements MouseListener, MouseMotionListen
                             }
                         };
 
-                        galleryButton = new JButton("gallery") {
+                        galleryButton = new JButton("Галерея") {
                             BufferedImage bImage = menuImages[0];
 
                             @Override
                             public void paintComponent(Graphics g) {
                                 if (menuImages != null) {
-                                    Graphics2D g2D = (Graphics2D) g;
-                                    FoxRender.setMedRender(g2D);
+                                    g2D = (Graphics2D) g;
+//                                    FoxRender.setMedRender(g2D);
 
                                     g2D.drawImage(bImage, 0, 0, getWidth(), getHeight(), this);
-                                    g2D.drawString(getName(), (int) (getWidth() / 2 - FoxFontBuilder.getStringBounds(g, getName()).getWidth() / 2D), getHeight() / 2 + 6);
+                                    if (bImage == menuImages[1]) {
+                                        g2D.drawString(getName(),
+                                                (int) (getWidth() / 2 - FoxFontBuilder.getStringBounds(g, getName()).getWidth() / 2D) - 2,
+                                                getHeight() / 2 + 6 + 2);
+                                    } else {
+                                        g2D.drawString(getName(), (int) (getWidth() / 2 - FoxFontBuilder.getStringBounds(g, getName()).getWidth() / 2D),getHeight() / 2 + 6);
+                                    }
 //									g2D.dispose();
                                 } else {
                                     super.paintComponent(g);
@@ -371,7 +398,7 @@ public class MainMenu extends JFrame implements MouseListener, MouseMotionListen
                             }
 
                             {
-                                setName("galleryButton");
+                                setName("Галерея");
 //								setPreferredSize(new Dimension(410, 50));
                                 setFont(Registry.f5);
                                 setForeground(Color.BLACK);
@@ -407,17 +434,25 @@ public class MainMenu extends JFrame implements MouseListener, MouseMotionListen
                             }
                         };
 
-                        aboutButton = new JButton("about") {
+                        aboutButton = new JButton("Об игре") {
                             BufferedImage bImage = menuImages[0];
 
                             @Override
                             public void paintComponent(Graphics g) {
                                 if (menuImages != null) {
-                                    Graphics2D g2D = (Graphics2D) g;
-                                    FoxRender.setMedRender(g2D);
+                                    g2D = (Graphics2D) g;
+//                                    FoxRender.setMedRender(g2D);
 
                                     g2D.drawImage(bImage, 0, 0, getWidth(), getHeight(), this);
-                                    g2D.drawString(getName(), (int) (getWidth() / 2 - FoxFontBuilder.getStringBounds(g, getName()).getWidth() / 2D), getHeight() / 2 + 6);
+
+                                    if (bImage == menuImages[1]) {
+                                        g2D.drawString(getName(),
+                                                (int) (getWidth() / 2 - FoxFontBuilder.getStringBounds(g, getName()).getWidth() / 2D) - 2,
+                                                getHeight() / 2 + 6 + 2);
+                                    } else {
+                                        g2D.drawString(getName(), (int) (getWidth() / 2 - FoxFontBuilder.getStringBounds(g, getName()).getWidth() / 2D),getHeight() / 2 + 6);
+                                    }
+
 //									g2D.dispose();
                                 } else {
                                     super.paintComponent(g);
@@ -425,7 +460,7 @@ public class MainMenu extends JFrame implements MouseListener, MouseMotionListen
                             }
 
                             {
-                                setName("aboutButton");
+                                setName("Об игре");
 //								setPreferredSize(new Dimension(410, 50));
                                 setFont(Registry.f5);
                                 setForeground(Color.BLACK);
@@ -472,8 +507,8 @@ public class MainMenu extends JFrame implements MouseListener, MouseMotionListen
                     @Override
                     public void paintComponent(Graphics g) {
                         if (centerImage != null) {
-                            Graphics2D g2D = (Graphics2D) g;
-                            FoxRender.setMedRender(g2D);
+                            g2D = (Graphics2D) g;
+//                            FoxRender.setMedRender(g2D);
 
                             g2D.drawImage(centerImage, 0, 0, getWidth(), getHeight(), this);
 
@@ -486,35 +521,36 @@ public class MainMenu extends JFrame implements MouseListener, MouseMotionListen
                             super.paintComponent(g);
                         }
                     }
-
-                    {
-
-                    }
                 };
 
                 JPanel downExitPane = new JPanel(new BorderLayout((int) (wPercent * 3f), (int) (hPercent * 2.0f))) {
                     {
                         setOpaque(false);
 
-                        playButton = new JButton("exit game") {
+                        exitButton = new JButton() {
                             BufferedImage bImage = exitImages[0];
 
                             @Override
                             public void paintComponent(Graphics g) {
                                 if (exitImages != null) {
-                                    Graphics2D g2D = (Graphics2D) g;
-                                    FoxRender.setMedRender(g2D);
-
+                                    g2D = (Graphics2D) g;
                                     g2D.drawImage(bImage, 0, 0, getWidth(), getHeight(), null, null);
-                                    g2D.drawString(getName(), (int) (getWidth() / 2 - FoxFontBuilder.getStringBounds(g, getName()).getWidth() / 2D), getHeight() / 2 + 6);
-                                    g2D.dispose();
+                                    if (bImage == exitImages[1]) {
+                                        g2D.drawString(getName(),
+                                                (int) (getWidth() / 2 - FoxFontBuilder.getStringBounds(g, getName()).getWidth() / 2D) - 2,
+                                                getHeight() / 2 + 6 + 2);
+                                    } else {
+                                        g2D.drawString(getName(), (int) (getWidth() / 2 - FoxFontBuilder.getStringBounds(g, getName()).getWidth() / 2D),getHeight() / 2 + 6);
+                                    }
+
+//                                    g2D.dispose();
                                 } else {
                                     super.paintComponent(g);
                                 }
                             }
 
                             {
-                                setName("exitButton");
+                                setName("Выйти");
                                 setPreferredSize(new Dimension((int) (wPercent * 28.55f), (int) (hPercent * 6.5f)));
                                 setFont(Registry.f5);
                                 setForeground(Color.BLACK);
@@ -550,15 +586,18 @@ public class MainMenu extends JFrame implements MouseListener, MouseMotionListen
                             }
                         };
 
+                        BufferedImage tipIco = null;
                         try {
-                            cd = new FoxTipsEngine(this, FoxTipsEngine.TYPE.INFO, ImageIO.read(new File("./resources/tipIco.png")),
-                                    "Заголовок подсказки:",
-                                    "Это текст сообщения. Его необходимо правильно<br>переносить на следующую строку и вообще...<br>всё в таком духе. Вот.",
-                                    "Тем более, если сообщение окажется черезчур длинным."
-                            );
+                            tipIco = ImageIO.read(new File("./resources/tipIco.png"));
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
+
+                        cd = new FoxTipsEngine(this, FoxTipsEngine.TYPE.INFO, tipIco,
+                                "Заголовок подсказки:",
+                                "Это текст сообщения. Его необходимо правильно<br>переносить на следующую строку и вообще...<br>всё в таком духе. Вот.",
+                                "Тем более, если сообщение окажется черезчур длинным."
+                        );
 
                         downTextLabel = new JLabel() {
                             {
@@ -590,7 +629,7 @@ public class MainMenu extends JFrame implements MouseListener, MouseMotionListen
                             }
                         };
 
-                        add(playButton, BorderLayout.EAST);
+                        add(exitButton, BorderLayout.EAST);
                         add(downTextLabel, BorderLayout.CENTER);
                     }
                 };
@@ -601,10 +640,8 @@ public class MainMenu extends JFrame implements MouseListener, MouseMotionListen
                 add(downExitPane, BorderLayout.SOUTH);
             }
         };
-
         return basePane;
     }
-
 
     @Override
     public void mouseDragged(MouseEvent e) {
@@ -641,42 +678,31 @@ public class MainMenu extends JFrame implements MouseListener, MouseMotionListen
     @Override
     public void actionPerformed(ActionEvent e) {
         switch (e.getActionCommand()) {
-            case "play":
+            case "play" -> {
                 dispose();
                 if (userConf.getAvatarIndex() == 0) {
                     new GenderFrame();
                 } else {
                     new GameFrame();
                 }
-                break;
-
-            case "exit":
+            }
+            case "exit" -> {
                 int exit = new FOptionPane(
                         "Подтверждение:", "Точно закрыть игру и выйти?",
                         FOptionPane.TYPE.YES_NO_TYPE, null, true).get();
                 if (exit == 0) {
                     Exit.exit(0);
                 }
-                break;
-
-            case "gallery":
-                new GalleryFrame(MainMenu.this);
-                break;
-
-            case "saveLoad":
-                new SaveGame();
-                break;
-
-            case "options":
+            }
+            case "gallery" -> new GalleryFrame(MainMenu.this);
+            case "saveLoad" -> new SaveGame();
+            case "options" -> {
                 new OptMenuFrame();
-                switchFullscreen();
-                break;
-
-            case "about":
-                new AuthorsFrame();
-                break;
-
-            default:
+                checkFullscreen();
+            }
+            case "about" -> new AuthorsFrame();
+            default -> {
+            }
         }
     }
 }

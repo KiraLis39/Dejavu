@@ -1,4 +1,3 @@
-
 package tools;
 
 import javazoom.jl.decoder.Equalizer.EQFunction;
@@ -7,8 +6,8 @@ import javazoom.jl.player.advanced.AdvancedPlayer;
 import javazoom.jl.player.advanced.PlaybackEvent;
 import javazoom.jl.player.advanced.PlaybackListener;
 import lombok.NonNull;
-import registry.Registry;
 
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -20,11 +19,11 @@ import static fox.Out.Print;
 import static registry.Registry.userConf;
 
 public class Media extends EQFunction {
-    private static Thread musicThread, backgThread;
     private static final Map<String, File> musicMap = new LinkedHashMap<>();
     private static final Map<String, File> soundMap = new LinkedHashMap<>();
     private static final Map<String, File> voicesMap = new LinkedHashMap<>();
     private static final Map<String, File> backgMap = new LinkedHashMap<>();
+    private static Thread musicThread, backgThread;
 
     private static JavaSoundAudioDevice auDevMusic;
     private static AdvancedPlayer musicPlayer;
@@ -49,9 +48,37 @@ public class Media extends EQFunction {
         }
     }
 
+    public static void loadMusics(File[] listFiles) {
+        for (File file : listFiles) {
+            addMusic(file.getName().substring(0, file.getName().length() - 4), file);
+        }
+    }
+
+    public static void loadBackgs(File[] listFiles) {
+        for (File file : listFiles) {
+            addBackg(file.getName().substring(0, file.getName().length() - 4), file);
+        }
+    }
+
+    public static void loadVoices(File[] listFiles) {
+        for (File file : listFiles) {
+            addVoice(file.getName().substring(0, file.getName().length() - 4), file);
+        }
+    }
+
     public static void addSound(@NonNull String name, @NonNull File audioFile) {
         soundMap.put(name, audioFile);
     }
+    public static void addMusic(@NonNull String name, @NonNull File audioFile) {
+        musicMap.put(name, audioFile);
+    }
+    public static void addBackg(@NonNull String name, @NonNull File audioFile) {
+        backgMap.put(name, audioFile);
+    }
+    public static void addVoice(@NonNull String name, @NonNull File audioFile) {
+        voicesMap.put(name, audioFile);
+    }
+
 
     public static void playSound(@NonNull String trackName) {
         if (userConf.isSoundMuted()) {
@@ -64,18 +91,9 @@ public class Media extends EQFunction {
             new Thread(() -> {
                 auDevSound = new JavaSoundAudioDevice();
                 try (InputStream potok = new FileInputStream(soundMap.get(trackName))) {
-                    auDevSound.setLineGain(userConf.getSoundVolume());
+                    auDevSound.setLineGain(VolumeConverter.volumePercentToGain(userConf.getSoundVolume()));
                     soundPlayer = new AdvancedPlayer(potok, auDevSound);
-                    PlaybackListener listener = new PlaybackListener() {
-                        @Override
-                        public void playbackStarted(PlaybackEvent arg0) {
-                        }
-
-                        @Override
-                        public void playbackFinished(PlaybackEvent event) {
-                        }
-                    };
-                    soundPlayer.setPlayBackListener(listener);
+                    soundPlayer.setPlayBackListener(new PBList());
                     soundPlayer.play();
 
 //						javafx.scene.tools.Media hit = new javafx.scene.tools.Media(musicMap.get(trackName).toURI().toString());
@@ -99,64 +117,36 @@ public class Media extends EQFunction {
         }
     }
 
-
-    public static void loadMusics(File[] listFiles) {
-        for (File file : listFiles) {
-            addMusic(file.getName().substring(0, file.getName().length() - 4), file);
-        }
-    }
-
-    public static void addMusic(@NonNull String name, @NonNull File audioFile) {
-        musicMap.put(name, audioFile);
-    }
-
     public static void playMusic(@NonNull String trackName, boolean rep) {
         if (userConf.isMusicMuted()) {
             return;
         }
 
         if (musicMap.containsKey(trackName)) {
-            if (musicThread != null) {
-                if (!musicThread.isInterrupted()) {
-                    stopMusic();
-                }
-
-                while (musicThread.isAlive()) {
-                    try {
-                        musicThread.join(200);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
+            if (musicThread != null && (musicThread.isAlive() || !musicThread.isInterrupted())) {
+                stopMusic();
             }
 
             musicThread = new Thread(() -> {
-                if (auDevMusic != null && auDevMusic.isOpen()) {
-                    auDevMusic.close();
-                }
+                boolean replay = rep;
 
-                auDevMusic = new JavaSoundAudioDevice();
-                try (InputStream potok = new FileInputStream(musicMap.get(trackName))) {
-                    lastMusic = trackName;
-                    auDevMusic.setLineGain(userConf.getMusicVolume());
-                    musicPlayer = new AdvancedPlayer(potok, auDevMusic);
-                    PlaybackListener listener = new PlaybackListener() {
-                        @Override
-                        public void playbackStarted(PlaybackEvent arg0) {
+                System.out.println("Media: Played now '" + trackName + "'...");
+                lastMusic = trackName;
+                do {
+                    auDevMusic = new JavaSoundAudioDevice();
+                    auDevMusic.setLineGain(VolumeConverter.volumePercentToGain(userConf.getMusicVolume()));
+                    try (BufferedInputStream potok = new BufferedInputStream(new FileInputStream(musicMap.get(lastMusic)))) {
+                        musicPlayer = new AdvancedPlayer(potok, auDevMusic);
+                        musicPlayer.setPlayBackListener(new PBList());
+                        musicPlayer.play();
+                    } catch (Exception err) {
+                        err.printStackTrace();
+                    } finally {
+                        if (!replay) {
+                            stopMusic();
                         }
-
-                        @Override
-                        public void playbackFinished(PlaybackEvent event) {
-                        }
-                    };
-                    musicPlayer.setPlayBackListener(listener);
-                    musicPlayer.play();
-                } catch (Exception err) {
-                    err.printStackTrace();
-                } finally {
-                    musicPlayer.close();
-                    auDevMusic.close();
-                }
+                    }
+                } while (replay && !musicThread.isInterrupted());
             });
             musicThread.start();
 
@@ -170,78 +160,35 @@ public class Media extends EQFunction {
         }
     }
 
-    public static void stopMusic() {
-        if (musicPlayer == null) {
-            return;
-        }
-
-        try {
-            musicPlayer.stop();
-        } catch (Exception a) {/* IGNORE STOPPED ALREADY */}
-        try {
-            musicPlayer.close();
-        } catch (Exception a) {/* IGNORE CLOSED ALREADY */}
-        musicThread.interrupt();
-    }
-
-
-    public static void loadBackgs(File[] listFiles) {
-        for (File file : listFiles) {
-            addBackg(file.getName().substring(0, file.getName().length() - 4), file);
-        }
-    }
-
-    public static void addBackg(@NonNull String name, @NonNull File audioFile) {
-        backgMap.put(name, audioFile);
-    }
-
     public static void playBackg(@NonNull String trackName) {
         if (userConf.isBackgMuted()) {
             return;
         }
 
         if (backgMap.containsKey(trackName)) {
-            if (backgThread != null) {
-                if (!backgThread.isInterrupted()) {
-                    stopBackg();
-                }
-
-                while (backgThread.isAlive()) {
-                    try {
-                        backgThread.join();
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
+            if (backgThread != null && (backgThread.isAlive() || !backgThread.isInterrupted())) {
+                stopBackg();
             }
 
             backgThread = new Thread(() -> {
-                if (auDevBackg != null && auDevBackg.isOpen()) {
-                    auDevBackg.close();
-                }
-
-                auDevBackg = new JavaSoundAudioDevice();
-                try (InputStream potok = new FileInputStream(backgMap.get(trackName))) {
-                    lastBackg = trackName;
-                    auDevBackg.setLineGain(userConf.getBackgVolume());
-                    backgPlayer = new AdvancedPlayer(potok, auDevBackg);
-                    PlaybackListener listener = new PlaybackListener() {
-                        @Override
-                        public void playbackStarted(PlaybackEvent arg0) {
+                lastBackg = trackName;
+                do {
+                    auDevBackg = new JavaSoundAudioDevice();
+                    try (BufferedInputStream potok = new BufferedInputStream(new FileInputStream(backgMap.get(lastBackg)))) {
+                        backgPlayer = new AdvancedPlayer(potok, auDevBackg);
+                        backgPlayer.setPlayBackListener(new PBList());
+                        backgPlayer.play();
+                    } catch (Exception err) {
+                        err.printStackTrace();
+                    } finally {
+                        if (backgThread.isInterrupted()) {
+                            stopBackg();
                         }
-
-                        @Override
-                        public void playbackFinished(PlaybackEvent event) {
-                        }
-                    };
-                    backgPlayer.setPlayBackListener(listener);
-                    backgPlayer.play();
-                } catch (Exception err) {
-                    err.printStackTrace();
-                } finally {
-                    backgPlayer.close();
-                    auDevBackg.close();
-                }
+                    }
+                    if (auDevBackg != null && auDevBackg.isOpen()) {
+                        auDevBackg.close();
+                    }
+                } while (!backgThread.isInterrupted());
             });
             backgThread.start();
 
@@ -249,31 +196,6 @@ public class Media extends EQFunction {
         } else {
             Print(Media.class, LEVEL.INFO, "Media: backg: '" + trackName + "' is NOT exist in the backgMap");
         }
-    }
-
-    public static void stopBackg() {
-        if (backgPlayer == null) {
-            return;
-        }
-
-        try {
-            backgPlayer.stop();
-        } catch (Exception a) {/* IGNORE STOPPED ALREADY */}
-        try {
-            backgPlayer.close();
-        } catch (Exception a) {/* IGNORE CLOSED ALREADY */}
-        backgThread.interrupt();
-    }
-
-
-    public static void loadVoices(File[] listFiles) {
-        for (File file : listFiles) {
-            addVoice(file.getName().substring(0, file.getName().length() - 4), file);
-        }
-    }
-
-    public static void addVoice(@NonNull String name, @NonNull File audioFile) {
-        voicesMap.put(name, audioFile);
     }
 
     public static void playVoice(@NonNull String trackName) {
@@ -286,7 +208,8 @@ public class Media extends EQFunction {
                 auDevVoice = new JavaSoundAudioDevice();
                 try (InputStream potok = new FileInputStream(voicesMap.get(trackName))) {
                     voicePlayer = new AdvancedPlayer(potok, auDevVoice);
-                    auDevVoice.setLineGain(userConf.getVoiceVolume());
+                    auDevVoice.setLineGain(VolumeConverter.volumePercentToGain(userConf.getVoiceVolume()));
+                    voicePlayer.setPlayBackListener(new PBList());
                     voicePlayer.play();
                 } catch (Exception err) {
                     err.printStackTrace();
@@ -303,6 +226,38 @@ public class Media extends EQFunction {
                 System.out.println(vName + " (" + voicesMap.get(vName) + ")");
             }
         }
+    }
+
+
+    public static void stopMusic() {
+        close(musicPlayer, auDevMusic, musicThread);
+    }
+
+    public static void stopBackg() {
+        close(backgPlayer, auDevBackg, backgThread);
+    }
+
+    private static void close(AdvancedPlayer player, JavaSoundAudioDevice dev, Thread thread) {
+        if (player == null) {
+            return;
+        }
+
+        try {
+            player.stop();
+        } catch (Exception a) {/* IGNORE STOPPED ALREADY */}
+        try {
+            player.close();
+        } catch (Exception a) {/* IGNORE CLOSED ALREADY */}
+
+        try {
+            if (dev != null && dev.isOpen()) {
+                dev.close();
+            }
+        } catch (Exception e) {
+            /* IGNORE */
+        }
+
+        thread.interrupt();
     }
 
 
@@ -343,31 +298,50 @@ public class Media extends EQFunction {
     }
 
 
-    public static void setMusicVolume(float volume) {
-        userConf.setMusicVolume((float) (Math.log(volume) / Math.log(2) * 6.0f));
+    public static void setMusicVolume(float gain) {
         if (auDevMusic != null) {
-            auDevMusic.setLineGain(userConf.getMusicVolume());
+            auDevMusic.setLineGain(gain);
         }
     }
 
-    public static void setSoundVolume(float volume) {
-        userConf.setSoundVolume((float) (Math.log(volume) / Math.log(2) * 6.0f));
+    public static void setSoundVolume(float gain) {
         if (auDevSound != null) {
-            auDevSound.setLineGain(userConf.getSoundVolume());
+            auDevSound.setLineGain(gain);
         }
     }
 
-    public static void setBackgVolume(float volume) {
-        userConf.setBackgVolume((float) (Math.log(volume) / Math.log(2) * 6.0f));
+    public static void setBackgVolume(float gain) {
         if (auDevBackg != null) {
-            auDevBackg.setLineGain(userConf.getBackgVolume());
+            auDevBackg.setLineGain(gain);
         }
     }
 
-    public static void setVoiceVolume(float volume) {
-        userConf.setVoiceVolume((float) (Math.log(volume) / Math.log(2) * 6.0f));
+    public static void setVoiceVolume(float gain) {
         if (auDevVoice != null) {
-            auDevVoice.setLineGain(userConf.getVoiceVolume());
+            auDevVoice.setLineGain(gain);
+        }
+    }
+
+
+    static class PBList extends PlaybackListener {
+        @Override
+        public void playbackStarted(PlaybackEvent arg0) {
+            if (auDevBackg != null) {
+                auDevBackg.setLineGain(VolumeConverter.volumePercentToGain(userConf.getBackgVolume()));
+            }
+            if (auDevMusic != null) {
+                auDevMusic.setLineGain(VolumeConverter.volumePercentToGain(userConf.getMusicVolume()));
+            }
+            if (auDevSound != null) {
+                auDevSound.setLineGain(VolumeConverter.volumePercentToGain(userConf.getSoundVolume()));
+            }
+            if (auDevVoice != null) {
+                auDevVoice.setLineGain(VolumeConverter.volumePercentToGain(userConf.getVoiceVolume()));
+            }
+        }
+
+        @Override
+        public void playbackFinished(PlaybackEvent event) {
         }
     }
 }

@@ -9,6 +9,7 @@ import interfaces.Cached;
 import registry.Registry;
 import render.FoxRender;
 import tools.Media;
+import tools.VolumeConverter;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
@@ -54,7 +55,8 @@ public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotion
     public OptMenuFrame(int code) {
         Out.Print(OptMenuFrame.class, LEVEL.INFO, "Вход в опции!");
 
-        setModalExclusionType(Dialog.ModalExclusionType.NO_EXCLUDE);
+        setModal(true);
+        setModalExclusionType(Dialog.ModalExclusionType.APPLICATION_EXCLUDE);
         setUndecorated(true);
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         setCursor(FoxCursor.createCursor((BufferedImage) cache.get("curOtherCursor"), "otherCursor"));
@@ -84,11 +86,8 @@ public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotion
         pack();
         setLocationRelativeTo(null);
 
-        setModal(true);
+        Out.Print(OptMenuFrame.class, LEVEL.DEBUG, "Окно опций OptMenuFrame готово к отображению.");
         setVisible(true);
-        repaint();
-
-        Out.Print(OptMenuFrame.class, LEVEL.INFO, "Окно опций OptMenuFrame отображено успешно.");
     }
 
     @Override
@@ -113,10 +112,11 @@ public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotion
     private void reloadBaseBuffer() {
         Graphics2D g2D = baseBuffer.createGraphics();
         FoxRender.setMedRender(g2D);
-        g2D.setFont(Registry.f0);
+        g2D.setFont(Registry.f3);
 
         if (titlePoint == null) {
-            titlePoint = new Point((int) (horizontalCenter - FoxFontBuilder.getStringBounds(g2D, "Настройки игры:").getWidth() / 2), (int) (heightPercent * 6D));
+            titlePoint = new Point((int) (horizontalCenter - FoxFontBuilder.getStringBounds(g2D, "Настройки игры:").getWidth() / 2),
+                    (int) (heightPercent * 6D));
             soundTitlePoint = new Point((int) (widthPercent * 5D), (int) (heightPercent * 14D));
             musTitlePoint = new Point((int) (widthPercent * 5D), (int) (heightPercent * 29D));
             backgTitlePoint = new Point((int) (widthPercent * 5D), (int) (heightPercent * 43D));
@@ -145,7 +145,7 @@ public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotion
         g2D.setColor(Color.WHITE);
 //		g2D.drawString("Настройки игры:", titlePoint.x, titlePoint.y);
 
-        TextLayout tLayout = new TextLayout("Настройки игры:", Registry.f0, g2D.getFontRenderContext());
+        TextLayout tLayout = new TextLayout("Настройки игры:", Registry.f3, g2D.getFontRenderContext());
         AffineTransform affTrans = new AffineTransform();
         affTrans.setToTranslation(titlePoint.x, titlePoint.y);
         g2D.draw(tLayout.getOutline(affTrans));
@@ -290,9 +290,16 @@ public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotion
     }
 
     private void downSettingsPrepare(Graphics2D g2D) {
+        g2D.setFont(Registry.f0);
+
         if (down0Point == null) {
-            down0Point = new Point((int) (WIDTH / 4 - FoxFontBuilder.getStringBounds(g2D, stringFullscreen).getWidth() / 2), (int) (heightPercent * 77D));
-            down2Point = new Point((int) (WIDTH / 4 * 3 - FoxFontBuilder.getStringBounds(g2D, stringUseMods).getWidth() / 2) - 5, (int) (heightPercent * 77D));
+            down0Point = new Point(
+                    (int) (WIDTH / 4 - FoxFontBuilder.getStringBounds(g2D, stringFullscreen).getWidth() / 2), (int) (heightPercent * 77D)
+            );
+
+            down2Point = new Point(
+                    (int) (WIDTH / 4 * 3 - FoxFontBuilder.getStringBounds(g2D, stringUseMods).getWidth() / 2) - 5, (int) (heightPercent * 77D)
+            );
 
             down1Point = new Point((int) (WIDTH / 4 - FoxFontBuilder.getStringBounds(g2D, stringAutoSaving).getWidth() / 2), (int) (heightPercent * 89D));
             down3Point = new Point((int) (WIDTH / 4 * 3 - FoxFontBuilder.getStringBounds(g2D, stringAutoSkipping).getWidth() / 2) - 5, (int) (heightPercent * 89D));
@@ -351,14 +358,14 @@ public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotion
     private void buildVolumeSliders() {
         Out.Print(OptMenuFrame.class, LEVEL.INFO, "Построение слайдеров громкости....");
 
-        volumeOfSoundSlider = getSlider("volumeOfSound", (int) (userConf.getSoundVolume() * 100f));
-        volumeOfMusicSlider = getSlider("volumeOfMusic", (int) (userConf.getMusicVolume() * 100f));
-        volumeOfBackgSlider = getSlider("volumeOfBackg", (int) (userConf.getBackgVolume() * 100f));
-        volumeOfVoiceSlider = getSlider("volumeOfVoice", (int) (userConf.getVoiceVolume() * 100f));
+        volumeOfSoundSlider = getSlider("volumeOfSound", userConf.getSoundVolume());
+        volumeOfMusicSlider = getSlider("volumeOfMusic", userConf.getMusicVolume());
+        volumeOfBackgSlider = getSlider("volumeOfBackg", userConf.getBackgVolume());
+        volumeOfVoiceSlider = getSlider("volumeOfVoice", userConf.getVoiceVolume());
     }
 
-    private JSlider getSlider(String name, int value) {
-        return new JSlider(0, 100, value) {
+    private JSlider getSlider(String name, int volume) {
+        return new JSlider(0, 100, volume) {
             {
                 setName(name);
                 setForeground(Color.ORANGE.brighter());
@@ -382,33 +389,50 @@ public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotion
     }
 
     private void saveAndClose() {
-        Out.Print(OptMenuFrame.class, LEVEL.ACCENT, "Сохранение и закрытие опций....");
+        Out.Print(OptMenuFrame.class, LEVEL.ACCENT, "Закрытие окна опций...");
 
-        userConf.setSoundVolume(volumeOfSoundSlider.getValue() / 100f);
-        userConf.setMusicVolume(volumeOfMusicSlider.getValue() / 100f);
-        userConf.setBackgVolume(volumeOfBackgSlider.getValue() / 100f);
-        userConf.setVoiceVolume(volumeOfVoiceSlider.getValue() / 100f);
-
+        setModal(false);
         dispose();
     }
 
 
+    private int sChCount = 3;
     @Override
     public void stateChanged(ChangeEvent e) {
         if (((JComponent) e.getSource()).getName().equals("volumeOfSound")) {
-            Media.setSoundVolume(volumeOfSoundSlider.getValue() / 100f);
+            sChCount--;
+            if (sChCount == 0) {
+                userConf.setSoundVolume(volumeOfSoundSlider.getValue());
+                Media.setSoundVolume(VolumeConverter.volumePercentToGain(userConf.getSoundVolume()));
+            }
         }
 
         if (((JComponent) e.getSource()).getName().equals("volumeOfMusic")) {
-            Media.setMusicVolume(volumeOfMusicSlider.getValue() / 100f);
+            sChCount--;
+            if (sChCount == 0) {
+                userConf.setMusicVolume(volumeOfMusicSlider.getValue());
+                Media.setMusicVolume(VolumeConverter.volumePercentToGain(userConf.getMusicVolume()));
+            }
         }
 
         if (((JComponent) e.getSource()).getName().equals("volumeOfBackg")) {
-            Media.setBackgVolume(volumeOfBackgSlider.getValue() / 100f);
+            sChCount--;
+            if (sChCount == 0) {
+                userConf.setBackgVolume(volumeOfBackgSlider.getValue());
+                Media.setBackgVolume(VolumeConverter.volumePercentToGain(userConf.getBackgVolume()));
+            }
         }
 
         if (((JComponent) e.getSource()).getName().equals("volumeOfVoice")) {
-            Media.setVoiceVolume(volumeOfVoiceSlider.getValue() / 100f);
+            sChCount--;
+            if (sChCount == 0) {
+                userConf.setVoiceVolume(volumeOfVoiceSlider.getValue());
+                Media.setVoiceVolume(VolumeConverter.volumePercentToGain(userConf.getVoiceVolume()));
+            }
+        }
+
+        if (sChCount == 0) {
+            sChCount = 3;
         }
     }
 
@@ -417,20 +441,14 @@ public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotion
         mouseNow = e.getPoint();
 
         isMusicMuteOver = musicMuteRect.contains(mouseNow);
-
         isSoundMuteOver = soundMuteRect.contains(mouseNow);
-
         isBackgMuteOver = backgMuteRect.contains(mouseNow);
-
         isVoiceMuteOver = voiceMuteRect.contains(mouseNow);
 
         if (downBackFonRect.contains(mouseNow)) {
             isFullscreenOver = new Rectangle(downChecker0.x, downChecker0.y, 25, 25).contains(mouseNow);
-
             isModEnabledOver = new Rectangle(downChecker1.x, downChecker1.y, 25, 25).contains(mouseNow);
-
             isAutoSaveOver = new Rectangle(downChecker2.x, downChecker2.y, 25, 25).contains(mouseNow);
-
             isAutoSkippingOver = new Rectangle(downChecker3.x, downChecker3.y, 25, 25).contains(mouseNow);
         }
     }

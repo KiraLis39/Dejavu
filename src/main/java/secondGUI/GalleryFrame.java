@@ -6,6 +6,8 @@ import fox.Out.LEVEL;
 import interfaces.Cached;
 import registry.Registry;
 import render.FoxRender;
+import tools.Media;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
@@ -90,8 +92,9 @@ public class GalleryFrame extends JDialog implements MouseListener, MouseMotionL
         InputAction.set("gallery", "close", KeyEvent.VK_ESCAPE, 0, new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
+                Media.playMusic("musMainMenu", true);
+                Media.playBackg("fonKricket");
                 dispose();
-//				new MainMenu();
             }
         });
         InputAction.set("gallery", "fullscreen", KeyEvent.VK_F, 0, new AbstractAction() {
@@ -108,6 +111,8 @@ public class GalleryFrame extends JDialog implements MouseListener, MouseMotionL
             }
         });
 
+        Media.playMusic("musGalleryTheme", true);
+        Media.stopBackg();
         setVisible(true);
     }
 

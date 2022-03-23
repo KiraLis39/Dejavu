@@ -4,6 +4,7 @@ import GUI.MainMenu;
 import fox.FoxLogo;
 import fox.JIOM;
 import fox.Out;
+import interfaces.Cached;
 import secondGUI.NewUserForm;
 import tools.Media;
 import tools.ModsLoader;
@@ -11,6 +12,7 @@ import configurations.Configuration;
 import tools.MediaCache;
 import registry.Registry;
 import configurations.UserConf;
+import tools.VolumeConverter;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -21,11 +23,12 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.stream.Collectors;
 
 import static registry.Registry.configuration;
 import static registry.Registry.userConf;
 
-public class MainClass {
+public class MainClass implements Cached {
     private static boolean isLogEnabled = true;
     private static FoxLogo fl;
 
@@ -45,6 +48,19 @@ public class MainClass {
     }
 
     public static void main(String[] args) {
+        float testIn1 = VolumeConverter.volumePercentToGain(0);
+        float testIn2 = VolumeConverter.volumePercentToGain(25);
+        float testIn3 = VolumeConverter.volumePercentToGain(50);
+        float testIn4 = VolumeConverter.volumePercentToGain(75);
+        float testIn5 = VolumeConverter.volumePercentToGain(100);
+        System.out.println();
+        System.out.println("Percent 01: " + VolumeConverter.gainToVolumePercent(testIn1));
+        System.out.println("Percent 02: " + VolumeConverter.gainToVolumePercent(testIn2));
+        System.out.println("Percent 03: " + VolumeConverter.gainToVolumePercent(testIn3));
+        System.out.println("Percent 04: " + VolumeConverter.gainToVolumePercent(testIn4));
+        System.out.println("Percent 05: " + VolumeConverter.gainToVolumePercent(testIn5));
+        System.out.println();
+        System.exit(0);
         preInit();
 
         if (configuration.isShowLogo()) {
@@ -120,7 +136,6 @@ public class MainClass {
             } else {
                 Registry.usersSaveDir = Paths.get(Registry.usersDir + "/" + luHash + "/");
                 userConf = JIOM.fileToDto(Paths.get(Registry.usersSaveDir + "/config.dto"), UserConf.class);
-                loadAudioSettings();
             }
 
             JIOM.dtoToFile(configuration);
@@ -153,113 +168,61 @@ public class MainClass {
             }
             JIOM.dtoToFile(userConf);
 
-            loadAudioSettings();
-
             Out.Print(MainClass.class, Out.LEVEL.INFO, "Приветствуем игрока " + userConf.getUserName() + "!");
         } catch (Exception e) {
             throw e;
         }
     }
 
-    static void loadAudioSettings() {
-        // === Определение конфигурации аудио ===
-        Out.Print(MainClass.class, Out.LEVEL.INFO, "Определение конфигурации аудио...");
-        if (userConf.getMusicVolume() == null) {
-            userConf.setMusicVolume(0.75f);
-        }
-        if (userConf.getSoundVolume() == null) {
-            userConf.setSoundVolume(0.5f);
-        }
-        if (userConf.getBackgVolume() == null) {
-            userConf.setBackgVolume(0.5f);
-        }
-        if (userConf.getVoiceVolume() == null) {
-            userConf.setVoiceVolume(0.75f);
-        }
-        Out.Print(MainClass.class, Out.LEVEL.INFO, "Аудио сконфигурировано.");
-    }
-
-
     private static void loadImages() {
-        MediaCache cashe = MediaCache.getInstance();
         // other:
-        try {
-            cashe.add("picExitButtonSprite", toBImage(Registry.picDir + "/buttons/exits"));
-            cashe.add("picPlayButtonSprite", toBImage(Registry.picDir + "/buttons/starts"));
-            cashe.add("picMenuButtonSprite", toBImage(Registry.picDir + "/buttons/menus"));
+        cache.add("picExitButtonSprite", toBImage(Registry.picDir + "/buttons/exits"));
+        cache.add("picPlayButtonSprite", toBImage(Registry.picDir + "/buttons/starts"));
+        cache.add("picMenuButtonSprite", toBImage(Registry.picDir + "/buttons/menus"));
 
-            cashe.add("picBackButBig", toBImage(Registry.picDir + "/buttons/butListG"));
-            cashe.add("picMenuButtons", toBImage(Registry.picDir + "/buttons/butListM"));
+        cache.add("picBackButBig", toBImage(Registry.picDir + "/buttons/butListG"));
+        cache.add("picMenuButtons", toBImage(Registry.picDir + "/buttons/butListM"));
 
-            cashe.add("picGameIcon", toBImage(Registry.picDir + "/32"));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        cache.add("picGameIcon", toBImage(Registry.picDir + "/32"));
 
         // cursors & backgrounds:
-        try {
-            cashe.add("curSimpleCursor", toBImage(Registry.curDir + "/01"));
-            cashe.add("curTextCursor", toBImage(Registry.curDir + "/02"));
-            cashe.add("curGaleryCursor", toBImage(Registry.curDir + "/03"));
-            cashe.add("curAnyCursor", toBImage(Registry.curDir + "/04"));
-            cashe.add("curOtherCursor", toBImage(Registry.curDir + "/05"));
+        cache.add("curSimpleCursor", toBImage(Registry.curDir + "/01"));
+        cache.add("curTextCursor", toBImage(Registry.curDir + "/02"));
+        cache.add("curGalleryCursor", toBImage(Registry.curDir + "/03"));
+        cache.add("curAnyCursor", toBImage(Registry.curDir + "/04"));
+        cache.add("curOtherCursor", toBImage(Registry.curDir + "/05"));
 
-            cashe.add("picSaveLoad", toBImage(Registry.picDir + "/backgrounds/saveLoad"));
-            cashe.add("picMenuBase", toBImage(Registry.picDir + "/backgrounds/menuBase"));
-            cashe.add("picAurora", toBImage(Registry.picDir + "/backgrounds/aurora"));
-            cashe.add("picGallery", toBImage(Registry.picDir + "/backgrounds/gallery"));
-            cashe.add("picMenupane", toBImage(Registry.picDir + "/backgrounds/menupane"));
-            cashe.add("picGender", toBImage(Registry.picDir + "/backgrounds/gender"));
-            cashe.add("picGamepane", toBImage(Registry.picDir + "/backgrounds/gamepane"));
-            cashe.add("picAutrs", toBImage(Registry.picDir + "/backgrounds/autrs"));
-            cashe.add("picGameMenu", toBImage(Registry.picDir + "/backgrounds/gameMenu"));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        cache.add("picSaveLoad", toBImage(Registry.picDir + "/backgrounds/saveLoad"));
+        cache.add("picMenuBase", toBImage(Registry.picDir + "/backgrounds/menuBase"));
+        cache.add("picAurora", toBImage(Registry.picDir + "/backgrounds/aurora"));
+        cache.add("picGallery", toBImage(Registry.picDir + "/backgrounds/gallery"));
+        cache.add("picMenupane", toBImage(Registry.picDir + "/backgrounds/menupane"));
+        cache.add("picGender", toBImage(Registry.picDir + "/backgrounds/gender"));
+        cache.add("picGamepane", toBImage(Registry.picDir + "/backgrounds/gamepane"));
+        cache.add("picAutrs", toBImage(Registry.picDir + "/backgrounds/autrs"));
+        cache.add("picGameMenu", toBImage(Registry.picDir + "/backgrounds/gameMenu"));
 
         // heroes:
-        try {
-            cashe.add("0", new File(Registry.picDir + "/hero/00"));
+        cache.add("0", toBImage(Registry.picDir + "/hero/0"));
 
-            // fema:
-            cashe.add("1", new File(Registry.picDir + "/hero/01"));
-            cashe.add("2", new File(Registry.picDir + "/hero/02"));
-            cashe.add("3", new File(Registry.picDir + "/hero/03"));
-            cashe.add("4", new File(Registry.picDir + "/hero/04"));
+        // fema:
+        cache.add("1", toBImage(Registry.picDir + "/hero/1"));
+        cache.add("2", toBImage(Registry.picDir + "/hero/2"));
+        cache.add("3", toBImage(Registry.picDir + "/hero/3"));
+        cache.add("4", toBImage(Registry.picDir + "/hero/4"));
 
-            // male:
-            cashe.add("5", new File(Registry.picDir + "/hero/05"));
-            cashe.add("6", new File(Registry.picDir + "/hero/06"));
-            cashe.add("7", new File(Registry.picDir + "/hero/07"));
-            cashe.add("8", new File(Registry.picDir + "/hero/08"));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        // npc avatars:
-        try {
-            for (Path path : Registry.npcAvatarsDir) {
-                cashe.add(path.toFile().getName().replace(Registry.picExtension, ""), toBImage(path.toString()));
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        // scenes load:
-        try {
-            for (Path path : Registry.scenesDir) {
-                cashe.add(path.toFile().getName().replace(Registry.picExtension, ""), toBImage(path.toString()));
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        // male:
+        cache.add("5", toBImage(Registry.picDir + "/hero/5"));
+        cache.add("6", toBImage(Registry.picDir + "/hero/6"));
+        cache.add("7", toBImage(Registry.picDir + "/hero/7"));
+        cache.add("8", toBImage(Registry.picDir + "/hero/8"));
     }
 
     private static BufferedImage toBImage(String path) {
         try {
             return ImageIO.read(new File(path + Registry.picExtension));
-        } catch (IOException e) {
-            Out.Print(MainClass.class, Out.LEVEL.WARN, "Ошибка чтения медиа '" + path + "': " + e.getMessage());
+        } catch (Exception e) {
+            Out.Print(MainClass.class, Out.LEVEL.WARN, "Ошибка чтения медиа '" + Paths.get(path) + "': " + e.getMessage());
         }
         return null;
     }

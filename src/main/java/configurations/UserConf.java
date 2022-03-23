@@ -22,13 +22,13 @@ public class UserConf implements JConfigurable {
     boolean autoSaveOn = true;
     boolean autoSkipping = false;
 
-    Float musicVolume;
+    int musicVolume;
     boolean musicMuted = false;
-    Float soundVolume;
+    int soundVolume;
     boolean soundMuted = false;
-    Float backgVolume;
+    int backgVolume;
     boolean backgMuted = false;
-    Float voiceVolume;
+    int voiceVolume;
     boolean voiceMuted = false;
 
     @Override
