@@ -5,11 +5,10 @@ import fox.FoxFontBuilder;
 import fox.InputAction;
 import fox.Out;
 import fox.Out.LEVEL;
+import fox.player.VolumeConverter;
 import interfaces.Cached;
 import registry.Registry;
 import render.FoxRender;
-import tools.Media;
-import tools.VolumeConverter;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
@@ -20,8 +19,7 @@ import java.awt.font.TextLayout;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 
-import static registry.Registry.configuration;
-import static registry.Registry.userConf;
+import static registry.Registry.*;
 
 public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotionListener, MouseListener, Cached {
     private final int WIDTH = 400, HEIGHT = 600;
@@ -47,6 +45,7 @@ public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotion
     private JSlider volumeOfMusicSlider, volumeOfSoundSlider, volumeOfBackgSlider, volumeOfVoiceSlider;
     private Point mouseNow, titlePoint, musTitlePoint, soundTitlePoint, backgTitlePoint, voiceTitlePoint,
             down0Point, down1Point, down2Point, down3Point, downChecker0, downChecker1, downChecker2, downChecker3;
+    private int sChCount = 3;
 
     public OptMenuFrame() {
         this(0);
@@ -395,15 +394,13 @@ public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotion
         dispose();
     }
 
-
-    private int sChCount = 3;
     @Override
     public void stateChanged(ChangeEvent e) {
         if (((JComponent) e.getSource()).getName().equals("volumeOfSound")) {
             sChCount--;
             if (sChCount == 0) {
                 userConf.setSoundVolume(volumeOfSoundSlider.getValue());
-                Media.setSoundVolume(VolumeConverter.volumePercentToGain(userConf.getSoundVolume()));
+                soundPlayer.setVolume(VolumeConverter.volumePercentToGain(userConf.getSoundVolume()));
             }
         }
 
@@ -411,7 +408,7 @@ public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotion
             sChCount--;
             if (sChCount == 0) {
                 userConf.setMusicVolume(volumeOfMusicSlider.getValue());
-                Media.setMusicVolume(VolumeConverter.volumePercentToGain(userConf.getMusicVolume()));
+                musicPlayer.setVolume(VolumeConverter.volumePercentToGain(userConf.getMusicVolume()));
             }
         }
 
@@ -419,7 +416,7 @@ public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotion
             sChCount--;
             if (sChCount == 0) {
                 userConf.setBackgVolume(volumeOfBackgSlider.getValue());
-                Media.setBackgVolume(VolumeConverter.volumePercentToGain(userConf.getBackgVolume()));
+                backgPlayer.setVolume(VolumeConverter.volumePercentToGain(userConf.getBackgVolume()));
             }
         }
 
@@ -427,7 +424,7 @@ public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotion
             sChCount--;
             if (sChCount == 0) {
                 userConf.setVoiceVolume(volumeOfVoiceSlider.getValue());
-                Media.setVoiceVolume(VolumeConverter.volumePercentToGain(userConf.getVoiceVolume()));
+//                voicePlayer.setVolume(VolumeConverter.volumePercentToGain(userConf.getVoiceVolume()));
             }
         }
 
@@ -463,22 +460,22 @@ public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotion
     public void mousePressed(MouseEvent e) {
         if (isSoundMuteOver) {
             userConf.setSoundMuted(!userConf.isSoundMuted());
-            Media.soundMute(userConf.isSoundMuted());
+            soundPlayer.mute(userConf.isSoundMuted());
         }
 
         if (isMusicMuteOver) {
             userConf.setMusicMuted(!userConf.isMusicMuted());
-            Media.musicMute(userConf.isMusicMuted());
+            musicPlayer.mute(userConf.isMusicMuted());
         }
 
         if (isBackgMuteOver) {
             userConf.setBackgMuted(!userConf.isBackgMuted());
-            Media.backgMute(userConf.isBackgMuted());
+            backgPlayer.mute(userConf.isBackgMuted());
         }
 
         if (isVoiceMuteOver) {
             userConf.setVoiceMuted(!userConf.isVoiceMuted());
-            Media.voiceMute(userConf.isVoiceMuted());
+//            voicePlayer.voiceMute(userConf.isVoiceMuted());
         }
 
         if (isFullscreenOver) {
@@ -497,7 +494,7 @@ public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotion
             userConf.setAutoSkipping(!userConf.isAutoSkipping());
         }
 
-        Media.playSound("check");
+        soundPlayer.play("check", false);
         reloadBaseBuffer();
         repaint();
     }

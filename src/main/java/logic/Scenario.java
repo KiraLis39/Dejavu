@@ -1,9 +1,7 @@
 package logic;
 
 import GUI.GameFrame;
-import fox.Out;
 import registry.Registry;
-import tools.Media;
 
 import javax.imageio.ImageIO;
 import java.io.File;
@@ -13,13 +11,14 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
 
-import static fox.Out.*;
-import static registry.Registry.userConf;
+import static fox.Out.LEVEL;
+import static fox.Out.Print;
+import static registry.Registry.*;
 
 public class Scenario {
     private static final Random rand = new Random();
 
-    private static Map<String, Integer> npcAvatarIndex = new HashMap<>();
+    private static final Map<String, Integer> npcAvatarIndex = new HashMap<>();
     private static ArrayList<String> answers = new ArrayList<>();
     private static LinkedList<String> dialogBlockArray;
     private static Boolean isChoseMode = false;
@@ -34,7 +33,7 @@ public class Scenario {
             Print(Scenario.class, LEVEL.INFO, "Читаем loadBlock " + loadFile);
 
             try {
-                dialogBlockArray = new LinkedList<String>(Files.readAllLines(Paths.get(loadFile.getPath()), StandardCharsets.UTF_8));
+                dialogBlockArray = new LinkedList<>(Files.readAllLines(Paths.get(loadFile.getPath()), StandardCharsets.UTF_8));
                 for (int i = 0; i < dialogBlockArray.size(); i++) {
                     if (dialogBlockArray.get(i).length() <= 1) {
                         dialogBlockArray.remove(i);
@@ -166,29 +165,29 @@ public class Scenario {
 
         if (MUSIC != null) {
             if (MUSIC.equals("STOP")) {
-                Media.stopMusic();
+                musicPlayer.stop();
             } else {
-                Media.playMusic(MUSIC, true);
+                musicPlayer.play(MUSIC);
             }
         }
         if (BACKG != null) {
             if (BACKG.equals("STOP")) {
-                Media.stopBackg();
+                backgPlayer.stop();
             } else {
-                Media.playBackg(BACKG);
+                backgPlayer.play(BACKG);
             }
         }
 
         if (SOUND != null) {
-            Media.playSound(SOUND);
+            soundPlayer.play(SOUND);
         }
         if (VOICE != null) {
-            Media.playVoice(VOICE);
+//            voicePlayer.play(VOICE);
         }
 
         if (META != null) {
             String[] metaData = META.split("\",\"");  /* делёж по символам: "," */
-            System.out.println(">>> Meta: " + metaData);
+            System.out.println(">>> Meta: " + Arrays.asList(metaData));
         }
 
         GameFrame.setDialogText(DIALOG, answers == null || answers.size() == 0 ? null : answers);
@@ -199,7 +198,7 @@ public class Scenario {
             return null;
         }
 
-        resultAnswersList = new ArrayList<String>(5);
+        resultAnswersList = new ArrayList<>(5);
 
         do {
             System.out.println("variantsAnalyser has line: " + line);
@@ -230,7 +229,12 @@ public class Scenario {
         // lineData[3];  npc pictures mood
         File[] variants = new File(Registry.personasDir + "/" + lineData[1] + "/" + lineData[2] + "/" + lineData[3]).listFiles();
         try {
-            GameFrame.setNpcImage(ImageIO.read(variants[rand.nextInt(variants.length)]));
+            File var = variants[rand.nextInt(variants.length)];
+            if (var != null) {
+                GameFrame.setNpcImage(ImageIO.read(var));
+            } else {
+                throw new RuntimeException("Scenario.nextScene: File is null");
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }

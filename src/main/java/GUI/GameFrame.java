@@ -13,8 +13,6 @@ import lombok.EqualsAndHashCode;
 import registry.Registry;
 import render.FoxRender;
 import secondGUI.SaveGame;
-import tools.Media;
-
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -33,7 +31,7 @@ import java.util.stream.Collectors;
 
 import static fox.Out.LEVEL;
 import static fox.Out.Print;
-import static registry.Registry.userConf;
+import static registry.Registry.*;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
@@ -141,8 +139,8 @@ public class GameFrame extends JFrame implements MouseListener, MouseMotionListe
         answerList.setSize(choseVariantRect.width, choseVariantRect.height);
         answerList.setLocation(choseVariantRect.x, choseVariantRect.y);
 
-        Media.stopMusic();
-        Media.stopBackg();
+        musicPlayer.stop();
+        backgPlayer.stop();
 
         isStoryPlayed = true;
         new Thread(() -> {
@@ -411,7 +409,7 @@ public class GameFrame extends JFrame implements MouseListener, MouseMotionListe
     private void initialization() {
         // npc avatars:
         try {
-            for (Path path : Files.list(Registry.npcAvatarsDir).collect(Collectors.toList())) {
+            for (Path path : Files.list(Registry.npcAvatarsDir).toList()) {
                 cache.add(path.toFile().getName().replace(Registry.picExtension, ""), toBImage(path.toString().replace(Registry.picExtension, "")));
             }
         } catch (IOException e) {
@@ -420,7 +418,7 @@ public class GameFrame extends JFrame implements MouseListener, MouseMotionListe
 
         // scenes load:
         try {
-            for (Path path : Files.list(Registry.scenesDir).collect(Collectors.toList())) {
+            for (Path path : Files.list(Registry.scenesDir).toList()) {
                 cache.add(path.toFile().getName().replace(Registry.picExtension, ""), toBImage(path.toString().replace(Registry.picExtension, "")));
             }
         } catch (IOException e) {
@@ -446,19 +444,16 @@ public class GameFrame extends JFrame implements MouseListener, MouseMotionListe
                         JOptionPane.YES_NO_OPTION);
 
                 switch (closeQ) {
-                    case 0:
+                    case 0 -> {
                         isStoryPlayed = false;
                         dispose();
                         new MainMenu();
-                        break;
-
-                    case 1:
+                    }
+                    case 1 -> {
                         new SaveGame();
                         isPaused = false;
-                        break;
-
-                    default:
-                        setVisible(true);
+                    }
+                    default -> setVisible(true);
                 }
             }
         });
@@ -575,7 +570,7 @@ public class GameFrame extends JFrame implements MouseListener, MouseMotionListe
             FRAME_HEIGHT = Toolkit.getDefaultToolkit().getScreenSize().height;
         } else {
             FRAME_WIDTH = (int) (screen.getWidth() * 0.75D);
-            FRAME_HEIGHT = (int) (screen.getHeight() * 1.0D);
+            FRAME_HEIGHT = (int) (screen.getHeight());
         }
         reloadRectangles();
         GameFrame.this.setLocationRelativeTo(null);

@@ -9,9 +9,8 @@ import fox.FoxFontBuilder;
 import fox.InputAction;
 import images.FoxSpritesCombiner;
 import interfaces.Cached;
-import tools.Media;
-import render.FoxRender;
 import registry.Registry;
+import render.FoxRender;
 import secondGUI.*;
 
 import javax.imageio.ImageIO;
@@ -25,7 +24,7 @@ import java.io.File;
 
 import static fox.Out.LEVEL;
 import static fox.Out.Print;
-import static registry.Registry.userConf;
+import static registry.Registry.*;
 
 public class MainMenu extends JFrame implements MouseListener, MouseMotionListener, ActionListener, Cached {
     private static final Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
@@ -42,9 +41,8 @@ public class MainMenu extends JFrame implements MouseListener, MouseMotionListen
     private static JLabel downTextLabel;
 
     private static float wPercent, hPercent;
-    private Graphics2D g2D;
-
     private final FoxConsole cons;
+    private Graphics2D g2D;
     private FoxTipsEngine cd;
 
     public MainMenu() {
@@ -73,10 +71,32 @@ public class MainMenu extends JFrame implements MouseListener, MouseMotionListen
 
         setStatusText(null);
 
-        Media.playBackg("fonKricket");
-        Media.playMusic("musMainMenu", true);
+        backgPlayer.play("fonKricket");
+        musicPlayer.play("musMainMenu");
 
         cons = new FoxConsole(this);
+    }
+
+    private static void testNewbie() {
+        Print(MainMenu.class, LEVEL.INFO, "A newbie test...");
+
+        if (userConf.getUserName().equals("newEmptyUser")) {
+            Print(MainMenu.class, LEVEL.ACCENT, "Open NewUserForm to change name " + userConf.getUserName());
+            new NewUserForm();
+        }
+
+//		Out.Print("\nДанная программа использует " +
+//				(Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / 1048576 +
+//				"мб из " + Runtime.getRuntime().totalMemory() / 1048576 +
+//				"мб выделенных под неё. \nСпасибо за использование утилиты компании MultyVerse39 Group!");
+    }
+
+    private static void setStatusText(String newText) {
+        if (newText == null) {
+            downTextLabel.setText("\u266B " + userConf.getUserName() + " \u266B");
+        } else {
+            downTextLabel.setText("\u266B " + newText + " \u266B");
+        }
     }
 
     private void preLoading() {
@@ -110,28 +130,6 @@ public class MainMenu extends JFrame implements MouseListener, MouseMotionListen
             }
         });
         Print(MainMenu.class, LEVEL.INFO, "MainMenu preloading done.");
-    }
-
-    private static void testNewbie() {
-        Print(MainMenu.class, LEVEL.INFO, "A newbie test...");
-
-        if (userConf.getUserName().equals("newEmptyUser")) {
-            Print(MainMenu.class, LEVEL.ACCENT, "Open NewUserForm to change name " + userConf.getUserName());
-            new NewUserForm();
-        }
-
-//		Out.Print("\nДанная программа использует " + 
-//				(Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / 1048576 + 
-//				"мб из " + Runtime.getRuntime().totalMemory() / 1048576 + 
-//				"мб выделенных под неё. \nСпасибо за использование утилиты компании MultyVerse39 Group!");
-    }
-
-    private static void setStatusText(String newText) {
-        if (newText == null) {
-            downTextLabel.setText("\u266B " + userConf.getUserName() + " \u266B");
-        } else {
-            downTextLabel.setText("\u266B " + newText + " \u266B");
-        }
     }
 
     private void checkFullscreen() {
@@ -172,13 +170,6 @@ public class MainMenu extends JFrame implements MouseListener, MouseMotionListen
     private JComponent buildBasePane() {
         Print(MainMenu.class, LEVEL.INFO, "Building the BasePane...");
         basePane = new JPanel(new BorderLayout((int) (wPercent * 2.6f), (int) (hPercent * 2.0f))) {
-            @Override
-            protected void paintComponent(Graphics g) {
-                g2D = (Graphics2D) g;
-                FoxRender.setMedRender(g2D);
-                g2D.drawImage(picMenuImage, 0, 0, getWidth(), getHeight(), this);
-            }
-
             {
                 setBorder(new EmptyBorder((int) (hPercent * 3f), (int) (wPercent * 2f), (int) (wPercent * 1.6f), (int) (hPercent * 4.2f)));
 
@@ -201,7 +192,7 @@ public class MainMenu extends JFrame implements MouseListener, MouseMotionListen
                                                 (int) (getWidth() / 2 - FoxFontBuilder.getStringBounds(g, getName()).getWidth() / 2D) - 2,
                                                 getHeight() / 2 + 6 + 2);
                                     } else {
-                                        g2D.drawString(getName(), (int) (getWidth() / 2 - FoxFontBuilder.getStringBounds(g, getName()).getWidth() / 2D),getHeight() / 2 + 6);
+                                        g2D.drawString(getName(), (int) (getWidth() / 2 - FoxFontBuilder.getStringBounds(g, getName()).getWidth() / 2D), getHeight() / 2 + 6);
                                     }
 //									g2D.dispose();
                                 } else {
@@ -269,7 +260,7 @@ public class MainMenu extends JFrame implements MouseListener, MouseMotionListen
                                                 (int) (getWidth() / 2 - FoxFontBuilder.getStringBounds(g, getName()).getWidth() / 2D) - 2,
                                                 getHeight() / 2 + 6 + 2);
                                     } else {
-                                        g2D.drawString(getName(), (int) (getWidth() / 2 - FoxFontBuilder.getStringBounds(g, getName()).getWidth() / 2D),getHeight() / 2 + 6);
+                                        g2D.drawString(getName(), (int) (getWidth() / 2 - FoxFontBuilder.getStringBounds(g, getName()).getWidth() / 2D), getHeight() / 2 + 6);
                                     }
 //									g2D.dispose();
                                 } else {
@@ -329,7 +320,7 @@ public class MainMenu extends JFrame implements MouseListener, MouseMotionListen
                                                 (int) (getWidth() / 2 - FoxFontBuilder.getStringBounds(g, getName()).getWidth() / 2D) - 2,
                                                 getHeight() / 2 + 6 + 2);
                                     } else {
-                                        g2D.drawString(getName(), (int) (getWidth() / 2 - FoxFontBuilder.getStringBounds(g, getName()).getWidth() / 2D),getHeight() / 2 + 6);
+                                        g2D.drawString(getName(), (int) (getWidth() / 2 - FoxFontBuilder.getStringBounds(g, getName()).getWidth() / 2D), getHeight() / 2 + 6);
                                     }
 //									g2D.dispose();
                                 } else {
@@ -389,7 +380,7 @@ public class MainMenu extends JFrame implements MouseListener, MouseMotionListen
                                                 (int) (getWidth() / 2 - FoxFontBuilder.getStringBounds(g, getName()).getWidth() / 2D) - 2,
                                                 getHeight() / 2 + 6 + 2);
                                     } else {
-                                        g2D.drawString(getName(), (int) (getWidth() / 2 - FoxFontBuilder.getStringBounds(g, getName()).getWidth() / 2D),getHeight() / 2 + 6);
+                                        g2D.drawString(getName(), (int) (getWidth() / 2 - FoxFontBuilder.getStringBounds(g, getName()).getWidth() / 2D), getHeight() / 2 + 6);
                                     }
 //									g2D.dispose();
                                 } else {
@@ -450,7 +441,7 @@ public class MainMenu extends JFrame implements MouseListener, MouseMotionListen
                                                 (int) (getWidth() / 2 - FoxFontBuilder.getStringBounds(g, getName()).getWidth() / 2D) - 2,
                                                 getHeight() / 2 + 6 + 2);
                                     } else {
-                                        g2D.drawString(getName(), (int) (getWidth() / 2 - FoxFontBuilder.getStringBounds(g, getName()).getWidth() / 2D),getHeight() / 2 + 6);
+                                        g2D.drawString(getName(), (int) (getWidth() / 2 - FoxFontBuilder.getStringBounds(g, getName()).getWidth() / 2D), getHeight() / 2 + 6);
                                     }
 
 //									g2D.dispose();
@@ -540,7 +531,7 @@ public class MainMenu extends JFrame implements MouseListener, MouseMotionListen
                                                 (int) (getWidth() / 2 - FoxFontBuilder.getStringBounds(g, getName()).getWidth() / 2D) - 2,
                                                 getHeight() / 2 + 6 + 2);
                                     } else {
-                                        g2D.drawString(getName(), (int) (getWidth() / 2 - FoxFontBuilder.getStringBounds(g, getName()).getWidth() / 2D),getHeight() / 2 + 6);
+                                        g2D.drawString(getName(), (int) (getWidth() / 2 - FoxFontBuilder.getStringBounds(g, getName()).getWidth() / 2D), getHeight() / 2 + 6);
                                     }
 
 //                                    g2D.dispose();
@@ -638,6 +629,13 @@ public class MainMenu extends JFrame implements MouseListener, MouseMotionListen
                 add(rightButPane, BorderLayout.EAST);
                 add(midImagePane, BorderLayout.CENTER);
                 add(downExitPane, BorderLayout.SOUTH);
+            }
+
+            @Override
+            protected void paintComponent(Graphics g) {
+                g2D = (Graphics2D) g;
+                FoxRender.setMedRender(g2D);
+                g2D.drawImage(picMenuImage, 0, 0, getWidth(), getHeight(), this);
             }
         };
         return basePane;
