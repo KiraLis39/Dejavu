@@ -1,29 +1,24 @@
 package door;
 
 import GUI.MainMenu;
+import configurations.Configuration;
+import configurations.UserConf;
 import fox.FoxLogo;
 import fox.JIOM;
 import fox.Out;
 import interfaces.Cached;
-import secondGUI.NewUserForm;
+import registry.Registry;
 import tools.Media;
 import tools.ModsLoader;
-import configurations.Configuration;
-import tools.MediaCache;
-import registry.Registry;
-import configurations.UserConf;
-import tools.VolumeConverter;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.stream.Collectors;
 
 import static registry.Registry.configuration;
 import static registry.Registry.userConf;
@@ -37,30 +32,18 @@ public class MainClass implements Cached {
         Out.setErrorLevel(Out.LEVEL.DEBUG);
         Out.setLogsCountAllow(3);
 
-        try {configuration = JIOM.fileToDto(Registry.globalConfigFile, Configuration.class);
+        try {
+            configuration = JIOM.fileToDto(Registry.globalConfigFile, Configuration.class);
         } catch (Exception e) {
             e.printStackTrace();
         }
 
         Out.Print(MainClass.class, Out.LEVEL.INFO,
                 "\nКодировка системы: " + Charset.defaultCharset() +
-                "\nКодировка программы: " + Registry.charset + "\n");
+                        "\nКодировка программы: " + Registry.charset + "\n");
     }
 
     public static void main(String[] args) {
-        float testIn1 = VolumeConverter.volumePercentToGain(0);
-        float testIn2 = VolumeConverter.volumePercentToGain(25);
-        float testIn3 = VolumeConverter.volumePercentToGain(50);
-        float testIn4 = VolumeConverter.volumePercentToGain(75);
-        float testIn5 = VolumeConverter.volumePercentToGain(100);
-        System.out.println();
-        System.out.println("Percent 01: " + VolumeConverter.gainToVolumePercent(testIn1));
-        System.out.println("Percent 02: " + VolumeConverter.gainToVolumePercent(testIn2));
-        System.out.println("Percent 03: " + VolumeConverter.gainToVolumePercent(testIn3));
-        System.out.println("Percent 04: " + VolumeConverter.gainToVolumePercent(testIn4));
-        System.out.println("Percent 05: " + VolumeConverter.gainToVolumePercent(testIn5));
-        System.out.println();
-        System.exit(0);
         preInit();
 
         if (configuration.isShowLogo()) {
@@ -148,7 +131,7 @@ public class MainClass implements Cached {
     public static void createNewUser(String name, UserConf.USER_SEX sex, int age) throws Exception {
         try {
             if (userConf != null) {
-            // сохраняем предыдущего пользователя:
+                // сохраняем предыдущего пользователя:
                 JIOM.dtoToFile(userConf);
             }
 
@@ -244,7 +227,9 @@ public class MainClass implements Cached {
     }
 
     static void connectMods() {
-        if (!configuration.isUseMods()) {return;}
+        if (!configuration.isUseMods()) {
+            return;
+        }
 
         Out.Print(MainClass.class, Out.LEVEL.INFO, "Сканирование папки mods...");
         try {
