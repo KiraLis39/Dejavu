@@ -1,16 +1,13 @@
 package secondGUI;
 
-import GUI.GameFrame;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import components.FOptionPane;
 import configurations.UserConf;
 import door.MainClass;
-import fox.*;
-import fox.Out.LEVEL;
+import fox.FoxFontBuilder;
+import fox.InputAction;
 import interfaces.Cached;
 import registry.Registry;
 import tools.Cursors;
-import tools.ModsLoader;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -23,67 +20,16 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.nio.file.Paths;
 
-import static fox.Out.LEVEL.ACCENT;
-import static fox.Out.LEVEL.INFO;
-import static registry.Registry.configuration;
 import static registry.Registry.userConf;
 
 public class NewUserForm extends JDialog implements Cached, ListSelectionListener, ActionListener, ChangeListener {
-    private JTextField nameField, ageField;
-
     private final int WIDTH = 500, HEIGHT = 480;
+    private JTextField nameField, ageField;
     private JCheckBox maleBox, femaBox;
 
     private JList<String> avatarList;
     private JPanel avatarPicPane;
-
-    @Override
-    public void paint(Graphics g) {
-        Graphics2D g2D = (Graphics2D) g;
-        g2D.setColor(Color.DARK_GRAY);
-        g2D.fillRoundRect(0, 0, WIDTH, HEIGHT, 30, 30);
-
-        g2D.setStroke(new BasicStroke(1.2f));
-        g2D.setColor(Color.BLACK);
-        g2D.drawRoundRect(4, 6, WIDTH - 11, HEIGHT - 9, 25, 25);
-        g2D.setColor(Color.GRAY);
-        g2D.drawRoundRect(5, 5, WIDTH - 10, HEIGHT - 10, 25, 25);
-
-        g2D.setFont(Registry.f0);
-        g2D.setColor(Color.BLACK);
-        g2D.drawString("Настройка персонажа:", (int) (WIDTH / 2 - FoxFontBuilder.getStringBounds(g2D, "Настройка персонажа:").getWidth() / 2D) - 1, 41);
-        g2D.setColor(Color.ORANGE);
-        g2D.drawString("Настройка персонажа:", (int) (WIDTH / 2 - FoxFontBuilder.getStringBounds(g2D, "Настройка персонажа:").getWidth() / 2D), 40);
-
-        g2D.setFont(Registry.f0);
-        if (nameField.hasFocus()) {
-            g2D.setColor(Color.GREEN);
-        } else {
-            g2D.setColor(Color.WHITE);
-        }
-        if (ageField.hasFocus()) {
-            g2D.setColor(Color.GREEN);
-        } else {
-            g2D.setColor(Color.WHITE);
-        }
-
-        super.paintComponents(g2D);
-    }
-
-    private void preInit() {
-        setUndecorated(true);
-        setBackground(new Color(0, 0, 0, 0));
-        setPreferredSize(new Dimension(this.WIDTH, this.HEIGHT));
-        setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
-        setCursor(Cursors.OtherCursor.get());
-        setIgnoreRepaint(true);
-        getRootPane().setBorder(new EmptyBorder(45, 12, 15, 12));
-        getContentPane().setLayout(new BorderLayout(6, 6));
-    }
 
     public NewUserForm() {
         preInit();
@@ -277,6 +223,50 @@ public class NewUserForm extends JDialog implements Cached, ListSelectionListene
 
         UserConf.USER_SEX gender = userConf.getUserSex();
         avatarList.setSelectedIndex(gender == UserConf.USER_SEX.MALE ? userConf.getAvatarIndex() + 1 : userConf.getAvatarIndex() + 5);
+    }
+
+    @Override
+    public void paint(Graphics g) {
+        Graphics2D g2D = (Graphics2D) g;
+        g2D.setColor(Color.DARK_GRAY);
+        g2D.fillRoundRect(0, 0, WIDTH, HEIGHT, 30, 30);
+
+        g2D.setStroke(new BasicStroke(1.2f));
+        g2D.setColor(Color.BLACK);
+        g2D.drawRoundRect(4, 6, WIDTH - 11, HEIGHT - 9, 25, 25);
+        g2D.setColor(Color.GRAY);
+        g2D.drawRoundRect(5, 5, WIDTH - 10, HEIGHT - 10, 25, 25);
+
+        g2D.setFont(Registry.f0);
+        g2D.setColor(Color.BLACK);
+        g2D.drawString("Настройка персонажа:", (int) (WIDTH / 2 - FoxFontBuilder.getStringBounds(g2D, "Настройка персонажа:").getWidth() / 2D) - 1, 41);
+        g2D.setColor(Color.ORANGE);
+        g2D.drawString("Настройка персонажа:", (int) (WIDTH / 2 - FoxFontBuilder.getStringBounds(g2D, "Настройка персонажа:").getWidth() / 2D), 40);
+
+        g2D.setFont(Registry.f0);
+        if (nameField.hasFocus()) {
+            g2D.setColor(Color.GREEN);
+        } else {
+            g2D.setColor(Color.WHITE);
+        }
+        if (ageField.hasFocus()) {
+            g2D.setColor(Color.GREEN);
+        } else {
+            g2D.setColor(Color.WHITE);
+        }
+
+        super.paintComponents(g2D);
+    }
+
+    private void preInit() {
+        setUndecorated(true);
+        setBackground(new Color(0, 0, 0, 0));
+        setPreferredSize(new Dimension(this.WIDTH, this.HEIGHT));
+        setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+        setCursor(Cursors.OtherCursor.get());
+        setIgnoreRepaint(true);
+        getRootPane().setBorder(new EmptyBorder(45, 12, 15, 12));
+        getContentPane().setLayout(new BorderLayout(6, 6));
     }
 
     private void inAc() {
