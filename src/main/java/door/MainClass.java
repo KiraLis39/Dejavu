@@ -187,11 +187,14 @@ public class MainClass implements Cached {
         cache.add("picGameIcon", toBImage(picDir + "/32"));
 
         // cursors & backgrounds:
-        cache.add("curSimpleCursor", toBImage(curDir + "/01"));
-        cache.add("curTextCursor", toBImage(curDir + "/02"));
-        cache.add("curGalleryCursor", toBImage(curDir + "/03"));
-        cache.add("curAnyCursor", toBImage(curDir + "/04"));
-        cache.add("curOtherCursor", toBImage(curDir + "/05"));
+        cache.add("curSimpleCursor", toBImage(curDir + "/SimpleCursor"));
+        cache.add("curTextCursor", toBImage(curDir + "/TextCursor"));
+        cache.add("curGalleryCursor", toBImage(curDir + "/GalleryCursor"));
+        cache.add("curPinkCursor", toBImage(curDir + "/PinkCursor"));
+        cache.add("curOtherCursor", toBImage(curDir + "/OtherCursor"));
+        cache.add("curCrossCursor", toBImage(curDir + "/CrossCursor"));
+        cache.add("curBlueCursor", toBImage(curDir + "/BlueCursor"));
+        cache.add("curOrangeCursor", toBImage(curDir + "/OrangeCursor"));
 
         cache.add("picSaveLoad", toBImage(picDir + "/backgrounds/saveLoad"));
         cache.add("picMenuBase", toBImage(picDir + "/backgrounds/menuBase"));

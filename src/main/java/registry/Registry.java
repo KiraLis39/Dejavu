@@ -24,7 +24,7 @@ public class Registry {
     public static final String picExtension = ".png";
     // DIRECTORIES:
     public static final Path picDir = Paths.get("resources/pictures/");
-    public static final Path curDir = Paths.get("resources/cur/");
+    public static final Path curDir = Paths.get("resources/pictures/cur/");
     public static final Path audioDir = Paths.get("resources/audio/");
     public static final Path audioBackgDir = Paths.get("resources/audio/backg/");
     public static final Path audioSoundDir = Paths.get("resources/audio/sound/");

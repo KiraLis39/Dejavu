@@ -13,6 +13,7 @@ import lombok.EqualsAndHashCode;
 import registry.Registry;
 import render.FoxRender;
 import secondGUI.SaveGame;
+
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -27,7 +28,6 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static fox.Out.LEVEL;
 import static fox.Out.Print;
@@ -37,8 +37,10 @@ import static registry.Registry.*;
 @EqualsAndHashCode(callSuper = true)
 public class GameFrame extends JFrame implements MouseListener, MouseMotionListener, Cached {
     private static Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
-    private static int FRAME_WIDTH = (int) (screen.getWidth() * 0.8D);
-    private static int FRAME_HEIGHT = (int) (screen.getHeight() * 0.9D);
+    private final Double FULLSCREEN_WIDTH = screen.getWidth();
+    private final Double FULLSCREEN_HEIGHT = screen.getHeight();
+    private Double WINDOWED_WIDTH = screen.getWidth() * 0.75D;
+    private Double WINDOWED_HEIGHT = screen.getHeight() * 0.9D;
 
     private static Map<String, File> answerBlocksMap = new HashMap<>();
     private static DefaultListModel<String> dlm;
@@ -54,14 +56,14 @@ public class GameFrame extends JFrame implements MouseListener, MouseMotionListe
     private static int n = 0, shift = 0;
     private static double charWidth = 12.2D;
     private static char[] dialogChars;
-    private static long dialogDelaySpeed = 64;
+    private static long dialogDelaySpeed = 48;
     private BufferedImage picGamepane;
     private BufferedImage[] backButton;
     private Rectangle heroAvatarRect, backButtonRect, centerPicRect;
     private Point mouseNow, frameWas, mouseWasOnScreen;
 
     public GameFrame() {
-        initialization();
+        loadResources();
 
         setUndecorated(true);
         setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
@@ -162,6 +164,35 @@ public class GameFrame extends JFrame implements MouseListener, MouseMotionListe
         addAnswer("Далее...");
     }
 
+    private void loadResources() {
+        // npc avatars:
+        try {
+            for (Path path : Files.list(Registry.npcAvatarsDir).toList()) {
+                cache.add(path.toFile().getName().replace(Registry.picExtension, ""),
+                        toBImage(path.toString().replace(Registry.picExtension, "")));
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        // scenes load:
+        try {
+            for (Path path : Files.list(Registry.scenesDir).toList()) {
+                cache.add(path.toFile().getName().replace(Registry.picExtension, ""),
+                        toBImage(path.toString().replace(Registry.picExtension, "")));
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        // other images:
+        backButton = FoxSpritesCombiner.addSpritelist("picBackButBig", (BufferedImage) cache.get("picBackButBig"), 3, 1);
+        picGamepane = (BufferedImage) cache.get("picGamepane");
+
+        setCenterImage(null);
+    }
+
+
     private static BufferedImage toBImage(String path) {
         try {
             return ImageIO.read(new File(path + Registry.picExtension));
@@ -242,7 +273,8 @@ public class GameFrame extends JFrame implements MouseListener, MouseMotionListe
                     } catch (Exception e) {/* IGNORE */
                     }
 
-                    try {Thread.sleep(dialogDelaySpeed);
+                    try {
+                        Thread.sleep(dialogDelaySpeed);
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
                     }
@@ -404,32 +436,6 @@ public class GameFrame extends JFrame implements MouseListener, MouseMotionListe
         }
     }
 
-    private void initialization() {
-        // npc avatars:
-        try {
-            for (Path path : Files.list(Registry.npcAvatarsDir).toList()) {
-                cache.add(path.toFile().getName().replace(Registry.picExtension, ""), toBImage(path.toString().replace(Registry.picExtension, "")));
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        // scenes load:
-        try {
-            for (Path path : Files.list(Registry.scenesDir).toList()) {
-                cache.add(path.toFile().getName().replace(Registry.picExtension, ""), toBImage(path.toString().replace(Registry.picExtension, "")));
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        // other images:
-        backButton = FoxSpritesCombiner.addSpritelist("picBackButBig", (BufferedImage) cache.get("picBackButBig"), 3, 1);
-        picGamepane = (BufferedImage) cache.get("picGamepane");
-
-        setCenterImage(null);
-    }
-
     private void setInAc() {
         InputAction.add("game", this);
 
@@ -546,30 +552,43 @@ public class GameFrame extends JFrame implements MouseListener, MouseMotionListe
             textDynamicThread.interrupt();
         }
 
-        dispose();
+        GameFrame.this.dispose();
         new MainMenu();
     }
 
     private void reloadRectangles() {
-        this.centerPicRect = new Rectangle(0, 0, FRAME_WIDTH, (int) (FRAME_HEIGHT * 0.75D));
-        this.heroAvatarRect = new Rectangle((int) (FRAME_WIDTH * 0.01D), (int) (FRAME_HEIGHT * 0.74D), (int) (FRAME_WIDTH * 0.148D), (int) (FRAME_HEIGHT * 0.23D));
-        this.backButtonRect = new Rectangle((int) (FRAME_WIDTH * 0.895D), (int) (FRAME_HEIGHT * 0.734D), (int) (FRAME_WIDTH * 0.0832D), (int) (FRAME_HEIGHT * 0.19D));
+        if (userConf.isFullScreen()) {
+            this.centerPicRect = new Rectangle(0, 0, FULLSCREEN_WIDTH.intValue(), (int) (FULLSCREEN_HEIGHT * 0.75D));
+            this.heroAvatarRect = new Rectangle((int) (FULLSCREEN_WIDTH * 0.01D), (int) (FULLSCREEN_HEIGHT * 0.74D),
+                    (int) (FULLSCREEN_WIDTH * 0.148D), (int) (FULLSCREEN_HEIGHT * 0.23D));
+            this.backButtonRect = new Rectangle((int) (FULLSCREEN_WIDTH * 0.895D), (int) (FULLSCREEN_HEIGHT * 0.734D),
+                    (int) (FULLSCREEN_WIDTH * 0.0832D), (int) (FULLSCREEN_HEIGHT * 0.19D));
 
-        dialogTextRect = new Rectangle((int) (FRAME_WIDTH * 0.167D), (int) (FRAME_HEIGHT * 0.74D), (int) (FRAME_WIDTH * 0.565D), (int) (FRAME_HEIGHT * 0.225D));
-        choseVariantRect = new Rectangle((int) (FRAME_WIDTH * 0.735D), (int) (FRAME_HEIGHT * 0.74D), (int) (FRAME_WIDTH * 0.1485D), (int) (FRAME_HEIGHT * 0.225D));
+            dialogTextRect = new Rectangle((int) (FULLSCREEN_WIDTH * 0.167D), (int) (FULLSCREEN_HEIGHT * 0.74D),
+                    (int) (FULLSCREEN_WIDTH * 0.565D), (int) (FULLSCREEN_HEIGHT * 0.225D));
+            choseVariantRect = new Rectangle((int) (FULLSCREEN_WIDTH * 0.735D), (int) (FULLSCREEN_HEIGHT * 0.74D),
+                    (int) (FULLSCREEN_WIDTH * 0.1485D), (int) (FULLSCREEN_HEIGHT * 0.225D));
 
-        setSize(FRAME_WIDTH, FRAME_HEIGHT);
-        basePane.setSize(FRAME_WIDTH, FRAME_HEIGHT);
+            setSize(FULLSCREEN_WIDTH.intValue(), FULLSCREEN_HEIGHT.intValue());
+            basePane.setSize(FULLSCREEN_WIDTH.intValue(), FULLSCREEN_HEIGHT.intValue());
+        } else {
+            this.centerPicRect = new Rectangle(0, 0, WINDOWED_WIDTH.intValue(), (int) (WINDOWED_HEIGHT * 0.75D));
+            this.heroAvatarRect = new Rectangle((int) (WINDOWED_WIDTH * 0.01D), (int) (WINDOWED_HEIGHT * 0.74D),
+                    (int) (WINDOWED_WIDTH * 0.148D), (int) (WINDOWED_HEIGHT * 0.23D));
+            this.backButtonRect = new Rectangle((int) (WINDOWED_WIDTH * 0.895D), (int) (WINDOWED_HEIGHT * 0.734D),
+                    (int) (WINDOWED_WIDTH * 0.0832D), (int) (WINDOWED_HEIGHT * 0.19D));
+
+            dialogTextRect = new Rectangle((int) (WINDOWED_WIDTH * 0.167D), (int) (WINDOWED_HEIGHT * 0.74D),
+                    (int) (WINDOWED_WIDTH * 0.565D), (int) (WINDOWED_HEIGHT * 0.225D));
+            choseVariantRect = new Rectangle((int) (WINDOWED_WIDTH * 0.735D), (int) (WINDOWED_HEIGHT * 0.74D),
+                    (int) (WINDOWED_WIDTH * 0.1485D), (int) (WINDOWED_HEIGHT * 0.225D));
+
+            setSize(WINDOWED_WIDTH.intValue(), WINDOWED_HEIGHT.intValue());
+            basePane.setSize(WINDOWED_WIDTH.intValue(), WINDOWED_HEIGHT.intValue());
+        }
     }
 
     private void setFullscreen() {
-        if (userConf.isFullScreen()) {
-            FRAME_WIDTH = Toolkit.getDefaultToolkit().getScreenSize().width;
-            FRAME_HEIGHT = Toolkit.getDefaultToolkit().getScreenSize().height;
-        } else {
-            FRAME_WIDTH = (int) (screen.getWidth() * 0.75D);
-            FRAME_HEIGHT = (int) (screen.getHeight());
-        }
         reloadRectangles();
         GameFrame.this.setLocationRelativeTo(null);
 //		userConf.setFullScreen(!userConf.isFullScreen());

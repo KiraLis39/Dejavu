@@ -9,10 +9,13 @@ import fox.*;
 import fox.Out.LEVEL;
 import interfaces.Cached;
 import registry.Registry;
+import tools.Cursors;
 import tools.ModsLoader;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import java.awt.*;
@@ -29,7 +32,7 @@ import static fox.Out.LEVEL.INFO;
 import static registry.Registry.configuration;
 import static registry.Registry.userConf;
 
-public class NewUserForm extends JDialog implements Cached, ListSelectionListener, ActionListener {
+public class NewUserForm extends JDialog implements Cached, ListSelectionListener, ActionListener, ChangeListener {
     private JTextField nameField, ageField;
 
     private final int WIDTH = 500, HEIGHT = 480;
@@ -76,8 +79,7 @@ public class NewUserForm extends JDialog implements Cached, ListSelectionListene
         setBackground(new Color(0, 0, 0, 0));
         setPreferredSize(new Dimension(this.WIDTH, this.HEIGHT));
         setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
-        setCursor(FoxCursor.createCursor((BufferedImage) cache.get("curOtherCursor"), "nhc"));
-//        setCursor(FoxCursor.createCursor((BufferedImage) cache.get("curAnyCursor"), "anyCursor"));
+        setCursor(Cursors.OtherCursor.get());
         setIgnoreRepaint(true);
         getRootPane().setBorder(new EmptyBorder(45, 12, 15, 12));
         getContentPane().setLayout(new BorderLayout(6, 6));
@@ -188,7 +190,8 @@ public class NewUserForm extends JDialog implements Cached, ListSelectionListene
                             {
                                 setOpaque(false);
                                 setBorder(BorderFactory.createCompoundBorder(
-                                        BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.BLACK, 1, true), "Пол:", 1, 0, Registry.f2, Color.BLACK),
+                                        BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.BLACK, 1, true),
+                                                "Пол:", 1, 0, Registry.f2, Color.BLACK),
                                         new EmptyBorder(-3, 0, 3, 0)
                                 ));
 
@@ -196,22 +199,26 @@ public class NewUserForm extends JDialog implements Cached, ListSelectionListene
 
                                 maleBox = new JCheckBox("Парень") {
                                     {
+                                        setName("mailCBox");
                                         setOpaque(false);
                                         setFont(Registry.f0);
                                         setHorizontalAlignment(0);
                                         setFocusPainted(false);
                                         setForeground(Color.CYAN);
                                         setSelected(userConf.getUserSex() == UserConf.USER_SEX.MALE);
+                                        addChangeListener(NewUserForm.this);
                                     }
                                 };
                                 femaBox = new JCheckBox("Девушка") {
                                     {
+                                        setName("femaCBox");
                                         setOpaque(false);
                                         setFont(Registry.f0);
                                         setHorizontalAlignment(0);
                                         setFocusPainted(false);
                                         setForeground(Color.MAGENTA.brighter());
                                         setSelected(userConf.getUserSex() == UserConf.USER_SEX.FEMALE);
+                                        addChangeListener(NewUserForm.this);
                                     }
                                 };
 
@@ -310,6 +317,17 @@ public class NewUserForm extends JDialog implements Cached, ListSelectionListene
                 }
 
                 dispose();
+            }
+        }
+    }
+
+    @Override
+    public void stateChanged(ChangeEvent e) {
+        if (e.getSource() instanceof JCheckBox) {
+            if (((JCheckBox) e.getSource()).getName().equals("mailCBox")) {
+                userConf.setUserSex(UserConf.USER_SEX.MALE);
+            } else {
+                userConf.setUserSex(UserConf.USER_SEX.FEMALE);
             }
         }
     }

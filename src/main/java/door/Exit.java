@@ -1,6 +1,7 @@
 package door;
 
 import fox.JIOM;
+import fox.Out;
 import registry.Registry;
 
 import java.awt.*;
@@ -38,6 +39,7 @@ public class Exit {
             Print(Exit.class, LEVEL.ACCENT, "Комментарий завершения: " + comment);
         }
 
+        i += Out.close();
         System.exit(i);
     }
 }

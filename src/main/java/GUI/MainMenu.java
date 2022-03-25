@@ -12,6 +12,7 @@ import interfaces.Cached;
 import registry.Registry;
 import render.FoxRender;
 import secondGUI.*;
+import tools.Cursors;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -51,7 +52,7 @@ public class MainMenu extends JFrame implements MouseListener, MouseMotionListen
         setUndecorated(true);
         setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
         setResizable(false);
-        setCursor(FoxCursor.createCursor((BufferedImage) cache.get("curSimpleCursor"), "simpleCursor"));
+        setCursor(Cursors.SimpleCursor.get());
 
         preLoading();
 
