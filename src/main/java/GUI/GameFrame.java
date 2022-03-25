@@ -242,10 +242,8 @@ public class GameFrame extends JFrame implements MouseListener, MouseMotionListe
                     } catch (Exception e) {/* IGNORE */
                     }
 
-                    try {
-                        Thread.sleep(dialogDelaySpeed);
+                    try {Thread.sleep(dialogDelaySpeed);
                     } catch (InterruptedException e) {
-                        e.printStackTrace();
                         Thread.currentThread().interrupt();
                     }
                 }

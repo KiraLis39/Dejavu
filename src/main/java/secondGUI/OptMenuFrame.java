@@ -400,7 +400,7 @@ public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotion
             sChCount--;
             if (sChCount == 0) {
                 userConf.setSoundVolume(volumeOfSoundSlider.getValue());
-                soundPlayer.setVolume(VolumeConverter.volumePercentToGain(userConf.getSoundVolume()));
+                soundPlayer.setVolume(userConf.getSoundVolume());
             }
         }
 
@@ -408,7 +408,7 @@ public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotion
             sChCount--;
             if (sChCount == 0) {
                 userConf.setMusicVolume(volumeOfMusicSlider.getValue());
-                musicPlayer.setVolume(VolumeConverter.volumePercentToGain(userConf.getMusicVolume()));
+                musicPlayer.setVolume(userConf.getMusicVolume());
             }
         }
 
@@ -416,7 +416,7 @@ public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotion
             sChCount--;
             if (sChCount == 0) {
                 userConf.setBackgVolume(volumeOfBackgSlider.getValue());
-                backgPlayer.setVolume(VolumeConverter.volumePercentToGain(userConf.getBackgVolume()));
+                backgPlayer.setVolume(userConf.getBackgVolume());
             }
         }
 

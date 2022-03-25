@@ -40,8 +40,6 @@ public class GalleryFrame extends JDialog implements MouseListener, MouseMotionL
         } else {
             setPreferredSize(new Dimension(950, 600));
         }
-//		Media.stopBackg();
-//		Media.playMusic("musGalleryTheme");
 
         addMouseListener(this);
         addMouseMotionListener(this);
@@ -51,6 +49,14 @@ public class GalleryFrame extends JDialog implements MouseListener, MouseMotionL
 
         buildMiniatures();
 
+        inAc();
+
+        musicPlayer.play("musGalleryTheme", true);
+        backgPlayer.stop();
+        setVisible(true);
+    }
+
+    private void inAc() {
         InputAction.add("gallery", this);
         InputAction.set("gallery", "close", KeyEvent.VK_ESCAPE, 0, new AbstractAction() {
             @Override
@@ -73,10 +79,6 @@ public class GalleryFrame extends JDialog implements MouseListener, MouseMotionL
                 isFullscreen = !isFullscreen;
             }
         });
-
-        musicPlayer.play("musGalleryTheme", true);
-        backgPlayer.stop();
-        setVisible(true);
     }
 
     @Override

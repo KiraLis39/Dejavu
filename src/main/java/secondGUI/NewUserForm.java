@@ -1,36 +1,42 @@
 package secondGUI;
 
+import GUI.GameFrame;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import components.FOptionPane;
 import configurations.UserConf;
 import door.MainClass;
-import fox.FoxCursor;
-import fox.FoxFontBuilder;
-import fox.JIOM;
-import fox.Out;
+import fox.*;
 import fox.Out.LEVEL;
 import interfaces.Cached;
 import registry.Registry;
+import tools.ModsLoader;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Paths;
 
+import static fox.Out.LEVEL.ACCENT;
+import static fox.Out.LEVEL.INFO;
 import static registry.Registry.configuration;
 import static registry.Registry.userConf;
 
-public class NewUserForm extends JDialog implements Cached {
+public class NewUserForm extends JDialog implements Cached, ListSelectionListener, ActionListener {
     private JTextField nameField, ageField;
 
-    private final int WIDTH = 450;
-    private final int HEIGHT = 260;
+    private final int WIDTH = 500, HEIGHT = 480;
     private JCheckBox maleBox, femaBox;
 
+    private JList<String> avatarList;
+    private JPanel avatarPicPane;
 
     @Override
     public void paint(Graphics g) {
@@ -50,155 +56,180 @@ public class NewUserForm extends JDialog implements Cached {
         g2D.setColor(Color.ORANGE);
         g2D.drawString("Настройка персонажа:", (int) (WIDTH / 2 - FoxFontBuilder.getStringBounds(g2D, "Настройка персонажа:").getWidth() / 2D), 40);
 
-        // name field:
-//		if (isNameFieldOver) {g2D.setColor(Color.GRAY.brighter());} else {g2D.setColor(Color.GRAY);}
-//		g2D.drawRoundRect(nameRect.x, nameRect.y, nameRect.width, nameRect.height, 5, 5);
-//		if (isAgeFieldOver) {g2D.setColor(Color.GRAY.brighter());} else {g2D.setColor(Color.GRAY);}
-//		g2D.drawRoundRect(ageRect.x, ageRect.y, ageRect.width, ageRect.height, 5, 5);
-
         g2D.setFont(Registry.f0);
         if (nameField.hasFocus()) {
             g2D.setColor(Color.GREEN);
         } else {
             g2D.setColor(Color.WHITE);
         }
-//		g2D.drawString(nameField.getText(), (int) (nameRect.getCenterX() - Registry.ffb.getStringBounds(g2D, nameField.getText()).getWidth() / 2D), (int) nameRect.getCenterY() + 6);
         if (ageField.hasFocus()) {
             g2D.setColor(Color.GREEN);
         } else {
             g2D.setColor(Color.WHITE);
         }
-//		g2D.drawString(ageField.getText(), (int) (ageRect.getCenterX() - Registry.ffb.getStringBounds(g2D, ageField.getText()).getWidth() / 2D), (int) ageRect.getCenterY() + 6);
-
-        // sex choise:
-//		GradientPaint gp = new GradientPaint(0, 0, Color.BLUE.darker(), (float) (nameRect.getWidth()), (float) nameRect.getHeight(), Color.RED.darker());
-//		g2D.setPaint(gp);
-//		g2D.fillRoundRect(nameRect.x, nameRect.y + nameRect.height + 20, nameRect.width + ageRect.width + 10, nameRect.height * 2, 5, 5);
-
-        g2D.setColor(Color.GRAY);
-//		g2D.drawRoundRect(nameRect.x, nameRect.y + nameRect.height + 20, nameRect.width + ageRect.width + 10, nameRect.height * 2, 5, 5);
-
-//		if (isMaleSexPressed) {g2D.setColor(Color.GREEN);} else {g2D.setColor(Color.WHITE);}
-//		g2D.drawRoundRect(maleSexChoiserRect.x, maleSexChoiserRect.y, maleSexChoiserRect.width, maleSexChoiserRect.height, 3, 3);
-//		if (isFemaSexPressed) {g2D.setColor(Color.GREEN);} else {g2D.setColor(Color.WHITE);}
-//		g2D.drawRoundRect(femaSexChoiserRect.x, femaSexChoiserRect.y, femaSexChoiserRect.width, femaSexChoiserRect.height, 3, 3);
-
-        g2D.setColor(Color.GREEN);
-//		if (isMaleSexPressed) {
-//			g2D.fillPolygon(
-//					new Polygon(
-//							new int[] {maleSexChoiserRect.x, maleSexChoiserRect.x + 10, maleSexChoiserRect.x + 15, maleSexChoiserRect.x + 7}, 
-//							new int[] {maleSexChoiserRect.y + 3, maleSexChoiserRect.y + 13, maleSexChoiserRect.y - 9, maleSexChoiserRect.y + 8}, 
-//							4));
-//		} else {
-//			g2D.fillPolygon(
-//					new Polygon(
-//							new int[] {femaSexChoiserRect.x, femaSexChoiserRect.x + 10, femaSexChoiserRect.x + 15, femaSexChoiserRect.x + 7}, 
-//							new int[] {femaSexChoiserRect.y + 3, femaSexChoiserRect.y + 13, femaSexChoiserRect.y - 9, femaSexChoiserRect.y + 8}, 
-//							4));
-//		}
-
-        g2D.setColor(Color.WHITE);
-//		g2D.drawString("Парень:", (int) (maleSexChoiserRect.getCenterX() - Registry.ffb.getStringBounds(g2D, "Парень:").getWidth() / 2D), maleSexChoiserRect.y - 10);
-//		g2D.drawString("Девушка:", (int) (femaSexChoiserRect.getCenterX() - Registry.ffb.getStringBounds(g2D, "Девушка:").getWidth() / 2D), femaSexChoiserRect.y - 10);
-
-        // ok button:
-//		if (isOkButtonOver) {g2D.setColor(Color.WHITE);} else {g2D.setColor(Color.GRAY);}		
-//		g2D.drawRoundRect(okButtonRect.x, okButtonRect.y, okButtonRect.width, okButtonRect.height, 10, 10);
-//		if (isOkButtonPressed) {g2D.setColor(Color.GREEN);} else {g2D.setColor(Color.WHITE);}
-//		g2D.drawString("Готово", (int) (okButtonRect.getCenterX() - Registry.ffb.getStringBounds(g2D, "Готово").getWidth() / 2D), (int) (okButtonRect.getCenterY() + 6));
-
-//		g2D.dispose();
 
         super.paintComponents(g2D);
     }
 
-    public NewUserForm() {
+    private void preInit() {
         setUndecorated(true);
         setBackground(new Color(0, 0, 0, 0));
         setPreferredSize(new Dimension(this.WIDTH, this.HEIGHT));
         setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         setCursor(FoxCursor.createCursor((BufferedImage) cache.get("curOtherCursor"), "nhc"));
-        setModalExclusionType(Dialog.ModalExclusionType.NO_EXCLUDE);
+//        setCursor(FoxCursor.createCursor((BufferedImage) cache.get("curAnyCursor"), "anyCursor"));
         setIgnoreRepaint(true);
         getRootPane().setBorder(new EmptyBorder(45, 12, 15, 12));
         getContentPane().setLayout(new BorderLayout(6, 6));
+    }
+
+    public NewUserForm() {
+        preInit();
 
         JPanel midAreasPane = new JPanel(new BorderLayout(3, 3)) {
             {
                 setOpaque(false);
                 setBorder(new EmptyBorder(9, 0, 6, 0));
 
-                nameField = new JTextField() {
-                    {
-                        setFont(Registry.f0);
-                        setOpaque(false);
-                        setForeground(Color.WHITE);
-                        setHorizontalAlignment(CENTER);
-                        setText(userConf.getUserName());
-                        setBorder(BorderFactory.createCompoundBorder(
-                                BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.BLACK, 1, true), "Имя:", 1, 0, Registry.f2, Color.BLACK),
-                                new EmptyBorder(-3, 0, 3, 0)
-                        ));
+                JPanel avatarPane = new JPanel(new BorderLayout(3, 3)) {
+                    @Override
+                    protected void paintComponent(Graphics g) {
+                        g.drawImage((BufferedImage) cache.get("picGameMenu"), 0, 0, getWidth(), getHeight(), this);
                     }
-                };
 
-                ageField = new JTextField(6) {
-                    {
-                        setFont(Registry.f0);
-                        setOpaque(false);
-                        setForeground(Color.WHITE);
-                        setHorizontalAlignment(CENTER);
-                        setText(userConf.getUserAge() + "");
-                        setBorder(BorderFactory.createCompoundBorder(
-                                BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.BLACK, 1, true), "Возраст:", 1, 0, Registry.f2, Color.BLACK),
-                                new EmptyBorder(-3, 0, 3, 0)
-                        ));
-                    }
-                };
-
-                JPanel midSexPane = new JPanel(new GridLayout(1, 2)) {
                     {
                         setOpaque(false);
-                        setBorder(BorderFactory.createCompoundBorder(
-                                BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.BLACK, 1, true), "Пол:", 1, 0, Registry.f2, Color.BLACK),
-                                new EmptyBorder(-3, 0, 3, 0)
-                        ));
 
-                        ButtonGroup bg = new ButtonGroup();
-
-                        maleBox = new JCheckBox("Парень") {
+                        avatarList = new JList<>(new String[]{"Аватар 1", "Аватар 2", "Аватар 3", "Аватар 4"}) {
                             {
+                                setFont(Registry.f2);
+                                setBackground(new Color(0, 0, 0, 0));
+                                setBorder(new EmptyBorder(3, 6, 0, 0));
                                 setOpaque(false);
-                                setFont(Registry.f0);
-                                setHorizontalAlignment(0);
-                                setFocusPainted(false);
-                                setForeground(Color.CYAN);
-                                setSelected(userConf.getUserSex() == UserConf.USER_SEX.MALE);
-                            }
-                        };
-                        femaBox = new JCheckBox("Девушка") {
-                            {
-                                setOpaque(false);
-                                setFont(Registry.f0);
-                                setHorizontalAlignment(0);
-                                setFocusPainted(false);
-                                setForeground(Color.MAGENTA.brighter());
-                                setSelected(userConf.getUserSex() == UserConf.USER_SEX.FEMALE);
+                                setForeground(Color.WHITE);
+                                setSelectionBackground(Color.BLUE.darker());
+                                setSelectionForeground(Color.ORANGE.brighter());
+                                addListSelectionListener(NewUserForm.this);
                             }
                         };
 
-                        bg.add(maleBox);
-                        bg.add(femaBox);
+                        avatarPicPane = new JPanel() {
+                            @Override
+                            protected void paintComponent(Graphics g) {
+                                Graphics2D g2D = (Graphics2D) g;
 
-                        add(maleBox);
-                        add(femaBox);
+                                g2D.setColor(new Color(0.0f, 0.0f, 0.0f, 0.0f));
+                                g2D.fillRect(0, 0, getWidth(), getHeight());
+
+                                g2D.setColor(new Color(0.0f, 0.0f, 0.0f, 0.25f));
+                                g2D.fillRoundRect(1, 1, getWidth() - 2, getHeight() - 2, 9, 9);
+
+                                g2D.setColor(Color.GRAY);
+                                g2D.drawRoundRect(1, 1, getWidth() - 2, getHeight() - 2, 9, 9);
+                                g2D.drawImage((BufferedImage) cache.get(userConf.getAvatarIndex() + ""),
+                                        6, 6,
+                                        getWidth() - 12, getHeight() - 12,
+                                        NewUserForm.this);
+                            }
+
+                            {
+                                setOpaque(false);
+                                setPreferredSize(new Dimension(256, 256)); //cache.get("0")
+                            }
+                        };
+
+                        add(avatarList, BorderLayout.CENTER);
+                        add(avatarPicPane, BorderLayout.EAST);
                     }
                 };
 
-                add(nameField);
-                add(ageField, BorderLayout.EAST);
-                add(midSexPane, BorderLayout.SOUTH);
+                JPanel nameAgeSexPane = new JPanel(new BorderLayout(3, 3)) {
+                    {
+                        setOpaque(false);
+
+                        JPanel nameAgePane = new JPanel(new BorderLayout(3, 3)) {
+                            {
+                                setOpaque(false);
+
+                                nameField = new JTextField() {
+                                    {
+                                        setFont(Registry.f0);
+                                        setOpaque(false);
+                                        setForeground(Color.WHITE);
+                                        setHorizontalAlignment(CENTER);
+                                        setText(userConf.getUserName());
+                                        setBorder(BorderFactory.createCompoundBorder(
+                                                BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.BLACK, 1, true), "Имя:", 1, 0, Registry.f2, Color.BLACK),
+                                                new EmptyBorder(-3, 0, 3, 0)
+                                        ));
+                                    }
+                                };
+
+                                ageField = new JTextField(6) {
+                                    {
+                                        setFont(Registry.f0);
+                                        setOpaque(false);
+                                        setForeground(Color.WHITE);
+                                        setHorizontalAlignment(CENTER);
+                                        setText(userConf.getUserAge() + "");
+                                        setBorder(BorderFactory.createCompoundBorder(
+                                                BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.BLACK, 1, true), "Возраст:", 1, 0, Registry.f2, Color.BLACK),
+                                                new EmptyBorder(-3, 0, 3, 0)
+                                        ));
+                                    }
+                                };
+
+                                add(nameField, BorderLayout.CENTER);
+                                add(ageField, BorderLayout.EAST);
+                            }
+                        };
+
+                        JPanel midSexPane = new JPanel(new GridLayout(1, 2)) {
+                            {
+                                setOpaque(false);
+                                setBorder(BorderFactory.createCompoundBorder(
+                                        BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.BLACK, 1, true), "Пол:", 1, 0, Registry.f2, Color.BLACK),
+                                        new EmptyBorder(-3, 0, 3, 0)
+                                ));
+
+                                ButtonGroup bg = new ButtonGroup();
+
+                                maleBox = new JCheckBox("Парень") {
+                                    {
+                                        setOpaque(false);
+                                        setFont(Registry.f0);
+                                        setHorizontalAlignment(0);
+                                        setFocusPainted(false);
+                                        setForeground(Color.CYAN);
+                                        setSelected(userConf.getUserSex() == UserConf.USER_SEX.MALE);
+                                    }
+                                };
+                                femaBox = new JCheckBox("Девушка") {
+                                    {
+                                        setOpaque(false);
+                                        setFont(Registry.f0);
+                                        setHorizontalAlignment(0);
+                                        setFocusPainted(false);
+                                        setForeground(Color.MAGENTA.brighter());
+                                        setSelected(userConf.getUserSex() == UserConf.USER_SEX.FEMALE);
+                                    }
+                                };
+
+                                bg.add(maleBox);
+                                bg.add(femaBox);
+
+                                add(maleBox);
+                                add(femaBox);
+                            }
+                        };
+
+                        add(nameAgePane, BorderLayout.CENTER);
+                        add(midSexPane, BorderLayout.SOUTH);
+                    }
+                };
+
+                add(avatarPane, BorderLayout.CENTER);
+                add(nameAgeSexPane, BorderLayout.SOUTH);
             }
         };
 
@@ -214,28 +245,8 @@ public class NewUserForm extends JDialog implements Cached {
                         setForeground(Color.ORANGE);
                         setFont(Registry.f1);
                         setPreferredSize(new Dimension(0, 42));
-                        addActionListener(new ActionListener() {
-                            @Override
-                            public void actionPerformed(ActionEvent e) {
-                                if (nameField.getText().equals("")) {
-                                    JOptionPane.showMessageDialog(null,
-                                            "Не введен ник персонажа!", "Ошибка:",
-                                            JOptionPane.ERROR_MESSAGE);
-                                } else {
-                                    if (!userConf.getUserName().equals(nameField.getText().trim())) {
-                                        try {
-                                            MainClass.createNewUser(nameField.getText().trim(),
-                                                    maleBox.isSelected() ? UserConf.USER_SEX.MALE : UserConf.USER_SEX.FEMALE,
-                                                    Integer.parseInt(ageField.getText()));
-                                        } catch (Exception ex) {
-                                            ex.printStackTrace();
-                                        }
-                                    }
-
-                                    dispose();
-                                }
-                            }
-                        });
+                        setActionCommand("finish");
+                        addActionListener(NewUserForm.this);
                     }
                 };
 
@@ -246,10 +257,60 @@ public class NewUserForm extends JDialog implements Cached {
         add(midAreasPane, BorderLayout.CENTER);
         add(downOkPane, BorderLayout.SOUTH);
 
+        inAc();
+
         pack();
         setLocationRelativeTo(null);
 
+        setModalityType(ModalityType.APPLICATION_MODAL);
+        setModalExclusionType(ModalExclusionType.NO_EXCLUDE);
         setModal(true);
+
         setVisible(true);
+
+        UserConf.USER_SEX gender = userConf.getUserSex();
+        avatarList.setSelectedIndex(gender == UserConf.USER_SEX.MALE ? userConf.getAvatarIndex() + 1 : userConf.getAvatarIndex() + 5);
+    }
+
+    private void inAc() {
+        InputAction.add("form", NewUserForm.this);
+        InputAction.set("form", "cancel", KeyEvent.VK_ESCAPE, 0, new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                dispose();
+            }
+        });
+    }
+
+    @Override
+    public void valueChanged(ListSelectionEvent e) {
+        UserConf.USER_SEX sex = userConf.getUserSex();
+        userConf.setAvatarIndex(sex == UserConf.USER_SEX.FEMALE ? avatarList.getSelectedIndex() + 1 : avatarList.getSelectedIndex() + 5);
+        avatarPicPane.repaint();
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        if (e.getActionCommand().equals("finish")) {
+            if (nameField.getText().equals("")) {
+                new FOptionPane("Ошибка:", "Не введен ник персонажа!");
+            } else if (!maleBox.isSelected() && !femaBox.isSelected()) {
+                new FOptionPane("Ошибка:", "Не выбран пол персонажа!");
+            } else if (userConf.getAvatarIndex() == 0) {
+                new FOptionPane("Ошибка:", "Не выбран аватар!");
+            } else {
+                if (userConf.getUserName() == null || !userConf.getUserName().equals(nameField.getText().trim())) {
+                    try {
+                        MainClass.createNewUser(nameField.getText().trim(),
+                                maleBox.isSelected() ? UserConf.USER_SEX.MALE : UserConf.USER_SEX.FEMALE,
+                                Integer.parseInt(ageField.getText()));
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                    }
+                }
+
+                dispose();
+            }
+        }
     }
 }

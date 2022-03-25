@@ -14,7 +14,7 @@ public class UserConf implements JConfigurable {
 
     public enum USER_SEX {MALE, FEMALE}
     USER_SEX userSex;
-    String userName;
+    String userName = "newEmptyUser";
     int userAge = 14;
     int avatarIndex = 0;
     int cycleCount = 0;
@@ -22,13 +22,13 @@ public class UserConf implements JConfigurable {
     boolean autoSaveOn = true;
     boolean autoSkipping = false;
 
-    int musicVolume;
+    int musicVolume = 75;
     boolean musicMuted = false;
-    int soundVolume;
+    int soundVolume = 50;
     boolean soundMuted = false;
-    int backgVolume;
+    int backgVolume = 50;
     boolean backgMuted = false;
-    int voiceVolume;
+    int voiceVolume = 75;
     boolean voiceMuted = false;
 
     @Override

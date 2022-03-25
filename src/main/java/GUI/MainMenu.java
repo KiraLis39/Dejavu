@@ -80,7 +80,7 @@ public class MainMenu extends JFrame implements MouseListener, MouseMotionListen
     private static void testNewbie() {
         Print(MainMenu.class, LEVEL.INFO, "A newbie test...");
 
-        if (userConf.getUserName().equals("newEmptyUser")) {
+        if (userConf.getUserName() == null || userConf.getUserName().equals("newEmptyUser")) {
             Print(MainMenu.class, LEVEL.ACCENT, "Open NewUserForm to change name " + userConf.getUserName());
             new NewUserForm();
         }
@@ -678,11 +678,7 @@ public class MainMenu extends JFrame implements MouseListener, MouseMotionListen
         switch (e.getActionCommand()) {
             case "play" -> {
                 dispose();
-                if (userConf.getAvatarIndex() == 0) {
-                    new GenderFrame();
-                } else {
-                    new GameFrame();
-                }
+                new GameFrame();
             }
             case "exit" -> {
                 int exit = new FOptionPane(
