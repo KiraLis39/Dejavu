@@ -14,6 +14,7 @@ public class Configuration implements JConfigurable {
     Path source;
 
     boolean showLogo = true;
+    boolean fpsShowed = false;
     int lastUserHash;
     String lastUserName;
     boolean useMods = false;

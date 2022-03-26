@@ -1,17 +1,17 @@
 package door;
 
-import GUI.MainMenu;
+import GUI.GameMenu;
 import configurations.Configuration;
 import configurations.UserConf;
 import fox.FoxLogo;
 import fox.JIOM;
 import fox.Out;
 import fox.Out.LEVEL;
-import fox.player.VolumeConverter;
 import interfaces.Cached;
 import tools.ModsLoader;
 
 import javax.imageio.ImageIO;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -43,21 +43,6 @@ public class MainClass implements Cached {
     }
 
     public static void main(String[] args) {
-//        VolumeConverter converter = new VolumeConverter();
-//        float testIn1 = converter.volumePercentToGain(0);
-//        float testIn2 = converter.volumePercentToGain(25);
-//        float testIn3 = converter.volumePercentToGain(50);
-//        float testIn4 = converter.volumePercentToGain(75);
-//        float testIn5 = converter.volumePercentToGain(100);
-//        System.out.println();
-//        System.out.println("Percent 01: " + converter.gainToVolumePercent(testIn1));
-//        System.out.println("Percent 02: " + converter.gainToVolumePercent(testIn2));
-//        System.out.println("Percent 03: " + converter.gainToVolumePercent(testIn3));
-//        System.out.println("Percent 04: " + converter.gainToVolumePercent(testIn4));
-//        System.out.println("Percent 05: " + converter.gainToVolumePercent(testIn5));
-//        System.out.println();
-//        System.exit(0);
-
         preInit();
 
         if (configuration.isShowLogo()) {
@@ -90,7 +75,7 @@ public class MainClass implements Cached {
         }
 
         Out.Print(MainClass.class, LEVEL.ACCENT, "Запуск MainMenu...");
-        new MainMenu();
+        new GameMenu();
     }
 
     private static void existingDirectoriesCheck() {

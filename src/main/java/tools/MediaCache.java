@@ -1,7 +1,10 @@
 package tools;
 
 import lombok.NonNull;
+import render.FoxRender;
 
+import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.util.HashMap;
 
 public class MediaCache {

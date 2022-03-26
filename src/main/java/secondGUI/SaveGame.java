@@ -25,28 +25,21 @@ public class SaveGame extends JDialog implements Cached {
     private final Rectangle button1Rect;
     private final Rectangle button2Rect;
 
-    private final Boolean saveChosen = true;
+    private final Boolean saveChosen = true; // temporary ON
 
     @Override
     public void paint(Graphics g) {
+        super.paint(g);
         Graphics2D g2D = (Graphics2D) g;
-        FoxRender.setLowRender(g2D);
+        FoxRender.setRender(g2D, FoxRender.RENDER.MED);
 
-        g2D.drawImage((BufferedImage) cache.get("picSaveLoad"), 0, 0, getWidth(), getHeight(), null);
+        g2D.drawImage((BufferedImage) cache.get("picSaveLoad"), 0, 0, getWidth(), getHeight(), SaveGame.this);
 
         g2D.setColor(Color.ORANGE);
         g2D.setFont(Registry.f0);
         g2D.drawString("Загрузка и сохранение:", (int) (widthPercent * 4D), (int) (heightPercent * 3.5D));
 
         g2D.drawRect((int) (widthPercent * 67D), (int) (heightPercent * 6D), (int) (widthPercent * 30D), (int) (heightPercent * 5D));
-//		g2D.drawRect((int) (widthPercent * 67D), (int) (heightPercent * 12D), (int) (widthPercent * 30D), (int) (heightPercent * 5D));
-//		g2D.drawRect((int) (widthPercent * 67D), (int) (heightPercent * 18D), (int) (widthPercent * 30D), (int) (heightPercent * 5D));
-//		g2D.drawRect((int) (widthPercent * 67D), (int) (heightPercent * 24D), (int) (widthPercent * 30D), (int) (heightPercent * 5D));
-//		g2D.drawRect((int) (widthPercent * 67D), (int) (heightPercent * 30D), (int) (widthPercent * 30D), (int) (heightPercent * 5D));
-//		g2D.drawRect((int) (widthPercent * 67D), (int) (heightPercent * 36D), (int) (widthPercent * 30D), (int) (heightPercent * 5D));
-//		g2D.drawRect((int) (widthPercent * 67D), (int) (heightPercent * 42D), (int) (widthPercent * 30D), (int) (heightPercent * 5D));
-//		g2D.drawRect((int) (widthPercent * 67D), (int) (heightPercent * 48D), (int) (widthPercent * 30D), (int) (heightPercent * 5D));
-//		g2D.drawRect((int) (widthPercent * 67D), (int) (heightPercent * 54D), (int) (widthPercent * 30D), (int) (heightPercent * 5D));
 
         if (saveChosen) {
             g2D.setFont(Registry.f1);
@@ -77,12 +70,13 @@ public class SaveGame extends JDialog implements Cached {
         }
 
         g2D.dispose();
-//		super.paint(g);
     }
 
-    public SaveGame() {
+    public SaveGame(JFrame parent, GraphicsConfiguration gConfig) {
+        super(parent, "SaveLoadFrame", true, gConfig);
         setSize(WIDTH, HEIGHT);
         setUndecorated(true);
+        setBackground(new Color(0,0,0,0));
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         setCursor(FoxCursor.createCursor((BufferedImage) cache.get("curGalleryCursor"), "galleryCursor"));
 

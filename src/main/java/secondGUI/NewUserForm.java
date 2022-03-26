@@ -11,19 +11,15 @@ import tools.Cursors;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
+import java.awt.event.*;
 import java.awt.image.BufferedImage;
 
 import static registry.Registry.userConf;
 
-public class NewUserForm extends JDialog implements Cached, ListSelectionListener, ActionListener, ChangeListener {
+public class NewUserForm extends JDialog implements Cached, ListSelectionListener, ActionListener, ItemListener {
     private final int WIDTH = 500, HEIGHT = 480;
     private JTextField nameField, ageField;
     private JCheckBox maleBox, femaBox;
@@ -152,7 +148,7 @@ public class NewUserForm extends JDialog implements Cached, ListSelectionListene
                                         setFocusPainted(false);
                                         setForeground(Color.CYAN);
                                         setSelected(userConf.getUserSex() == UserConf.USER_SEX.MALE);
-                                        addChangeListener(NewUserForm.this);
+                                        addItemListener(NewUserForm.this);
                                     }
                                 };
                                 femaBox = new JCheckBox("Девушка") {
@@ -164,7 +160,7 @@ public class NewUserForm extends JDialog implements Cached, ListSelectionListene
                                         setFocusPainted(false);
                                         setForeground(Color.MAGENTA.brighter());
                                         setSelected(userConf.getUserSex() == UserConf.USER_SEX.FEMALE);
-                                        addChangeListener(NewUserForm.this);
+                                        addItemListener(NewUserForm.this);
                                     }
                                 };
 
@@ -280,13 +276,6 @@ public class NewUserForm extends JDialog implements Cached, ListSelectionListene
     }
 
     @Override
-    public void valueChanged(ListSelectionEvent e) {
-        UserConf.USER_SEX sex = userConf.getUserSex();
-        userConf.setAvatarIndex(sex == UserConf.USER_SEX.FEMALE ? avatarList.getSelectedIndex() + 1 : avatarList.getSelectedIndex() + 5);
-        avatarPicPane.repaint();
-    }
-
-    @Override
     public void actionPerformed(ActionEvent e) {
         if (e.getActionCommand().equals("finish")) {
             if (nameField.getText().equals("")) {
@@ -312,13 +301,35 @@ public class NewUserForm extends JDialog implements Cached, ListSelectionListene
     }
 
     @Override
-    public void stateChanged(ChangeEvent e) {
-        if (e.getSource() instanceof JCheckBox) {
-            if (((JCheckBox) e.getSource()).getName().equals("mailCBox")) {
-                userConf.setUserSex(UserConf.USER_SEX.MALE);
-            } else {
-                userConf.setUserSex(UserConf.USER_SEX.FEMALE);
+    public void itemStateChanged(ItemEvent e) {
+        if (e.getStateChange() == ItemEvent.SELECTED) {
+            int memIndex = userConf.getAvatarIndex(); // 1-4 male; 5-8 fema
+            if (memIndex == 0) {
+                memIndex = 1;
             }
+
+            if (((JCheckBox) e.getItem()).getName().equals("mailCBox")) {
+                userConf.setUserSex(UserConf.USER_SEX.MALE);
+                userConf.setAvatarIndex(memIndex <= 4 ? memIndex : memIndex - 4);
+            } else if (((JCheckBox) e.getItem()).getName().equals("femaCBox")) {
+                userConf.setUserSex(UserConf.USER_SEX.FEMALE);
+                userConf.setAvatarIndex(memIndex <= 4 ? memIndex + 4 : memIndex);
+            }
+
+            avatarPicPane.repaint();
         }
+    }
+
+    @Override
+    public void valueChanged(ListSelectionEvent e) {
+        if (e.getValueIsAdjusting()) {return;}
+
+        if (userConf.getAvatarIndex() == 0) {
+            return;
+        }
+
+        UserConf.USER_SEX sex = userConf.getUserSex();
+        userConf.setAvatarIndex(sex == UserConf.USER_SEX.FEMALE ? avatarList.getSelectedIndex() + 5 : avatarList.getSelectedIndex() + 1);
+        avatarPicPane.repaint();
     }
 }

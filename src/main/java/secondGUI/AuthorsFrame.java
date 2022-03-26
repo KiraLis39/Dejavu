@@ -32,7 +32,8 @@ public class AuthorsFrame extends JDialog implements Cached {
             + "\nТестировщик и прочее: KiraLis39";
     private static JTextArea textHelp;
 
-    public AuthorsFrame() {
+    public AuthorsFrame(JFrame parent, GraphicsConfiguration gConfig) {
+        super(parent, "AuthorsFrame", true, gConfig);
         Print(AuthorsFrame.class, LEVEL.INFO, "Вход в AutorsFrame.");
 //		Library.mEngineModule.startMusic(new File(Library.musAutorsTheme), true);
 
@@ -40,8 +41,10 @@ public class AuthorsFrame extends JDialog implements Cached {
         setUndecorated(true);
         setCursor(FoxCursor.createCursor((BufferedImage) cache.get("curTextCursor"), "textCursor"));
         if (userConf.isFullScreen()) {
+            setBackground(Color.BLACK);
             setPreferredSize(toolk.getSize());
         } else {
+            setBackground(new Color(0,0,0,0));
             setPreferredSize(new Dimension(600, 500));
         }
 
@@ -98,11 +101,12 @@ public class AuthorsFrame extends JDialog implements Cached {
                         setBorder(new EmptyBorder(0, 20, 10, 10));
                         setBackground(new Color(0.0f, 0.0f, 0.0f, 0.0f));
                         setForeground(Color.ORANGE);
-                        setFont(FoxFontBuilder.setFoxFont(FoxFontBuilder.FONT.GEORGIA, 19, false));
+                        setFont(Registry.f10);
                         setWrapStyleWord(true);
                         setLineWrap(true);
                         setText(aboutText);
                         setEditable(false);
+                        setFocusable(false);
                     }
                 };
 

@@ -4,15 +4,18 @@ import fox.interfaces.JConfigurable;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.experimental.FieldDefaults;
+import render.FoxRender;
+import render.FoxRender.RENDER;
 
 import java.nio.file.Path;
 
 @Data
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class UserConf implements JConfigurable {
-    Path source;
-
     public enum USER_SEX {MALE, FEMALE}
+
+    Path source;
+    RENDER quality = RENDER.LOW;
     USER_SEX userSex;
     String userName = "newEmptyUser";
     int userAge = 14;
@@ -39,5 +42,10 @@ public class UserConf implements JConfigurable {
     @Override
     public Path getSource() {
         return source;
+    }
+
+    public void nextQuality() {
+        int curQ = quality.ordinal();
+        quality = RENDER.values().length > curQ + 1 ? RENDER.values()[curQ + 1] : RENDER.values()[0];
     }
 }

@@ -18,6 +18,7 @@ import java.awt.event.*;
 import java.awt.font.TextLayout;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
+import java.awt.image.VolatileImage;
 
 import static registry.Registry.*;
 
@@ -39,7 +40,7 @@ public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotion
     private final Rectangle voiceMuteRect;
     private final Rectangle downBackFonRect;
     private final int[] polygonsDot;
-    private BufferedImage baseBuffer;
+    private VolatileImage baseBuffer;
     private Boolean isSoundMuteOver = false, isMusicMuteOver = false, isBackgMuteOver = false, isVoiceMuteOver = false,
             isFullscreenOver = false, isModEnabledOver = false, isAutoSaveOver = false, isAutoSkippingOver = false;
     private JSlider volumeOfMusicSlider, volumeOfSoundSlider, volumeOfBackgSlider, volumeOfVoiceSlider;
@@ -47,11 +48,8 @@ public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotion
             down0Point, down1Point, down2Point, down3Point, downChecker0, downChecker1, downChecker2, downChecker3;
     private int sChCount = 3;
 
-    public OptMenuFrame() {
-        this(0);
-    }
-
-    public OptMenuFrame(int code) {
+    public OptMenuFrame(JFrame parent, GraphicsConfiguration gConfig) {
+        super(parent, "OptMenuFrame", true, gConfig);
         Out.Print(OptMenuFrame.class, LEVEL.INFO, "Вход в опции!");
 
         setModal(true);
@@ -92,13 +90,12 @@ public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotion
     @Override
     public void paint(Graphics g) {
         if (baseBuffer == null) {
-            baseBuffer = new BufferedImage(WIDTH, HEIGHT, BufferedImage.TYPE_INT_ARGB);
+            baseBuffer = getGraphicsConfiguration().createCompatibleVolatileImage(WIDTH, HEIGHT, VolatileImage.TRANSLUCENT);
             reloadBaseBuffer();
         }
 
         Graphics2D g2D = (Graphics2D) g;
         g2D.drawImage(baseBuffer, 0, 0, OptMenuFrame.this);
-        g2D.dispose();
 
         if (volumeOfSoundSlider != null) {
             volumeOfSoundSlider.repaint();
@@ -106,13 +103,21 @@ public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotion
             volumeOfBackgSlider.repaint();
             volumeOfVoiceSlider.repaint();
         }
+
+        g2D.dispose();
     }
 
     private void reloadBaseBuffer() {
         Graphics2D g2D = baseBuffer.createGraphics();
-        FoxRender.setMedRender(g2D);
-        g2D.setFont(Registry.f3);
+        FoxRender.setRender(g2D, FoxRender.RENDER.MED);
 
+        g2D.setColor(Color.DARK_GRAY);
+        g2D.fillRect(0, 0, getWidth(), getHeight());
+        g2D.setColor(Color.BLACK);
+        g2D.drawRect(5, 10, getWidth() - 10, getHeight() - 20);
+//		g2D.drawImage((BufferedImage) cache.get("picAurora"), 0, 0, getWidth(), getHeight(), OptMenuFrame.this);
+
+        g2D.setFont(Registry.f3);
         if (titlePoint == null) {
             titlePoint = new Point((int) (horizontalCenter - FoxFontBuilder.getStringBounds(g2D, "Настройки игры:").getWidth() / 2),
                     (int) (heightPercent * 6D));
@@ -121,13 +126,6 @@ public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotion
             backgTitlePoint = new Point((int) (widthPercent * 5D), (int) (heightPercent * 43D));
             voiceTitlePoint = new Point((int) (widthPercent * 5D), (int) (heightPercent * 57D));
         }
-
-        g2D.setColor(Color.DARK_GRAY);
-        g2D.fillRect(0, 0, getWidth(), getHeight());
-        g2D.setColor(Color.BLACK);
-        g2D.drawRect(5, 10, getWidth() - 10, getHeight() - 20);
-//		g2D.drawImage(ResourceManager.getBufferedImage("picAurora"), 0, 0, getWidth(), getHeight(), OptMenuFrame.this);
-
         drawUpTitle(g2D);
 
         g2D.setFont(Registry.f9);
@@ -367,21 +365,23 @@ public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotion
         return new JSlider(0, 100, volume) {
             {
                 setName(name);
+                setOpaque(false);
+                setBackground(new Color(0,0,0,0));
                 setForeground(Color.ORANGE.brighter());
                 setPaintLabels(true);
                 setPaintTicks(true);
+                setSnapToTicks(true);
                 setMajorTickSpacing(50);
                 setMinorTickSpacing(2);
-                setSnapToTicks(true);
-                setOpaque(false);
-                setIgnoreRepaint(true);
                 addChangeListener(OptMenuFrame.this);
             }
 
             @Override
-            protected void paintComponent(Graphics g) {
-                g.setColor(Color.DARK_GRAY);
-                g.fillRect(0, 0, getWidth(), getHeight());
+            public void paintComponent(Graphics g) {
+                Graphics2D g2D = (Graphics2D) g;
+                g2D.setColor(Color.DARK_GRAY);
+                g2D.fillRect(0, 0, getWidth(), getHeight());
+
                 super.paintComponent(g);
             }
         };
@@ -453,7 +453,7 @@ public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotion
     @Override
     public void mouseEntered(MouseEvent e) {
         reloadBaseBuffer();
-        repaint();
+//        repaint();
     }
 
     @Override

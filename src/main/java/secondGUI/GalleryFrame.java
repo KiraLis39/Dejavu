@@ -28,8 +28,8 @@ public class GalleryFrame extends JDialog implements MouseListener, MouseMotionL
     private boolean isFullscreen = false;
 
 
-    public GalleryFrame(JFrame parent) {
-        super(parent, true);
+    public GalleryFrame(JFrame parent, GraphicsConfiguration gConfig) {
+        super(parent, "GalleryFrame", true, gConfig);
         Print(GalleryFrame.class, INFO, "Вход в Галерею.");
 
         setUndecorated(true);
@@ -84,7 +84,7 @@ public class GalleryFrame extends JDialog implements MouseListener, MouseMotionL
     @Override
     public void paint(Graphics g) {
         Graphics2D g2D = (Graphics2D) g;
-        FoxRender.setLowRender(g2D);
+        FoxRender.setRender(g2D, FoxRender.RENDER.MED);
 
         g2D.drawImage(
                 (BufferedImage) cache.get("picGallery"),
