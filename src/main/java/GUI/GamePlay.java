@@ -274,7 +274,8 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
 
         // other images:
         try {
-            backButtons = FoxSpritesCombiner.addSpritelist("picBackButBig", (BufferedImage) cache.get("picBackButBig"), 3, 1);
+            backButtons = FoxSpritesCombiner.getSprites("picBackButBig",
+                    (BufferedImage) cache.get("picBackButBig"), 1, 3);
             gamepaneImage = (BufferedImage) cache.get("picGamepane");
             if (gamepaneImage == null) {
                 throw new NullPointerException("gamepaneImage is NULL");

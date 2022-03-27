@@ -19,7 +19,6 @@ import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
 
-
 public class NewUserForm extends JDialog implements Cached, ListSelectionListener, ActionListener, ItemListener {
     private final int WIDTH = 500, HEIGHT = 480;
     private JTextField nameField, ageField;
