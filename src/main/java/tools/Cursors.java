@@ -16,17 +16,13 @@ public enum Cursors implements Cached {
     BlueCursor("curBlueCursor"),
     OrangeCursor("curOrangeCursor");
 
-    String value;
+    final String value;
 
     Cursors(String value) {
         this.value = value;
     }
 
     public Cursor get() {
-        return FoxCursor.createCursor((BufferedImage) cache.get(this.value()), this.value());
-    }
-
-    private String value() {
-        return value;
+        return FoxCursor.createCursor((BufferedImage) cache.get(value), value);
     }
 }

@@ -8,10 +8,11 @@ import fox.JIOM;
 import fox.Out;
 import fox.Out.LEVEL;
 import interfaces.Cached;
+import registry.Registry;
+import secondGUI.NewUserForm;
 import tools.ModsLoader;
 
 import javax.imageio.ImageIO;
-import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -20,7 +21,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import static fox.Out.Print;
 import static registry.Registry.*;
+import static registry.Registry.userConf;
 
 public class MainClass implements Cached {
     private static boolean isLogEnabled = true;
@@ -31,8 +34,7 @@ public class MainClass implements Cached {
         Out.setErrorLevel(LEVEL.DEBUG);
         Out.setLogsCountAllow(3);
 
-        try {
-            configuration = JIOM.fileToDto(globalConfigFile, Configuration.class);
+        try {configuration = JIOM.fileToDto(globalConfigFile, Configuration.class);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -58,21 +60,18 @@ public class MainClass implements Cached {
         }
 
         existingDirectoriesCheck();
-
-        configurator();
-
         loadImages();
+
+        try {fl.join();
+        } catch (InterruptedException ignore) {}
+
+        playerCheck();
+        postPlayerInit();
+    }
+
+    public static void postPlayerInit() {
         loadAudio();
-
         connectMods();
-
-        if (fl != null) {
-            try {
-                fl.join();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
 
         Out.Print(MainClass.class, LEVEL.ACCENT, "Запуск MainMenu...");
         new GameMenu();
@@ -113,51 +112,51 @@ public class MainClass implements Cached {
         Out.Print(MainClass.class, LEVEL.INFO, "Проверка наличия необходимых директорий завершена.\n");
     }
 
-    private static void configurator() {
-        // настраиваем пользователя:
+    private static void playerCheck() {
         try {
             int luHash = configuration.getLastUserHash();
-            if (luHash == 0) {
-                createNewUser("newEmptyUser", UserConf.USER_SEX.MALE, 14);
+            if (luHash == 0 || Files.notExists(Paths.get(usersDir + "/" + luHash + "/save.dto"))) {
+                userConf = regNewbie();
             } else {
                 usersSaveDir = Paths.get(usersDir + "/" + luHash + "/");
-                userConf = JIOM.fileToDto(Paths.get(usersSaveDir + "/config.dto"), UserConf.class);
+                userConf = JIOM.fileToDto(Paths.get(usersSaveDir + "/save.dto"), UserConf.class);
             }
-
-            JIOM.dtoToFile(configuration);
-            JIOM.dtoToFile(userConf);
         } catch (Exception e) {
-            Out.Print(MainClass.class, LEVEL.ERROR, "Failed user save: " + e.getMessage());
+            Out.Print(MainClass.class, LEVEL.ERROR, "Failed user load: " + e.getMessage());
+            Exit.exit(13, e.getMessage());
         }
     }
 
-    public static void createNewUser(String name, UserConf.USER_SEX sex, int age) throws Exception {
+    public static UserConf regNewbie() {
+        Print(GameMenu.class, LEVEL.INFO, "A newbie creation...");
+
         try {
-            if (userConf != null) {
-                // сохраняем предыдущего пользователя:
-                JIOM.dtoToFile(userConf);
-            }
-
-            // Настраиваем глобальную конфигурацию:
-            configuration.setLastUserName(name);
-            configuration.calcUserHash();
-            JIOM.dtoToFile(configuration);
-
             // настраиваем нового пользователя:
-            usersSaveDir = Paths.get(usersDir + "/" + configuration.getLastUserHash() + "/");
-            userConf = JIOM.fileToDto(Paths.get(usersSaveDir + "/config.dto"), UserConf.class);
-            userConf.setUserName(configuration.getLastUserName());
-            userConf.setUserSex(sex);
-            userConf.setUserAge(age);
-            if (userConf.getUserAge() <= 0 || userConf.getUserAge() > 120) {
-                userConf.setUserAge(14);
+            userConf = new NewUserForm().get();
+            if (userConf != null) {
+                loadUser(userConf);
+            } else {
+                return null;
             }
-            JIOM.dtoToFile(userConf);
-
-            Out.Print(MainClass.class, LEVEL.INFO, "Приветствуем игрока " + userConf.getUserName() + "!");
         } catch (Exception e) {
-            throw e;
+            e.printStackTrace();
         }
+
+        return userConf;
+    }
+
+    public static void loadUser(UserConf uConf) throws IOException {
+        // Настраиваем глобальную конфигурацию:
+        configuration.setLastUserName(uConf.getUserName());
+        configuration.calcUserHash();
+        JIOM.dtoToFile(configuration);
+
+        usersSaveDir = Paths.get(usersDir + "/" + configuration.getLastUserHash());
+        uConf.setSource(Paths.get(usersSaveDir + "/save.dto"));
+        JIOM.dtoToFile(uConf);
+
+        userConf = uConf;
+        Out.Print(MainClass.class, LEVEL.INFO, "Приветствуем игрока " + userConf.getUserName() + "!");
     }
 
     private static void loadImages() {
@@ -185,11 +184,12 @@ public class MainClass implements Cached {
         cache.add("picMenuBase", toBImage(picDir + "/backgrounds/menuBase"));
         cache.add("picAurora", toBImage(picDir + "/backgrounds/aurora"));
         cache.add("picGallery", toBImage(picDir + "/backgrounds/gallery"));
-        cache.add("picMenupane", toBImage(picDir + "/backgrounds/menupane"));
-        cache.add("picGender", toBImage(picDir + "/backgrounds/gender"));
         cache.add("picGamepane", toBImage(picDir + "/backgrounds/gamepane"));
         cache.add("picAutrs", toBImage(picDir + "/backgrounds/autrs"));
         cache.add("picGameMenu", toBImage(picDir + "/backgrounds/gameMenu"));
+        cache.add("picMenuBotRight", toBImage(picDir + "/backgrounds/menu_bottomRight"));
+        cache.add("picMenuBotLeft", toBImage(picDir + "/backgrounds/menu_bottomLeft"));
+        cache.add("picMenuTop", toBImage(picDir + "/backgrounds/menu_top"));
 
         // heroes:
         cache.add("0", toBImage(picDir + "/hero/0"));

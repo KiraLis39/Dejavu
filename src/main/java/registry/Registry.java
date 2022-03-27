@@ -20,7 +20,7 @@ public class Registry {
 //	public static final FoxPlayer voicePlayer = new FoxPlayer("Voice");
 
     // GLOBAL DATA:
-    public static final String version = "0.1.4.0";
+    public static final String version = "0.1.4.6";
     public static final Charset charset = StandardCharsets.UTF_8;
     public static final String picExtension = ".png";
     public static final String sBlockExtension = ".json";
@@ -54,7 +54,7 @@ public class Registry {
     public static final Font f5 = FoxFontBuilder.setFoxFont(FONT.CONSTANTIA, 28, true, gEnv);
     public static final Font f6 = FoxFontBuilder.setFoxFont(FONT.CONSOLAS, 28, true, gEnv);
     public static final Font f7 = FoxFontBuilder.setFoxFont(FONT.ARIAL_NARROW, 22, true, gEnv);
-    public static final Font f8 = FoxFontBuilder.setFoxFont(FONT.MONOTYPE_CORSIVA, 24, true, gEnv);
+    public static final Font f8 = FoxFontBuilder.setFoxFont(FONT.MONOTYPE_CORSIVA, 20, true, gEnv);
     public static final Font f9 = FoxFontBuilder.setFoxFont(FONT.ARIAL, 30, true, gEnv);
     public static final Font f10 = FoxFontBuilder.setFoxFont(FONT.GEORGIA, 19, false, gEnv);
 

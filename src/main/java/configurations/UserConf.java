@@ -3,6 +3,7 @@ package configurations;
 import fox.interfaces.JConfigurable;
 import lombok.AccessLevel;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.experimental.FieldDefaults;
 import render.FoxRender;
 import render.FoxRender.RENDER;
@@ -10,33 +11,35 @@ import render.FoxRender.RENDER;
 import java.nio.file.Path;
 
 @Data
+@EqualsAndHashCode
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class UserConf implements JConfigurable {
     public enum USER_SEX {MALE, FEMALE}
+    USER_SEX userSex;
 
     Path source;
-    RENDER quality = RENDER.LOW;
-    USER_SEX userSex;
-    String userName = "newEmptyUser";
-    int userAge = 14;
-    int avatarIndex = 0;
-    int cycleCount = 0;
-    boolean fullScreen = false;
-    boolean autoSaveOn = true;
-    boolean autoSkipping = false;
 
-    int musicVolume = 75;
-    boolean musicMuted = false;
-    int soundVolume = 50;
-    boolean soundMuted = false;
-    int backgVolume = 50;
-    boolean backgMuted = false;
-    int voiceVolume = 75;
-    boolean voiceMuted = false;
+    RENDER quality;
+    String userName;
+    int userAge;
+    int avatarIndex;
+    int cycleCount;
+    boolean fullScreen;
+    boolean autoSaveOn;
+    boolean autoSkipping;
+
+    int musicVolume;
+    boolean musicMuted;
+    int soundVolume;
+    boolean soundMuted;
+    int backgVolume;
+    boolean backgMuted;
+    int voiceVolume;
+    boolean voiceMuted;
 
     @Override
-    public void setSource(Path path) {
-        source = path;
+    public void setSource(Path source) {
+        this.source = source;
     }
 
     @Override

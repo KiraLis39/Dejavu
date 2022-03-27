@@ -22,14 +22,14 @@ public class Exit {
         Print(Exit.class, LEVEL.ACCENT, "Сохранение...");
         try {
             JIOM.dtoToFile(Registry.configuration);
-        } catch (IOException e) {
+        } catch (Exception e) {
 			i++;
             e.printStackTrace();
         }
 
         try {
             JIOM.dtoToFile(Registry.userConf);
-        } catch (IOException e) {
+        } catch (Exception e) {
 			i++;
             e.printStackTrace();
         }
