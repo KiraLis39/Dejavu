@@ -30,7 +30,7 @@ public class NewUserForm extends JDialog implements Cached, ListSelectionListene
     @Override
     public void paint(Graphics g) {
         Graphics2D g2D = (Graphics2D) g;
-        // TODO: где рендер?
+        FoxRender.setRender(g2D, FoxRender.RENDER.ULTRA);
         g2D.setColor(Color.DARK_GRAY);
         g2D.fillRoundRect(0, 0, WIDTH, HEIGHT, 30, 30);
 

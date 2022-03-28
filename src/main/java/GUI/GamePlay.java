@@ -31,7 +31,7 @@ import static fox.Out.Print;
 import static registry.Registry.*;
 
 @Data
-public class GamePlay extends JFrame implements MouseListener, MouseMotionListener, Cached {
+public class GamePlay extends JFrame implements MouseListener, MouseMotionListener, WindowListener, Cached {
     private ScenarioEngine scenario;
 
     private Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
@@ -77,11 +77,192 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
         getContentPane().setBackground(new Color(0,0,0,0));
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setCursor(Cursors.PinkCursor.get());
-
+        addWindowListener(GamePlay.this);
+        
         loadResources();
-        loadScenario();
+        add(buildBasePane());
+        reloadRectangles();
+
         setInAc();
 
+        loadScenario();
+        new Thread(new StoryPlayThread()) {
+            {
+                setDaemon(true);
+                setName("StoryPlayed-thread (GameFrame repaint thread)");
+            }
+        }.start();
+    }
+
+    private void loadResources() {
+        // npc images:
+        try {
+            for (Path path : Files.list(npcAvatarsDir).toList()) {
+                cache.add(path.toFile().getName().replace(picExtension, ""),
+                        toBImage(path.toString().replace(picExtension, "")));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        // scenes images:
+        try {
+            for (Path path : Files.list(scenesDir).toList()) {
+                cache.add(path.toFile().getName().replace(picExtension, ""),
+                        toBImage(path.toString().replace(picExtension, "")));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        // other images:
+        try {
+            backButtons = FoxSpritesCombiner.getSprites("picBackButBig",
+                    (BufferedImage) cache.get("picBackButBig"), 1, 3);
+            gamepaneImage = (BufferedImage) cache.get("picGamepane");
+            if (gamepaneImage == null) {
+                throw new NullPointerException("gamepaneImage is NULL");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        setCenterImage(null);
+    }
+
+    private BufferedImage toBImage(String path) {
+        try {
+            return ImageIO.read(new File(path + picExtension));
+        } catch (Exception e) {
+            Out.Print(MainClass.class, Out.LEVEL.WARN, "Ошибка чтения медиа '" + Paths.get(path) + "': " + e.getMessage());
+        }
+        return null;
+    }
+
+    private void loadScenario() {
+        scenario = new ScenarioEngine();
+        scenario.load(new File(blockPath + "/00NewStart" + sBlockExtension)); // loading First block:
+    }
+
+    private void setInAc() {
+        InputAction.add("game", GamePlay.this); // SwingUtilities.getWindowAncestor(basePane));
+
+        InputAction.set("game", "Ctrl+F4", KeyEvent.VK_F4, 512, new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                showExitRequest();
+            }
+        });
+        InputAction.set(InputAction.FOCUS_TYPE.WHEN_FOCUSED, "game", "close", KeyEvent.VK_ESCAPE, 0, new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                showExitRequest();
+            }
+        });
+        InputAction.set("game", "fullscreen", KeyEvent.VK_F, 0, new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                isPaused = true;
+                userConf.setFullScreen(!userConf.isFullScreen());
+                reloadRectangles();
+                isPaused = false;
+            }
+        });
+        InputAction.set("game", "switchFPS", KeyEvent.VK_F11, 0, new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                configuration.setFpsShowed(!configuration.isFpsShowed());
+            }
+        });
+        InputAction.set("game", "switchQuality", KeyEvent.VK_F3, 0, new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                userConf.nextQuality();
+                System.out.println("Quality: " + userConf.getQuality());
+            }
+        });
+
+        InputAction.set("game", "next", KeyEvent.VK_SPACE, 0, new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (isDialogAnimated) {
+                    dialogDelaySpeed = 0;
+                    return;
+                }
+                scenario.choice(-1);
+                answerList.clearSelection();
+            }
+        });
+        InputAction.set("game", "answer_1", KeyEvent.VK_1, 0, new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (dlm.size() < 1) {
+                    return;
+                }
+                answerList.setSelectedIndex(0);
+                scenario.choice(0);
+                resetVariantsList();
+            }
+        });
+        InputAction.set("game", "answer_2", KeyEvent.VK_2, 0, new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (dlm.size() < 2) {
+                    return;
+                }
+                answerList.setSelectedIndex(1);
+                scenario.choice(1);
+                resetVariantsList();
+            }
+        });
+        InputAction.set("game", "answer_3", KeyEvent.VK_3, 0, new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (dlm.size() < 3) {
+                    return;
+                }
+                answerList.setSelectedIndex(2);
+                scenario.choice(2);
+                resetVariantsList();
+            }
+        });
+        InputAction.set("game", "answer_4", KeyEvent.VK_4, 0, new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (dlm.size() < 4) {
+                    return;
+                }
+                answerList.setSelectedIndex(3);
+                scenario.choice(3);
+                resetVariantsList();
+            }
+        });
+        InputAction.set("game", "answer_5", KeyEvent.VK_5, 0, new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (dlm.size() < 5) {
+                    return;
+                }
+                answerList.setSelectedIndex(4);
+                scenario.choice(4);
+                resetVariantsList();
+            }
+        });
+
+        InputAction.set("game", "keyLeft", KeyEvent.VK_LEFT, 0, new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+
+            }
+        });
+        InputAction.set("game", "keyRight", KeyEvent.VK_RIGHT, 0, new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+            }
+        });
+    }
+
+    private JPanel buildBasePane() {
         basePane = new JPanel(null) {
             @Override
             public void paintComponent(Graphics g) {
@@ -237,183 +418,12 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
                 add(answerList);
             }
         };
-
-        add(basePane);
-
-        setVisible(true);
-        reloadRectangles();
-
-        new Thread(new StoryPlayThread()) {
-            {
-                setDaemon(true);
-                setName("StoryPlayed-thread (GameFrame repaint thread)");
-            }
-        }.start();
-    }
-
-    private void loadResources() {
-        // npc images:
-        try {
-            for (Path path : Files.list(npcAvatarsDir).toList()) {
-                cache.add(path.toFile().getName().replace(picExtension, ""),
-                        toBImage(path.toString().replace(picExtension, "")));
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        // scenes images:
-        try {
-            for (Path path : Files.list(scenesDir).toList()) {
-                cache.add(path.toFile().getName().replace(picExtension, ""),
-                        toBImage(path.toString().replace(picExtension, "")));
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        // other images:
-        try {
-            backButtons = FoxSpritesCombiner.getSprites("picBackButBig",
-                    (BufferedImage) cache.get("picBackButBig"), 1, 3);
-            gamepaneImage = (BufferedImage) cache.get("picGamepane");
-            if (gamepaneImage == null) {
-                throw new NullPointerException("gamepaneImage is NULL");
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        setCenterImage(null);
-    }
-
-    private BufferedImage toBImage(String path) {
-        try {
-            return ImageIO.read(new File(path + picExtension));
-        } catch (Exception e) {
-            Out.Print(MainClass.class, Out.LEVEL.WARN, "Ошибка чтения медиа '" + Paths.get(path) + "': " + e.getMessage());
-        }
-        return null;
-    }
-
-    private void loadScenario() {
-        scenario = new ScenarioEngine();
-        scenario.load(new File(blockPath + "/00NewStart" + sBlockExtension)); // loading First block:
-    }
-
-    private void setInAc() {
-        InputAction.add("game", GamePlay.this); // SwingUtilities.getWindowAncestor(basePane));
-
-        InputAction.set(InputAction.FOCUS_TYPE.WHEN_FOCUSED, "game", "close", KeyEvent.VK_ESCAPE, 0, new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                showExitRequest();
-            }
-        });
-        InputAction.set("game", "fullscreen", KeyEvent.VK_F, 0, new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                isPaused = true;
-                userConf.setFullScreen(!userConf.isFullScreen());
-                reloadRectangles();
-                isPaused = false;
-            }
-        });
-        InputAction.set("game", "switchFPS", KeyEvent.VK_F11, 0, new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                configuration.setFpsShowed(!configuration.isFpsShowed());
-            }
-        });
-        InputAction.set("game", "switchQuality", KeyEvent.VK_F3, 0, new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                userConf.nextQuality();
-                System.out.println("Quality: " + userConf.getQuality());
-            }
-        });
-
-        InputAction.set("game", "next", KeyEvent.VK_SPACE, 0, new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if (isDialogAnimated) {
-                    dialogDelaySpeed = 0;
-                    return;
-                }
-                scenario.choice(-1);
-                answerList.clearSelection();
-            }
-        });
-        InputAction.set("game", "answer_1", KeyEvent.VK_1, 0, new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if (dlm.size() < 1) {
-                    return;
-                }
-                answerList.setSelectedIndex(0);
-                scenario.choice(0);
-                resetVariantsList();
-            }
-        });
-        InputAction.set("game", "answer_2", KeyEvent.VK_2, 0, new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if (dlm.size() < 2) {
-                    return;
-                }
-                answerList.setSelectedIndex(1);
-                scenario.choice(1);
-                resetVariantsList();
-            }
-        });
-        InputAction.set("game", "answer_3", KeyEvent.VK_3, 0, new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if (dlm.size() < 3) {
-                    return;
-                }
-                answerList.setSelectedIndex(2);
-                scenario.choice(2);
-                resetVariantsList();
-            }
-        });
-        InputAction.set("game", "answer_4", KeyEvent.VK_4, 0, new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if (dlm.size() < 4) {
-                    return;
-                }
-                answerList.setSelectedIndex(3);
-                scenario.choice(3);
-                resetVariantsList();
-            }
-        });
-        InputAction.set("game", "answer_5", KeyEvent.VK_5, 0, new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if (dlm.size() < 5) {
-                    return;
-                }
-                answerList.setSelectedIndex(4);
-                scenario.choice(4);
-                resetVariantsList();
-            }
-        });
-
-        InputAction.set("game", "keyLeft", KeyEvent.VK_LEFT, 0, new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-
-            }
-        });
-        InputAction.set("game", "keyRight", KeyEvent.VK_RIGHT, 0, new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-            }
-        });
+        return basePane;
     }
 
     private void reloadRectangles() {
+        if (isVisible()) {dispose();}
+
         if (userConf.isFullScreen()) {
             centerPicRect = new Rectangle(0, 0, FULLSCREEN_WIDTH.intValue(), (int) (FULLSCREEN_HEIGHT * 0.75D));
             heroAvatarRect = new Rectangle((int) (FULLSCREEN_WIDTH * 0.01D), (int) (FULLSCREEN_HEIGHT * 0.74D),
@@ -425,10 +435,6 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
                     (int) (FULLSCREEN_WIDTH * 0.565D), (int) (FULLSCREEN_HEIGHT * 0.225D));
             choseVariantRect = new Rectangle((int) (FULLSCREEN_WIDTH * 0.735D), (int) (FULLSCREEN_HEIGHT * 0.74D),
                     (int) (FULLSCREEN_WIDTH * 0.1485D), (int) (FULLSCREEN_HEIGHT * 0.225D));
-
-            setBackground(new Color(0, 0, 0, 0));
-            setSize(FULLSCREEN_WIDTH.intValue(), FULLSCREEN_HEIGHT.intValue());
-            basePane.setSize(getSize());
         } else {
             centerPicRect = new Rectangle(0, 0, WINDOWED_WIDTH.intValue(), (int) (WINDOWED_HEIGHT * 0.75D));
             heroAvatarRect = new Rectangle((int) (WINDOWED_WIDTH * 0.01D), (int) (WINDOWED_HEIGHT * 0.74D),
@@ -440,18 +446,26 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
                     (int) (WINDOWED_WIDTH * 0.565D), (int) (WINDOWED_HEIGHT * 0.225D));
             choseVariantRect = new Rectangle((int) (WINDOWED_WIDTH * 0.735D), (int) (WINDOWED_HEIGHT * 0.74D),
                     (int) (WINDOWED_WIDTH * 0.1485D), (int) (WINDOWED_HEIGHT * 0.225D));
+        }
 
-            setBackground(Color.BLACK);
-            setSize(WINDOWED_WIDTH.intValue(), WINDOWED_HEIGHT.intValue());
-            basePane.setSize(getSize());
+        if (userConf.isFullScreen()) {
+            getContentPane().setBackground(Color.BLACK);
+            setExtendedState(JFrame.MAXIMIZED_BOTH);
+//            gDevice.setFullScreenWindow(GameMenu.this);
+        } else {
+//            gDevice.setFullScreenWindow(null);
+            setExtendedState(NORMAL);
+            setBackground(new Color(0, 0, 0, 0));
+            setPreferredSize(new Dimension(WINDOWED_WIDTH.intValue(), WINDOWED_HEIGHT.intValue()));
+            pack();
         }
 
         answerList.setSize(choseVariantRect.width, choseVariantRect.height);
         answerList.setLocation(choseVariantRect.x, choseVariantRect.y);
 
+        setVisible(true);
         setLocationRelativeTo(null);
     }
-
 
     public void setCenterImage(String sceneName) {
         if (sceneName == null) {
@@ -566,14 +580,16 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
         isStoryPlayed = false;
         stopAnimation();
 
-        dispose();
         new GameMenu();
+        if (isVisible()) {dispose();}
     }
 
     private void stopAnimation() {
         if (textAnimateThread != null) {
             dialogDelaySpeed = 0;
             textAnimateThread.interrupt();
+            try {textAnimateThread.join(500);
+            } catch (InterruptedException ignore) {}
         }
     }
 
@@ -626,6 +642,16 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
     public void mouseExited(MouseEvent e) {
     }
 
+    @Override
+    public void windowClosing(WindowEvent e) {
+        showExitRequest();
+    }
+    public void windowOpened(WindowEvent e) {}
+    public void windowClosed(WindowEvent e) {}
+    public void windowIconified(WindowEvent e) {}
+    public void windowDeiconified(WindowEvent e) {}
+    public void windowActivated(WindowEvent e) {}
+    public void windowDeactivated(WindowEvent e) {}
 
     private class StoryPlayThread implements Runnable {
         @Override

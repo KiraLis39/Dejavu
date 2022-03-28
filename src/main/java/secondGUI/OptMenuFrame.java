@@ -48,45 +48,6 @@ public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotion
             down0Point, down1Point, down2Point, down3Point, downChecker0, downChecker1, downChecker2, downChecker3;
     private int sChCount = 3;
 
-    public OptMenuFrame(JFrame parent, GraphicsConfiguration gConfig) {
-        super(parent, "OptMenuFrame", true, gConfig);
-        Out.Print(OptMenuFrame.class, LEVEL.INFO, "Вход в опции!");
-
-        setModal(true);
-        setModalExclusionType(Dialog.ModalExclusionType.APPLICATION_EXCLUDE);
-        setUndecorated(true);
-        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-        setCursor(FoxCursor.createCursor((BufferedImage) cache.get("curOtherCursor"), "otherCursor"));
-        setMinimumSize(new Dimension(WIDTH, HEIGHT));
-        setLayout(null);
-
-        polygonsDot = new int[]{(int) (widthPercent * 84D), (int) (widthPercent * 87D), (int) (widthPercent * 89D), (int) (widthPercent * 87D)};
-
-        soundMuteRect = new Rectangle((int) (widthPercent * 85D), (int) (heightPercent * 12D), 15, 15);
-        musicMuteRect = new Rectangle((int) (widthPercent * 85D), (int) (heightPercent * 27D), 15, 15);
-        backgMuteRect = new Rectangle((int) (widthPercent * 85D), (int) (heightPercent * 41D), 15, 15);
-        voiceMuteRect = new Rectangle((int) (widthPercent * 85D), (int) (heightPercent * 55D), 15, 15);
-
-        downBackFonRect = new Rectangle((int) (widthPercent * 3D), (int) (heightPercent * 71D), (int) (widthPercent * 94D), (int) (heightPercent * 26D));
-
-        buildVolumeSliders();
-        addInAction();
-
-        add(volumeOfSoundSlider);
-        add(volumeOfMusicSlider);
-        add(volumeOfBackgSlider);
-        add(volumeOfVoiceSlider);
-
-        addMouseListener(this);
-        addMouseMotionListener(this);
-
-        pack();
-        setLocationRelativeTo(null);
-
-        Out.Print(OptMenuFrame.class, LEVEL.DEBUG, "Окно опций OptMenuFrame готово к отображению.");
-        setVisible(true);
-    }
-
     @Override
     public void paint(Graphics g) {
         if (baseBuffer == null) {
@@ -342,6 +303,39 @@ public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotion
         g2D.drawString(stringAutoSkipping, down3Point.x, down3Point.y);
     }
 
+    public OptMenuFrame(JFrame parent, GraphicsConfiguration gConfig) {
+        super(parent, "OptMenuFrame", true, gConfig);
+        Out.Print(OptMenuFrame.class, LEVEL.INFO, "Вход в опции!");
+
+        setLayout(null);
+        setUndecorated(true);
+        setMinimumSize(new Dimension(WIDTH, HEIGHT));
+        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+        setModalExclusionType(Dialog.ModalExclusionType.APPLICATION_EXCLUDE);
+        setCursor(FoxCursor.createCursor((BufferedImage) cache.get("curOtherCursor"), "otherCursor"));
+
+        addInAction();
+
+        polygonsDot = new int[]{(int) (widthPercent * 84D), (int) (widthPercent * 87D), (int) (widthPercent * 89D), (int) (widthPercent * 87D)};
+
+        soundMuteRect = new Rectangle((int) (widthPercent * 85D), (int) (heightPercent * 12D), 15, 15);
+        musicMuteRect = new Rectangle((int) (widthPercent * 85D), (int) (heightPercent * 27D), 15, 15);
+        backgMuteRect = new Rectangle((int) (widthPercent * 85D), (int) (heightPercent * 41D), 15, 15);
+        voiceMuteRect = new Rectangle((int) (widthPercent * 85D), (int) (heightPercent * 55D), 15, 15);
+
+        downBackFonRect = new Rectangle((int) (widthPercent * 3D), (int) (heightPercent * 71D), (int) (widthPercent * 94D), (int) (heightPercent * 26D));
+
+        buildVolumeSliders();
+
+        addMouseListener(this);
+        addMouseMotionListener(this);
+
+        pack();
+        setLocationRelativeTo(null);
+        Out.Print(OptMenuFrame.class, LEVEL.DEBUG, "Окно опций OptMenuFrame готово к отображению.");
+        setVisible(true);
+    }
+
     private void addInAction() {
         InputAction.add("options", this);
         InputAction.set("options", "close", KeyEvent.VK_ESCAPE, 0, new AbstractAction() {
@@ -359,30 +353,33 @@ public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotion
         volumeOfMusicSlider = getSlider("volumeOfMusic", userConf.getMusicVolume());
         volumeOfBackgSlider = getSlider("volumeOfBackg", userConf.getBackgVolume());
         volumeOfVoiceSlider = getSlider("volumeOfVoice", userConf.getVoiceVolume());
+
+        add(volumeOfSoundSlider);
+        add(volumeOfMusicSlider);
+        add(volumeOfBackgSlider);
+        add(volumeOfVoiceSlider);
     }
 
     private JSlider getSlider(String name, int volume) {
         return new JSlider(0, 100, volume) {
+            @Override
+            public void paintComponent(Graphics g) {
+                g.setColor(Color.DARK_GRAY);
+                g.fillRect(0, 0, getWidth(), getHeight());
+
+                super.paintComponent(g);
+            }
+
             {
                 setName(name);
-                setOpaque(false);
                 setBackground(new Color(0,0,0,0));
                 setForeground(Color.ORANGE.brighter());
                 setPaintLabels(true);
                 setPaintTicks(true);
-                setSnapToTicks(true);
-                setMajorTickSpacing(50);
-                setMinorTickSpacing(2);
+//                setSnapToTicks(true);
+                setMajorTickSpacing(25);
+                setMinorTickSpacing(5);
                 addChangeListener(OptMenuFrame.this);
-            }
-
-            @Override
-            public void paintComponent(Graphics g) {
-                Graphics2D g2D = (Graphics2D) g;
-                g2D.setColor(Color.DARK_GRAY);
-                g2D.fillRect(0, 0, getWidth(), getHeight());
-
-                super.paintComponent(g);
             }
         };
     }
@@ -453,7 +450,6 @@ public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotion
     @Override
     public void mouseEntered(MouseEvent e) {
         reloadBaseBuffer();
-//        repaint();
     }
 
     @Override

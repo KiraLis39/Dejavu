@@ -3,6 +3,7 @@ package secondGUI;
 import configurations.UserConf;
 import interfaces.Cached;
 import registry.Registry;
+import render.FoxRender;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -26,12 +27,7 @@ public class FoxCellRenderer implements ListCellRenderer<UserConfPanel>, Cached 
         JPanel base = new JPanel(new BorderLayout(0,0)) {
             {
                 setOpaque(false);
-//                setBackground(new Color(0,0,0,0));
                 setBorder(BorderFactory.createRaisedSoftBevelBorder());
-//                setFont(Registry.f8); // f4, f7
-//                setHorizontalTextPosition(JButton.RIGHT);
-//                setHorizontalAlignment(JButton.LEFT);
-//                setFocusPainted(false);
 
                 add(new JPanel() {
                     BufferedImage ico;

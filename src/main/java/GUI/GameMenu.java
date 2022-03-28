@@ -4,11 +4,8 @@ import components.FOptionPane;
 import components.FoxConsole;
 import components.FoxTipsEngine;
 import door.Exit;
-import door.MainClass;
 import fox.FoxFontBuilder;
 import fox.InputAction;
-import fox.JIOM;
-import fox.Out;
 import images.FoxSpritesCombiner;
 import interfaces.Cached;
 import registry.Registry;
@@ -24,33 +21,28 @@ import java.awt.event.*;
 import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.IOException;
-import java.nio.file.Paths;
 
 import static fox.Out.LEVEL;
 import static fox.Out.Print;
 import static registry.Registry.*;
 
 public class GameMenu extends JFrame implements MouseListener, MouseMotionListener, ActionListener, Cached {
+    private final Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
+    private final FoxConsole cons;
+
     private static GraphicsEnvironment gEnv = GraphicsEnvironment.getLocalGraphicsEnvironment();
     private static GraphicsDevice gDevice = gEnv.getDefaultScreenDevice();
     private static GraphicsConfiguration gc = gDevice.getDefaultConfiguration();
 
-    private static final Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
+    private BufferedImage[] exitImages, startImages, menuImages;
     private BufferedImage centerImage, botTopImage, botRightImage, botLeftImage;
-    private static BufferedImage[] exitImages, startImages, menuImages;
-
-    private static Point2D mouseWasOnScreen, frameWas;
-
-    private static String downText;
-
-    private static JPanel basePane;
-    private static JButton optionsButton, galleryButton, saveLoadButton, exitButton, aboutButton;
-    private static JLabel downTextLabel;
-
-    private final FoxConsole cons;
+    private Point2D mouseWasOnScreen, frameWas;
+    private JPanel basePane;
+    private JButton optionsButton, galleryButton, saveLoadButton, exitButton, aboutButton;
+    private JLabel downTextLabel;
     private FoxTipsEngine cd;
 
+    private String downText;
     private Integer curFps = 0;
     private int refDelay;
     private float fpsCounter = 0;
@@ -89,20 +81,21 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
         setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
         setResizable(false);
         setCursor(Cursors.SimpleCursor.get());
+        setAutoRequestFocus(true);
 
         preLoading();
         inAc();
+
+        add(buildBasePane());
 
         addMouseListener(this);
         addMouseMotionListener(this);
 
         pack();
-        setAutoRequestFocus(true);
         setLocationRelativeTo(null);
 
-        Print(GameMenu.class, LEVEL.INFO, "MainMenu setts visible...");
-        setVisible(true);
         checkFullscreen();
+        Print(GameMenu.class, LEVEL.INFO, "MainMenu setts visible...");
 
         setStatusText(null);
 
@@ -114,20 +107,13 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
         new Thread(() -> {
             while (!Thread.currentThread().isInterrupted()) {
                 repaint();
-                try {Thread.sleep(refDelay);
+                try {
+                    Thread.sleep(refDelay);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 }
             }
         }).start();
-    }
-
-    private static void setStatusText(String newText) {
-        if (newText == null) {
-            downTextLabel.setText("\u266B " + userConf.getUserName() + " \u266B");
-        } else {
-            downTextLabel.setText("\u266B " + newText + " \u266B");
-        }
     }
 
     private void preLoading() {
@@ -138,11 +124,11 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
         try {
             Print(GameMenu.class, LEVEL.DEBUG, "Preparing sprites...");
             startImages = FoxSpritesCombiner
-                    .getSprites("PlayButtonSprite", (BufferedImage) cache.get("picPlayButtonSprite"),3, 1);
+                    .getSprites("PlayButtonSprite", (BufferedImage) cache.get("picPlayButtonSprite"), 3, 1);
             menuImages = FoxSpritesCombiner
-                    .getSprites("MenuButtonSprite", (BufferedImage) cache.get("picMenuButtonSprite"),3, 1);
+                    .getSprites("MenuButtonSprite", (BufferedImage) cache.get("picMenuButtonSprite"), 3, 1);
             exitImages = FoxSpritesCombiner
-                    .getSprites("ExitButtonSprite", (BufferedImage) cache.get("picExitButtonSprite"),3, 1);
+                    .getSprites("ExitButtonSprite", (BufferedImage) cache.get("picExitButtonSprite"), 3, 1);
         } catch (Exception e) {
             Print(GameMenu.class, LEVEL.WARN, "Can`t load sprites: " + e.getMessage());
         }
@@ -172,6 +158,12 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
                 Exit.exit(0, "Exit by users 'Ctrl+F4'");
             }
         });
+        InputAction.set("MainMenu", "close", KeyEvent.VK_ESCAPE, 0, new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                showExitRequest();
+            }
+        });
         InputAction.set("MainMenu", "switchQuality", KeyEvent.VK_F3, 0, new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -195,6 +187,8 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
     }
 
     private void checkFullscreen() {
+        if (isVisible() && (userConf.isFullScreen() && getExtendedState() == MAXIMIZED_BOTH || !userConf.isFullScreen() && getExtendedState() == NORMAL)) {return;}
+
         Print(GameMenu.class, LEVEL.INFO, "\nMainMenu fullscreen switch...");
         GameMenu.this.dispose();
 
@@ -202,9 +196,8 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
             remove(basePane);
         }
         if (userConf.isFullScreen()) {
-            setExtendedState(this.getExtendedState() | JFrame.MAXIMIZED_BOTH);
             getContentPane().setBackground(Color.BLACK);
-            setSize(new Dimension((int) screen.getWidth(), (int) screen.getHeight()));
+            setExtendedState(MAXIMIZED_BOTH);
 //            gDevice.setFullScreenWindow(GameMenu.this);
         } else {
 //            gDevice.setFullScreenWindow(null);
@@ -220,7 +213,6 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
         Print(GameMenu.class, LEVEL.INFO, "MainMenu fullscreen checked. Thread: " + Thread.currentThread().getName());
     }
 
-
     private JPanel buildBasePane() {
         Print(GameMenu.class, LEVEL.INFO, "Building the BasePane...");
 
@@ -229,7 +221,7 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
                 setName("basePane");
                 setOpaque(false);
 
-                JPanel upPlayPane = new JPanel(new BorderLayout(0,0)) {
+                JPanel upPlayPane = new JPanel(new BorderLayout(0, 0)) {
                     @Override
                     public void paintComponent(Graphics g) {
                         g.drawImage(botTopImage, 0, 0, getWidth(), getHeight(), this);
@@ -305,7 +297,7 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
                     }
                 };
 
-                JPanel rightBottomPane = new JPanel(new BorderLayout(0,0)) {
+                JPanel rightBottomPane = new JPanel(new BorderLayout(0, 0)) {
                     @Override
                     public void paintComponent(Graphics g) {
                         g.drawImage(botRightImage, 0, 0, getWidth(), getHeight(), this);
@@ -316,7 +308,7 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
                         setBorder(new EmptyBorder(
                                 Double.valueOf(GameMenu.this.getHeight() * 0.0175d).intValue(),
                                 Double.valueOf(GameMenu.this.getWidth() * 0.01425d).intValue(),
-                                0,
+                                Double.valueOf(GameMenu.this.getHeight() * 0.025d).intValue(),
                                 Double.valueOf(GameMenu.this.getWidth() * 0.02425d).intValue()
                         ));
 
@@ -559,7 +551,7 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
                             }
                         };
 
-                        JPanel downExitPane = new JPanel(new BorderLayout(0,0)) {
+                        JPanel downExitPane = new JPanel(new BorderLayout(0, 0)) {
                             {
                                 setOpaque(false);
 
@@ -591,6 +583,11 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
                                         setFocusable(false);
                                         setOpaque(false);
 
+                                        setPreferredSize(new Dimension(
+                                                Double.valueOf(GameMenu.this.getWidth() * 0.25d).intValue(),
+                                                Double.valueOf(GameMenu.this.getHeight() * 0.07d).intValue()
+                                        ));
+
                                         setActionCommand("exit");
                                         addActionListener(GameMenu.this);
                                         addMouseListener(new MouseAdapter() {
@@ -619,7 +616,7 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
                                     }
                                 };
 
-                                add(exitButton, BorderLayout.EAST);
+                                add(exitButton, BorderLayout.CENTER);
                             }
                         };
 
@@ -628,7 +625,7 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
                     }
                 };
 
-                JPanel midLeftPane = new JPanel(new BorderLayout(0,0)) {
+                JPanel midLeftPane = new JPanel(new BorderLayout(0, 0)) {
                     @Override
                     public void paintComponent(Graphics g) {
                         if (centerImage != null) {
@@ -656,7 +653,7 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
 
                     {
                         setOpaque(false);
-                        setBorder(new EmptyBorder(0,0,Double.valueOf(GameMenu.this.getWidth() * 0.0235d).intValue(),0));
+                        setBorder(new EmptyBorder(0, 0, Double.valueOf(GameMenu.this.getWidth() * 0.0235d).intValue(), 0));
 
                         downTextLabel = new JLabel() {
                             {
@@ -694,6 +691,24 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
         return basePane;
     }
 
+    private void setStatusText(String newText) {
+        if (newText == null) {
+            downTextLabel.setText("\u266B " + userConf.getUserName() + " \u266B");
+        } else {
+            downTextLabel.setText("\u266B " + newText + " \u266B");
+        }
+    }
+
+    private void showExitRequest() {
+        int exit = new FOptionPane(
+                "Подтверждение:", "Точно закрыть игру и выйти?",
+                FOptionPane.TYPE.YES_NO_TYPE, null, true).get();
+        if (exit == 0) {
+            Exit.exit(0);
+        }
+    }
+
+
     @Override
     public void mouseDragged(MouseEvent e) {
         if (userConf.isFullScreen()) {
@@ -719,8 +734,6 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
         frameWas = GameMenu.this.getLocation();
     }
 
-    public void mouseMoved(MouseEvent e) {}
-    public void mouseReleased(MouseEvent e) {}
     @Override
     public void mouseExited(MouseEvent e) {
         if (e.getSource() instanceof JLabel) {
@@ -731,6 +744,7 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
             }
         }
     }
+
     @Override
     public void mouseEntered(MouseEvent e) {
         if (e.getSource() instanceof JLabel) {
@@ -741,7 +755,10 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
             }
         }
     }
+
     public void mouseClicked(MouseEvent e) {}
+    public void mouseMoved(MouseEvent e) {}
+    public void mouseReleased(MouseEvent e) {}
 
     @Override
     public void actionPerformed(ActionEvent e) {
@@ -750,14 +767,7 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
                 new GamePlay(gc);
                 dispose();
             }
-            case "exit" -> {
-                int exit = new FOptionPane(
-                        "Подтверждение:", "Точно закрыть игру и выйти?",
-                        FOptionPane.TYPE.YES_NO_TYPE, null, true).get();
-                if (exit == 0) {
-                    Exit.exit(0);
-                }
-            }
+            case "exit" -> showExitRequest();
             case "gallery" -> new GalleryFrame(GameMenu.this, getGraphicsConfiguration());
             case "saveLoad" -> new SaveGame(GameMenu.this, getGraphicsConfiguration());
             case "options" -> {
