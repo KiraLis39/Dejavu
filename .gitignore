@@ -9,3 +9,4 @@
 *.ogg
 /data/db
 log
+/resources/pictures/*
