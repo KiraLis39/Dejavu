@@ -123,13 +123,24 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
                     return;
                 }
                 g2D.drawImage(currentNpcImage,
-                        10, 10,
-                        getWidth() - 20, getHeight() - 20,
+                        0, 0,
+                        getWidth(), getHeight(),
                         this);
             }
         };
 
         JPanel downPane = new JPanel(new BorderLayout(0, 0)) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2D = (Graphics2D) g;
+                FoxRender.setRender(g2D, userConf.getQuality());
+
+                super.paintComponents(g2D);
+
+//                g2D.setColor(Color.ORANGE);
+//                g2D.drawRect(0,0,getWidth()-1,getHeight()-1);
+            }
+
             {
                 setOpaque(false);
                 setPreferredSize(new Dimension(0, Double.valueOf(GamePlay.this.getHeight() * 0.25d).intValue()));
@@ -345,17 +356,6 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
                 add(downCenterPane, BorderLayout.CENTER);
                 add(downRightPane, BorderLayout.EAST);
             }
-
-            @Override
-            protected void paintComponent(Graphics g) {
-                Graphics2D g2D = (Graphics2D) g;
-                FoxRender.setRender(g2D, userConf.getQuality());
-
-                super.paintComponents(g2D);
-
-//                g2D.setColor(Color.ORANGE);
-//                g2D.drawRect(0,0,getWidth()-1,getHeight()-1);
-            }
         };
 
         add(upPane, BorderLayout.CENTER);
@@ -378,17 +378,17 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
     // GAME CONTROLS:
     public static void setScene(String sceneName, String npcImage) {
         // scene:
-        if (sceneName == null) {
-            return;
-        } else {
+        if (sceneName != null) {
             currentSceneImage = (BufferedImage) cache.get(sceneName);
         }
 
         // npc:
         if (npcImage == null) {
+            return;
+        } else if (npcImage.equals("CLEAR")) {
             currentNpcImage = null;
         } else {
-            currentNpcImage = (BufferedImage) cache.get(npcImage);
+            currentNpcImage = (BufferedImage) cache.get(npcImage); //Screenshot_2 ?...
         }
     }
 
@@ -398,12 +398,14 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
 //        System.out.println("\nIncome data #" + n + ":\nTEXT: '[" + dialogOwner + "] " + dialogText + "'\nANSWERS: " + (answers == null ? "(next)" : Arrays.toString(answers.toArray())) + "\n");
 
         // owner:
-        if (_dialogOwner == null || _dialogOwner.equals("NULL")) {
-            setAvatar(null);
+        if (_dialogOwner == null || _dialogOwner.equalsIgnoreCase("NULL")) {
             dialogOwner = "Кто-то:";
-        } else {
-            setAvatar(_dialogOwner);
+            setAvatar(null);
+        } else if (_dialogOwner.equals(userConf.getUserName())) {
             dialogOwner = _dialogOwner;
+            setAvatar(_dialogOwner);
+        } else {
+            setAvatar(convertRussianNpcNameToSourceImageName(_dialogOwner));
         }
 
         // text:
@@ -414,6 +416,18 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
         setAnswers(Objects.requireNonNullElseGet(answers, () -> new ArrayList<>() {{
             add("Далее...");
         }}));
+    }
+
+    private static String convertRussianNpcNameToSourceImageName(String dialogOwner) {
+        switch (dialogOwner) {
+            case "Аня" -> {
+                return "Ann";
+            }
+
+            default -> {
+                return "NA";
+            }
+        }
     }
 
     public static void setAvatar(String avatar) {
@@ -523,6 +537,19 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
     }
 
     private void loadResources() {
+        new Thread(() -> {
+            try {
+                for (Path path : Files.walk(personasDir).toList()) {
+                    if (Files.isRegularFile(path)) {
+                        cache.add(path.toFile().getName().replace(picExtension, ""),
+                                toBImage(path.toString().replace(picExtension, "")));
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }).start();
+
         // npc images:
         try {
             for (Path path : Files.list(npcAvatarsDir).toList()) {
@@ -532,7 +559,6 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
         } catch (Exception e) {
             e.printStackTrace();
         }
-
         // scenes images:
         try {
             for (Path path : Files.list(scenesDir).toList()) {
@@ -545,6 +571,7 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
 
         // other images:
         try {
+            nullAvatar = (BufferedImage) cache.get("0");
             backButtons = FoxSpritesCombiner.getSprites("picBackButBig",
                     (BufferedImage) cache.get("picBackButBig"), 1, 3);
             gameImageUp = (BufferedImage) cache.get("picGamepaneUp");

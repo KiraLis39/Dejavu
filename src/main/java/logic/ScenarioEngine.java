@@ -29,15 +29,13 @@ public class ScenarioEngine {
     }
 
     public void choice(int chosenVariantIndex) {
-        if (chosenVariantIndex == -1) {
-            System.out.println("Default variant was chosen.");
-        } else {
-            System.out.println("Variant " + chosenVariantIndex + " was chosen.");
-        }
+//        if (chosenVariantIndex == -1) {
+//            System.out.println("Default variant was chosen.");
+//        } else {
+//            System.out.println("Variant " + chosenVariantIndex + " was chosen.");
+//        }
 
-        // temporary test:
-        do {
-            currentLineIndex++;
+        do {currentLineIndex++;
         } while (lines.get(currentLineIndex).isBlank());
         lineParser(lines.get(currentLineIndex));
     }
@@ -46,6 +44,8 @@ public class ScenarioEngine {
         if (line.startsWith("H-")) {
             // NPC set:
             switchNpc(line.split("-"));
+        } else if (line.startsWith("var")) {
+            System.out.println("=== VARIANTS is not completed yet ===");
         } else {
             // SCREEN set:
             switchScreen(line.split(";"));
@@ -55,13 +55,13 @@ public class ScenarioEngine {
     private void switchNpc(String[] lineData) {
         // H-Ann-upWork-simple
         if (lineData[1].equals("Clear")) {
-            GamePlay.setScene(null, null);
+            GamePlay.setScene(null, "Clear");
             choice(-1);
             return;
         }
 
         File[] variants = new File(Registry.personasDir + "/" + lineData[1] + "/" + lineData[2] + "/" + lineData[3]).listFiles();
-        GamePlay.setScene(null, variants[rand.nextInt(variants.length)].getName());
+        GamePlay.setScene(null, variants[rand.nextInt(variants.length)].getName().replace(picExtension, ""));
         choice(-1);
     }
 
@@ -73,38 +73,46 @@ public class ScenarioEngine {
 
         // dialog owner and dialog text:
         dialogOwner = lineData[0].split(":")[0].trim();
-        if (dialogOwner.equalsIgnoreCase("null")) {
-            dialogOwner = "Кто-то:";
-        } else {
-            dialogOwner = dialogOwner.equals("USERNAME") ? userConf.getUserName() + ":" : dialogOwner + ":";
-        }
+        dialogOwner = dialogOwner.equals("USERNAME") ? userConf.getUserName() : dialogOwner;
 
         dialogText = lineData[0].split(":")[1].replace("\"", "").trim();
         dialogText = dialogText.replaceAll("USERNAME", userConf.getUserName());
 
         // other data:
         if (lineData.length > 1) {
+            String mediaName;
+
             for (String lineDatum : lineData) {
                 if (lineDatum.trim().startsWith("screen")) {
                     sceneName = lineDatum.split(":")[1].replaceAll("\"", "").trim();
                     continue;
                 }
                 if (lineDatum.trim().startsWith("music")) {
-                    musicPlayer.play(lineDatum.split(":")[1].replaceAll("\"", "").trim());
+                    mediaName = lineDatum.split(":")[1].replaceAll("\"", "").trim();
+                    if (mediaName.equals("STOP")) {
+                        musicPlayer.stop();
+                    } else {
+                        musicPlayer.play(mediaName);
+                    }
                     continue;
                 }
                 if (lineDatum.trim().startsWith("backg")) {
-                    backgPlayer.play(lineDatum.split(":")[1].replaceAll("\"", "").trim());
+                    mediaName = lineDatum.split(":")[1].replaceAll("\"", "").trim();
+                    if (mediaName.equals("STOP")) {
+                        backgPlayer.stop();
+                    } else {
+                        backgPlayer.play(mediaName);
+                    }
                     continue;
                 }
                 if (lineDatum.trim().startsWith("sound")) {
                     soundPlayer.play(lineDatum.split(":")[1].replaceAll("\"", "").trim());
                     continue;
                 }
-                if (lineDatum.trim().startsWith("voice")) {
+//                if (lineDatum.trim().startsWith("voice")) {
 //                  voicePlayer.play(lineData[i].split(":")[1].replaceAll("\"", "").trim());
-                    continue;
-                }
+//                    continue;
+//                }
 //                if (lineDatum.trim().startsWith("meta")) {
 //                    meta = lineDatum.split(":")[1].replaceAll("\"", "").trim();
 //                    continue;
