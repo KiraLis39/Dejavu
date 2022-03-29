@@ -55,10 +55,15 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
     private BufferedImage nullAvatar, gameImageUp, gameImageDL, gameImageDC, gameImageDR;
     private BufferedImage[] backButtons;
     private JPanel basePane, downCenterPane;
-    private boolean isStoryPlayed, backButOver, backButPressed, isPaused, needsUpdateRectangles;
+    private boolean isStoryPlayed;
+    private boolean backButOver;
+    private boolean backButPressed;
+    private boolean isPaused;
+    private static boolean needsUpdateRectangles;
     private int refDelay;
     private float fpsIterCount = 0;
     private String curFps;
+    private static String lastText;
     private Point mouseNow, frameWas, mouseWasOnScreen;
     private Shape backBtnShape;
     private ScenarioEngine scenario = new ScenarioEngine();
@@ -294,7 +299,7 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
                                 setCursor(FoxCursor.createCursor((BufferedImage) cache.get("curTextCursor"), "textCursor"));
                                 addMouseListener(GamePlay.this);
 
-                                setPreferredSize(new Dimension(210, 0));
+//                                setPreferredSize(new Dimension(210, 0));
                             }
                         };
 
@@ -415,9 +420,10 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
         textAnimateThread.start();
 
         // answers:
-        setAnswers(Objects.requireNonNullElseGet(answers, () -> new ArrayList<>() {{
-            add("Далее...");
-        }}));
+//        setAnswers(Objects.requireNonNullElseGet(answers, () -> new ArrayList<>() {{
+//            add("Далее...");
+//        }}));
+        setAnswers(null);
     }
 
     private static String convertRussianNpcNameToSourceImageName(String dialogOwner) {
@@ -440,7 +446,7 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
         isDialogAnimated = false;
 
         if (text != null) { //  && !text.equals(lastText)
-//            lastText = text;
+            lastText = text;
 
             isDialogAnimated = true;
             dialogDelaySpeed = defaultDialogDefaultDelay;
@@ -485,8 +491,9 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
         }
 
         for (String answer : answers) {
-            dlm.addElement(dlm.size() + 1 + ": " + answer);
+            dlm.addElement(dlm.size() + 1 + ") " + answer.split("R")[0]);
         }
+        needsUpdateRectangles = true;
     }
 
     private static void stopAnimation() {

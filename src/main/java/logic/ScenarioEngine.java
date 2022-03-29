@@ -1,6 +1,7 @@
 package logic;
 
 import GUI.GamePlay;
+import components.FOptionPane;
 import lombok.Data;
 import lombok.NonNull;
 import registry.Registry;
@@ -22,34 +23,57 @@ public class ScenarioEngine {
     private final Random rand = new Random();
     private List<String> lines;
     private List<String> variants;
+    private ArrayList<String> allowedVariants;
     private int currentLineIndex;
     private boolean isChoice;
 
     public void load(@NonNull String scenarioFileName) throws IOException {
         Path scenario = Paths.get(blockPath + "/" + scenarioFileName + sBlockExtension);
-        lines = Files.readAllLines(scenario, charset);
+        lines = Files.readAllLines(scenario, charset).stream().filter(s -> !s.isBlank()).toList();
         variants = lines.stream().filter(s -> s.startsWith("var ")).toList();
+
+        System.out.println("LOADED: " + lines + "; VARS: " + variants);
+
         currentLineIndex = -1;
     }
 
     public void choice(int chosenVariantIndex) {
         if (isChoice) {
             if (chosenVariantIndex == -1) {
-                System.out.println("Denied. Need to choice.");
+                System.out.println("Denied there. Need to choice.");
+            } else if (chosenVariantIndex > allowedVariants.size()) {
+                System.out.println("Variant is too high!");
             } else {
-                System.out.println("Variant " + chosenVariantIndex + " mock.");
-            }
-            isChoice = false;
-        } else {
-            do {
-                if (currentLineIndex < lines.size()) {
-                    currentLineIndex++;
-                } else {
-                    System.out.println("=== END OF SCENARIO ===");
-                    return;
+                System.out.println("Variant chosen: " + chosenVariantIndex);
+                isChoice = false;
+                try {
+                    load(allowedVariants.get(chosenVariantIndex).split("R")[1]);
+                    choice(-1);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    new FOptionPane("Ошибка сценария:", "Не удалось загрузить файл сценария.");
                 }
-            } while (lines.get(currentLineIndex).isBlank());
-            lineParser(lines.get(currentLineIndex));
+            }
+            return;
+        }
+
+        if (currentLineIndex < lines.size() - 1) {
+            currentLineIndex++;
+        } else {
+            System.out.println("=== END OF SCENARIO ===");
+            return;
+        }
+        lineParser(lines.get(currentLineIndex));
+        if (lines.get(currentLineIndex + 1).startsWith("var ")) {
+            // VARIANTS PARSE:
+            isChoice = true;
+            allowedVariants = new ArrayList<>(
+                    variants.stream().filter(s -> Integer.parseInt(s.split(" ")[1]) <= userConf.getCycleCount()).toList()
+                            .stream().map(s -> s.split("R")[1].replace("\"", "").trim()
+                                    + "R" + s.split("R")[2].replace("\"", "").trim()).toList());
+            GamePlay.setAnswers(allowedVariants);
+        } else if (lines.get(currentLineIndex + 1).startsWith("nf ")) {
+            System.out.println("=== NEXT FILE PLEASE ===");
         }
     }
 
@@ -57,10 +81,6 @@ public class ScenarioEngine {
         if (line.startsWith("H-")) {
             // NPC set:
             switchNpc(line.split("-"));
-        } else if (line.startsWith("var")) {
-            // VARIANTS PARSE:
-            isChoice = true;
-            System.out.println("VARS: " + Arrays.toString(variants.toArray()));
         } else {
             // SCREEN set:
             switchScreen(line.split(";"));
@@ -124,19 +144,27 @@ public class ScenarioEngine {
                     soundPlayer.play(lineDatum.split(":")[1].replaceAll("\"", "").trim());
                     continue;
                 }
-//                if (lineDatum.trim().startsWith("voice")) {
+                if (lineDatum.trim().startsWith("meta")) {
+                    meta = lineDatum.split(":")[1].replaceAll("\"", "").trim();
+                    continue;
+                }
+                if (lineDatum.trim().startsWith("voice")) {
 //                  voicePlayer.play(lineData[i].split(":")[1].replaceAll("\"", "").trim());
-//                    continue;
-//                }
-//                if (lineDatum.trim().startsWith("meta")) {
-//                    meta = lineDatum.split(":")[1].replaceAll("\"", "").trim();
-//                    continue;
-//                }
+                    continue;
+                }
             }
         }
 
         GamePlay.setScene(sceneName, null);
         GamePlay.setDialog(dialogOwner, dialogText, answers);
+
+        if (meta != null) {
+            metaProcessor(meta);
+        }
+    }
+
+    private void metaProcessor(String meta) {
+        System.out.println("Meta: " + meta);
     }
 
     public void close() {
@@ -146,6 +174,6 @@ public class ScenarioEngine {
 //        voicePlayer.stop();
 
         currentLineIndex = -1;
-        lines.clear();
+//        lines.clear();
     }
 }
