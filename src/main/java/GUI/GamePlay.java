@@ -123,8 +123,10 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
                     return;
                 }
                 g2D.drawImage(currentNpcImage,
-                        0, 0,
-                        getWidth(), getHeight(),
+                        (int) (GamePlay.this.getWidth() * 0.3f),
+                        (int) (GamePlay.this.getHeight() * 0.15f),
+                        (int) (GamePlay.this.getWidth() * 0.36f),
+                        GamePlay.this.getHeight(),
                         this);
             }
         };
@@ -403,7 +405,7 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
             setAvatar(null);
         } else if (_dialogOwner.equals(userConf.getUserName())) {
             dialogOwner = _dialogOwner;
-            setAvatar(_dialogOwner);
+            setAvatar(String.valueOf(userConf.getAvatarIndex() + 1));
         } else {
             setAvatar(convertRussianNpcNameToSourceImageName(_dialogOwner));
         }
@@ -449,7 +451,7 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
             int shift = 0;
             for (int i = 0; i < text.length(); i++) {
                 shift++;
-                if (charWidth * shift > dialogTextRext.getBounds().width - charWidth * 2 + 4) {
+                if (charWidth * shift > dialogTextRext.getBounds().width - charWidth * 3) {
                     for (int k = i; k > 0; k--) {
                         if ((int) dialogChars[k] == 32) {
                             sb.setCharAt(k, (char) 10);

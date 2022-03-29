@@ -11,6 +11,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
@@ -20,24 +21,36 @@ import static registry.Registry.*;
 public class ScenarioEngine {
     private final Random rand = new Random();
     private List<String> lines;
+    private List<String> variants;
     private int currentLineIndex;
+    private boolean isChoice;
 
     public void load(@NonNull String scenarioFileName) throws IOException {
         Path scenario = Paths.get(blockPath + "/" + scenarioFileName + sBlockExtension);
         lines = Files.readAllLines(scenario, charset);
+        variants = lines.stream().filter(s -> s.startsWith("var ")).toList();
         currentLineIndex = -1;
     }
 
     public void choice(int chosenVariantIndex) {
-//        if (chosenVariantIndex == -1) {
-//            System.out.println("Default variant was chosen.");
-//        } else {
-//            System.out.println("Variant " + chosenVariantIndex + " was chosen.");
-//        }
-
-        do {currentLineIndex++;
-        } while (lines.get(currentLineIndex).isBlank());
-        lineParser(lines.get(currentLineIndex));
+        if (isChoice) {
+            if (chosenVariantIndex == -1) {
+                System.out.println("Denied. Need to choice.");
+            } else {
+                System.out.println("Variant " + chosenVariantIndex + " mock.");
+            }
+            isChoice = false;
+        } else {
+            do {
+                if (currentLineIndex < lines.size()) {
+                    currentLineIndex++;
+                } else {
+                    System.out.println("=== END OF SCENARIO ===");
+                    return;
+                }
+            } while (lines.get(currentLineIndex).isBlank());
+            lineParser(lines.get(currentLineIndex));
+        }
     }
 
     private void lineParser(@NonNull String line) {
@@ -45,7 +58,9 @@ public class ScenarioEngine {
             // NPC set:
             switchNpc(line.split("-"));
         } else if (line.startsWith("var")) {
-            System.out.println("=== VARIANTS is not completed yet ===");
+            // VARIANTS PARSE:
+            isChoice = true;
+            System.out.println("VARS: " + Arrays.toString(variants.toArray()));
         } else {
             // SCREEN set:
             switchScreen(line.split(";"));
