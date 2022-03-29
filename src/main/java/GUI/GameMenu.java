@@ -92,8 +92,6 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
         addMouseMotionListener(this);
 
         pack();
-        setLocationRelativeTo(null);
-
         checkFullscreen();
         Print(GameMenu.class, LEVEL.INFO, "MainMenu setts visible...");
 
@@ -189,8 +187,8 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
     private void checkFullscreen() {
         if (isVisible() && (userConf.isFullScreen() && getExtendedState() == MAXIMIZED_BOTH || !userConf.isFullScreen() && getExtendedState() == NORMAL)) {return;}
 
-        Print(GameMenu.class, LEVEL.INFO, "\nMainMenu fullscreen switch...");
-        GameMenu.this.dispose();
+        Print(GameMenu.class, LEVEL.INFO, "\nGameMenu fullscreen switch...");
+        dispose();
 
         if (basePane != null) {
             remove(basePane);
@@ -206,11 +204,11 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
             setSize(new Dimension(Double.valueOf(screen.getWidth() * 0.75d).intValue(), Double.valueOf(screen.getHeight() * 0.75d).intValue()));
         }
 
-        GameMenu.this.setVisible(true);
+        setVisible(true);
         setLocationRelativeTo(null);
 
         add(buildBasePane());
-        Print(GameMenu.class, LEVEL.INFO, "MainMenu fullscreen checked. Thread: " + Thread.currentThread().getName());
+        Print(GameMenu.class, LEVEL.INFO, "GameMenu fullscreen checked. Thread: " + Thread.currentThread().getName());
     }
 
     private JPanel buildBasePane() {

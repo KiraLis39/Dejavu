@@ -184,12 +184,15 @@ public class MainClass implements Cached {
         cache.add("picMenuBase", toBImage(picDir + "/backgrounds/menuBase"));
         cache.add("picAurora", toBImage(picDir + "/backgrounds/aurora"));
         cache.add("picGallery", toBImage(picDir + "/backgrounds/gallery"));
-        cache.add("picGamepane", toBImage(picDir + "/backgrounds/gamepane"));
         cache.add("picAutrs", toBImage(picDir + "/backgrounds/autrs"));
         cache.add("picGameMenu", toBImage(picDir + "/backgrounds/gameMenu"));
         cache.add("picMenuBotRight", toBImage(picDir + "/backgrounds/menu_bottomRight"));
         cache.add("picMenuBotLeft", toBImage(picDir + "/backgrounds/menu_bottomLeft"));
         cache.add("picMenuTop", toBImage(picDir + "/backgrounds/menu_top"));
+        cache.add("picGamepaneUp", toBImage(picDir + "/backgrounds/gamepaneUp"));
+        cache.add("picGamepaneDL", toBImage(picDir + "/backgrounds/gamepaneDL"));
+        cache.add("picGamepaneDC", toBImage(picDir + "/backgrounds/gamepaneDC"));
+        cache.add("picGamepaneDR", toBImage(picDir + "/backgrounds/gamepaneDR"));
 
         // heroes:
         cache.add("0", toBImage(picDir + "/hero/0"));

@@ -338,7 +338,7 @@ public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotion
 
     private void addInAction() {
         InputAction.add("options", this);
-        InputAction.set("options", "close", KeyEvent.VK_ESCAPE, 0, new AbstractAction() {
+        InputAction.set(InputAction.FOCUS_TYPE.WHEN_FOCUSED, "options", "close", KeyEvent.VK_ESCAPE, 0, new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 saveAndClose();
@@ -374,6 +374,7 @@ public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotion
                 setName(name);
                 setBackground(new Color(0,0,0,0));
                 setForeground(Color.ORANGE.brighter());
+                setFocusable(false);
                 setPaintLabels(true);
                 setPaintTicks(true);
 //                setSnapToTicks(true);
