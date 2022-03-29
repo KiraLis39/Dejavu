@@ -6,5 +6,6 @@
 *.zip
 *.docx
 *.dto
+*.ogg
 /data/db
 log
