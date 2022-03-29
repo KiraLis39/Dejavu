@@ -27,13 +27,11 @@ import static fox.Out.Print;
 import static registry.Registry.*;
 
 public class GameMenu extends JFrame implements MouseListener, MouseMotionListener, ActionListener, Cached {
+    private static GameMenu menuFrame;
+    private static final GraphicsEnvironment gEnv = GraphicsEnvironment.getLocalGraphicsEnvironment();
+    private static final GraphicsDevice gDevice = gEnv.getDefaultScreenDevice();
+    private static final GraphicsConfiguration gc = gDevice.getDefaultConfiguration();
     private final Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
-    private final FoxConsole cons;
-
-    private static GraphicsEnvironment gEnv = GraphicsEnvironment.getLocalGraphicsEnvironment();
-    private static GraphicsDevice gDevice = gEnv.getDefaultScreenDevice();
-    private static GraphicsConfiguration gc = gDevice.getDefaultConfiguration();
-
     private BufferedImage[] exitImages, startImages, menuImages;
     private BufferedImage centerImage, botTopImage, botRightImage, botLeftImage;
     private Point2D mouseWasOnScreen, frameWas;
@@ -44,36 +42,14 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
 
     private String downText;
     private Integer curFps = 0;
-    private int refDelay;
+    private final int refDelay;
     private float fpsCounter = 0;
     private long was = System.currentTimeMillis();
 
-    @Override
-    public void paint(Graphics g) {
-        super.paint(g);
-        Graphics2D g2D = (Graphics2D) g;
-        FoxRender.setRender(g2D, userConf.getQuality() == null ? FoxRender.RENDER.MED : userConf.getQuality());
-
-        super.paintComponents(g2D);
-        if (configuration.isFpsShowed()) {
-            fpsCounter++;
-            if (System.currentTimeMillis() - was > 1000) {
-                curFps = Double.valueOf(Math.floor(fpsCounter)).intValue();
-                fpsCounter = 0;
-                was = System.currentTimeMillis();
-            }
-            drawFPS(g2D);
-        }
-        g2D.dispose();
-    }
-
-    private void drawFPS(Graphics2D g2D) {
-        g2D.setColor(Color.GRAY);
-        g2D.drawString(curFps.toString(), 10, 25);
-    }
 
     public GameMenu() {
         super("GameMenuParent", gc);
+        menuFrame = this;
         refDelay = 1000 / gDevice.getDisplayMode().getRefreshRate();
 
         setName("GameMenu");
@@ -100,7 +76,7 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
         backgPlayer.play("fonKricket");
         musicPlayer.play("musMainMenu");
 
-        cons = new FoxConsole(this);
+        FoxConsole cons = new FoxConsole(this);
 
         new Thread(() -> {
             while (!Thread.currentThread().isInterrupted()) {
@@ -112,6 +88,36 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
                 }
             }
         }).start();
+    }
+
+    public static void setVisible() {
+        menuFrame.setVisible(true);
+        backgPlayer.play("fonKricket");
+        musicPlayer.play("musMainMenu");
+    }
+
+    @Override
+    public void paint(Graphics g) {
+        super.paint(g);
+        Graphics2D g2D = (Graphics2D) g;
+        FoxRender.setRender(g2D, userConf.getQuality() == null ? FoxRender.RENDER.MED : userConf.getQuality());
+
+        super.paintComponents(g2D);
+        if (configuration.isFpsShowed()) {
+            fpsCounter++;
+            if (System.currentTimeMillis() - was > 1000) {
+                curFps = Double.valueOf(Math.floor(fpsCounter)).intValue();
+                fpsCounter = 0;
+                was = System.currentTimeMillis();
+            }
+            drawFPS(g2D);
+        }
+        g2D.dispose();
+    }
+
+    private void drawFPS(Graphics2D g2D) {
+        g2D.setColor(Color.GRAY);
+        g2D.drawString(curFps.toString(), 10, 25);
     }
 
     private void preLoading() {
@@ -185,7 +191,9 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
     }
 
     private void checkFullscreen() {
-        if (isVisible() && (userConf.isFullScreen() && getExtendedState() == MAXIMIZED_BOTH || !userConf.isFullScreen() && getExtendedState() == NORMAL)) {return;}
+        if (isVisible() && (userConf.isFullScreen() && getExtendedState() == MAXIMIZED_BOTH || !userConf.isFullScreen() && getExtendedState() == NORMAL)) {
+            return;
+        }
 
         Print(GameMenu.class, LEVEL.INFO, "\nGameMenu fullscreen switch...");
         dispose();
@@ -706,7 +714,6 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
         }
     }
 
-
     @Override
     public void mouseDragged(MouseEvent e) {
         if (userConf.isFullScreen()) {
@@ -754,9 +761,14 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
         }
     }
 
-    public void mouseClicked(MouseEvent e) {}
-    public void mouseMoved(MouseEvent e) {}
-    public void mouseReleased(MouseEvent e) {}
+    public void mouseClicked(MouseEvent e) {
+    }
+
+    public void mouseMoved(MouseEvent e) {
+    }
+
+    public void mouseReleased(MouseEvent e) {
+    }
 
     @Override
     public void actionPerformed(ActionEvent e) {

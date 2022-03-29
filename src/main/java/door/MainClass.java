@@ -7,7 +7,9 @@ import fox.FoxLogo;
 import fox.JIOM;
 import fox.Out;
 import fox.Out.LEVEL;
+import fox.player.FoxPlayer;
 import interfaces.Cached;
+import lombok.NonNull;
 import registry.Registry;
 import secondGUI.NewUserForm;
 import tools.ModsLoader;
@@ -30,15 +32,17 @@ public class MainClass implements Cached {
     private static FoxLogo fl;
 
     private static void preInit() {
-        Out.setEnabled(isLogEnabled);
         Out.setErrorLevel(LEVEL.DEBUG);
         Out.setLogsCountAllow(3);
 
-        try {configuration = JIOM.fileToDto(globalConfigFile, Configuration.class);
+        try {
+            configuration = JIOM.fileToDto(globalConfigFile, Configuration.class);
+            isLogEnabled = configuration.isLogEnabled();
         } catch (Exception e) {
             e.printStackTrace();
         }
 
+        Out.setEnabled(isLogEnabled);
         Out.Print(MainClass.class, LEVEL.INFO,
                 "\nКодировка системы: " + Charset.defaultCharset() +
                         "\nКодировка программы: " + charset + "\n");
@@ -210,7 +214,7 @@ public class MainClass implements Cached {
         cache.add("8", toBImage(picDir + "/hero/8"));
     }
 
-    private static BufferedImage toBImage(String path) {
+    private static BufferedImage toBImage(@NonNull String path) {
         try {
             return ImageIO.read(new File(path + picExtension));
         } catch (Exception e) {
@@ -220,19 +224,17 @@ public class MainClass implements Cached {
     }
 
     private static void loadAudio() {
+        FoxPlayer.getVolumeConverter().setMinimum(-50);
+
 //        voicePlayer.load(audioVoicesDir);
 
         musicPlayer.load(audioMusicDir);
-        musicPlayer.setLooped(true);
         musicPlayer.mute(userConf.isMusicMuted());
         musicPlayer.setVolume(userConf.getMusicVolume());
-        musicPlayer.getVolumeConverter().setMinimum(-50);
 
         backgPlayer.load(audioBackgDir);
-        backgPlayer.setLooped(true);
         backgPlayer.mute(userConf.isBackgMuted());
         backgPlayer.setVolume(userConf.getBackgVolume());
-        backgPlayer.getVolumeConverter().setMinimum(-50);
 //        backgPlayer.setAudioBufDim(1024); // 4096
 
         soundPlayer.load(audioSoundDir);
@@ -240,7 +242,6 @@ public class MainClass implements Cached {
         soundPlayer.setLooped(false);
         soundPlayer.mute(userConf.isSoundMuted());
         soundPlayer.setVolume(userConf.getSoundVolume());
-        soundPlayer.getVolumeConverter().setMinimum(-50);
 //        soundPlayer.setAudioBufDim(8192); // 8192
     }
 

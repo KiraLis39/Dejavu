@@ -10,7 +10,8 @@ import images.FoxSpritesCombiner;
 import interfaces.Cached;
 import logic.ScenarioEngine;
 import lombok.Data;
-import registry.Registry;
+import lombok.EqualsAndHashCode;
+import lombok.NonNull;
 import render.FoxRender;
 import secondGUI.SaveGame;
 import tools.Cursors;
@@ -27,65 +28,47 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Objects;
 
 import static fox.Out.LEVEL;
 import static fox.Out.Print;
 import static registry.Registry.*;
 
+@EqualsAndHashCode(callSuper = true)
 @Data
-public class GamePlay extends iGamePlay implements MouseListener, MouseMotionListener, WindowListener, Cached {
-    private static GamePlay gamePlay;
-    private ScenarioEngine scenario = new ScenarioEngine();
+public class GamePlay extends JFrame implements MouseListener, MouseMotionListener, WindowListener, Cached {
+    private static DefaultListModel<String> dlm = new DefaultListModel<>();
+    private static Thread textAnimateThread;
+    private static long dialogDelaySpeed = 48, defaultDialogDefaultDelay = 48;
+    private static BufferedImage currentSceneImage, currentNpcImage, currentHeroAvatar;
+    private static boolean isDialogAnimated;
+    private static char[] dialogChars;
+    private static int n = 0;
+    private static Double charWidth = 12.2D;
+    private static String dialogOwner;
+    private static Shape dialogTextRext;
 
-    private Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
-    private Double WINDOWED_WIDTH = screen.getWidth() * 0.75D;
-    private Double WINDOWED_HEIGHT = screen.getHeight() * 0.9D;
-
-    private DefaultListModel<String> dlm = new DefaultListModel<>();
+    private Double WINDOWED_WIDTH = Toolkit.getDefaultToolkit().getScreenSize().getWidth() * 0.75D;
+    private Double WINDOWED_HEIGHT = Toolkit.getDefaultToolkit().getScreenSize().getHeight() * 0.9D;
     private JList<String> answerList;
-
-    private Thread textAnimateThread;
-    private long dialogDelaySpeed = 48, defaultDialogDefaultDelay = 48;
-
-    private BufferedImage nullSceneImage, currentSceneImage;
-    private BufferedImage currentNpcImage;
-    private BufferedImage nullAvatar, currentHeroAvatar;
-    private BufferedImage gameImageUp, gameImageDL, gameImageDC, gameImageDR;
-    private BufferedImage[] backButtons;
-
-    private JPanel basePane, downCenterPane;
-    private boolean isStoryPlayed, backButOver, backButPressed, isDialogAnimated, isPaused;
-
-    private int n = 0;
-    private int refDelay;
     private long was = System.currentTimeMillis();
-    private String dialogOwner;
-    private String curFps;
+    private BufferedImage nullAvatar, gameImageUp, gameImageDL, gameImageDC, gameImageDR;
+    private BufferedImage[] backButtons;
+    private JPanel basePane, downCenterPane;
+    private boolean isStoryPlayed, backButOver, backButPressed, isPaused, needsUpdateRectangles;
+    private int refDelay;
     private float fpsIterCount = 0;
-    private Double charWidth = 12.2D;
-    private char[] dialogChars;
+    private String curFps;
     private Point mouseNow, frameWas, mouseWasOnScreen;
-    private Shape backBtnShape, dialogTextRext;
-
+    private Shape backBtnShape;
+    private ScenarioEngine scenario = new ScenarioEngine();
 
     // FRAME BUILD:
     public GamePlay(GraphicsConfiguration gConfig) {
         super("GamePlayParent", gConfig);
-        gamePlay = this;
         refDelay = 1000 / gConfig.getDevice().getDisplayMode().getRefreshRate();
 
-        setName("GamePlay");
-        setUndecorated(true);
-        setResizable(false);
-        setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
-        setCursor(Cursors.PinkCursor.get());
-        setAutoRequestFocus(true);
-
-        addWindowListener(this);
-        addMouseListener(this);
-        addMouseMotionListener(this);
-
+        preInit();
         loadResources();
         setInAc();
         checkFullscreen();
@@ -101,12 +84,17 @@ public class GamePlay extends iGamePlay implements MouseListener, MouseMotionLis
                 FoxRender.setRender(g2D, userConf.getQuality());
 
                 try {
-                    g2D.drawImage(currentSceneImage,
-                            Double.valueOf(GamePlay.this.getWidth() * 0.01d).intValue(),
-                            Double.valueOf(GamePlay.this.getHeight() * 0.01d).intValue(),
-                            getWidth() - Double.valueOf(GamePlay.this.getWidth() * 0.02d).intValue(),
-                            getHeight() - Double.valueOf(GamePlay.this.getHeight() * 0.01d).intValue(),
-                            this);
+                    if (currentSceneImage == null) {
+                        g2D.setColor(Color.BLACK);
+                        g2D.fillRect(0, 0, getWidth(), getHeight());
+                    } else {
+                        g2D.drawImage(currentSceneImage,
+                                Double.valueOf(GamePlay.this.getWidth() * 0.01d).intValue(),
+                                Double.valueOf(GamePlay.this.getHeight() * 0.01d).intValue(),
+                                getWidth() - Double.valueOf(GamePlay.this.getWidth() * 0.02d).intValue(),
+                                getHeight() - Double.valueOf(GamePlay.this.getHeight() * 0.01d).intValue(),
+                                this);
+                    }
                 } catch (Exception e) {
                     g2D.setColor(Color.DARK_GRAY);
                     g2D.fillRect(16, 16, getWidth() - 32, getHeight() - 32);
@@ -199,26 +187,38 @@ public class GamePlay extends iGamePlay implements MouseListener, MouseMotionLis
 //                        g2D.drawRect(0,0,getWidth()-1,getHeight()-1);
 //                        g2D.setColor(Color.GREEN.darker());
 //                        g2D.draw(answerList.getBounds());
-                        if (dialogTextRext == null) {
-                            dialogTextRext = new Rectangle(
-                                    Double.valueOf(getWidth() * 0.0025d).intValue(),
-                                    Double.valueOf(getHeight() * 0.04d).intValue(),
-                                    getWidth() - answerList.getWidth() - Double.valueOf(getWidth() * 0.005d).intValue(),
-                                    getHeight() - Double.valueOf(getHeight() * 0.08d).intValue()
-                            );
+                        if (dialogTextRext == null || needsUpdateRectangles) {
+                            SwingUtilities.invokeLater(() -> {
+                                dialogTextRext = new Rectangle(
+                                        Double.valueOf(getWidth() * 0.0025d).intValue(),
+                                        Double.valueOf(getHeight() * 0.085d).intValue(),
+                                        Double.valueOf((getWidth() - answerList.getWidth()) * 0.985d).intValue(),
+                                        Double.valueOf(getHeight() * 0.75d).intValue()
+                                );
+                                needsUpdateRectangles = false;
+                            });
                         }
-                        g2D.setColor(Color.GREEN.darker());
-                        g2D.draw(dialogTextRext);
+//                        g2D.setColor(Color.GREEN.darker());
+//                        g2D.draw(dialogTextRext);
                     }
 
                     private void drawAutoDialog(Graphics2D g2D) {
                         // owner name:
                         if (dialogOwner != null) {
                             g2D.setFont(fontName);
+
+                            int dx = (int) (getWidth() * 0.09d - FoxFontBuilder.getStringBounds(g2D, dialogOwner).getWidth() / 2);
+                            int dy = dialogTextRext.getBounds().y - 3;
+
                             g2D.setColor(Color.BLACK);
-                            g2D.drawString(dialogOwner, dialogTextRext.getBounds().x - 3, dialogTextRext.getBounds().y + 6);
+                            g2D.drawString(dialogOwner,
+                                    dx,
+                                    dy);
+
                             g2D.setColor(Color.ORANGE);
-                            g2D.drawString(dialogOwner, dialogTextRext.getBounds().x - 4, dialogTextRext.getBounds().y + 5);
+                            g2D.drawString(dialogOwner,
+                                    dx - 1,
+                                    dy + 1);
                         }
 
                         // dialog:
@@ -240,8 +240,8 @@ public class GamePlay extends iGamePlay implements MouseListener, MouseMotionLis
                                     } // next line marker detector (\n)
 
                                     g2D.drawString(String.valueOf(dialogChars[i]),
-                                            dialogTextRext.getBounds().x * (shift * 5),
-                                            dialogTextRext.getBounds().y * line * 2
+                                            Double.valueOf(dialogTextRext.getBounds().x + (shift * charWidth)).intValue(),
+                                            dialogTextRext.getBounds().y * line
                                     );
 
                                     shift++;
@@ -320,7 +320,7 @@ public class GamePlay extends iGamePlay implements MouseListener, MouseMotionLis
 
                     private void drawBackButton(Graphics2D g2D) {
                         if (backButOver) {
-                            g2D.drawImage(backButPressed ? backButtons[1] : backButtons[1],
+                            g2D.drawImage(backButtons[1],
                                     backBtnShape.getBounds().x + 6, backBtnShape.getBounds().y - 3,
                                     backBtnShape.getBounds().width, backBtnShape.getBounds().height,
                                     this);
@@ -370,15 +370,127 @@ public class GamePlay extends iGamePlay implements MouseListener, MouseMotionLis
         }
         new Thread(new StoryPlayThread()) {
             {
-                setDaemon(true);
-                setName("StoryPlayed-thread (GameFrame repaint thread)");
+                setName("StoryPlayed_thread");
             }
         }.start();
     }
 
-    // GETTERS & SETTERS:
-    public static GamePlay getGamePlay() {
-        return gamePlay;
+    // GAME CONTROLS:
+    public static void setScene(String sceneName, String npcImage) {
+        // scene:
+        if (sceneName == null) {
+            return;
+        } else {
+            currentSceneImage = (BufferedImage) cache.get(sceneName);
+        }
+
+        // npc:
+        if (npcImage == null) {
+            currentNpcImage = null;
+        } else {
+            currentNpcImage = (BufferedImage) cache.get(npcImage);
+        }
+    }
+
+    public static void setDialog(String _dialogOwner, String dialogText, ArrayList<String> answers) {
+        stopAnimation();
+        n++;
+//        System.out.println("\nIncome data #" + n + ":\nTEXT: '[" + dialogOwner + "] " + dialogText + "'\nANSWERS: " + (answers == null ? "(next)" : Arrays.toString(answers.toArray())) + "\n");
+
+        // owner:
+        if (_dialogOwner == null || _dialogOwner.equals("NULL")) {
+            setAvatar(null);
+            dialogOwner = "Кто-то:";
+        } else {
+            setAvatar(_dialogOwner);
+            dialogOwner = _dialogOwner;
+        }
+
+        // text:
+        textAnimateThread = new Thread(() -> animateText(dialogText));
+        textAnimateThread.start();
+
+        // answers:
+        setAnswers(Objects.requireNonNullElseGet(answers, () -> new ArrayList<>() {{
+            add("Далее...");
+        }}));
+    }
+
+    public static void setAvatar(String avatar) {
+        currentHeroAvatar = (BufferedImage) cache.get(Objects.requireNonNullElse(avatar, "0"));
+    }
+
+    private static void animateText(String text) {
+        isDialogAnimated = false;
+
+        if (text != null) { //  && !text.equals(lastText)
+//            lastText = text;
+
+            isDialogAnimated = true;
+            dialogDelaySpeed = defaultDialogDefaultDelay;
+
+            StringBuilder sb = new StringBuilder(text);
+            dialogChars = new char[text.length()];
+
+            int shift = 0;
+            for (int i = 0; i < text.length(); i++) {
+                shift++;
+                if (charWidth * shift > dialogTextRext.getBounds().width - charWidth * 2 + 4) {
+                    for (int k = i; k > 0; k--) {
+                        if ((int) dialogChars[k] == 32) {
+                            sb.setCharAt(k, (char) 10);
+                            break;
+                        }
+                    }
+                    shift = 0;
+                }
+                try {
+                    sb.getChars(0, i + 1, dialogChars, 0);
+                } catch (Exception e) {
+                    /* IGNORE */
+                }
+
+                try {
+                    Thread.sleep(dialogDelaySpeed);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+
+            isDialogAnimated = false;
+        }
+    }
+
+    public static void setAnswers(ArrayList<String> answers) {
+        dlm.clear();
+        if (answers == null) {
+            dlm.addElement("Далее...");
+            return;
+        }
+
+        for (String answer : answers) {
+            dlm.addElement(dlm.size() + 1 + ": " + answer);
+        }
+    }
+
+    private static void stopAnimation() {
+        if (textAnimateThread != null) {
+            dialogDelaySpeed = 0;
+            textAnimateThread.interrupt();
+        }
+    }
+
+    private void preInit() {
+        setName("GamePlay");
+        setUndecorated(true);
+        setResizable(false);
+        setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+        setCursor(Cursors.PinkCursor.get());
+        setAutoRequestFocus(true);
+
+        addWindowListener(this);
+        addMouseListener(this);
+        addMouseMotionListener(this);
     }
 
     // FRAME DRAWING:
@@ -446,7 +558,7 @@ public class GamePlay extends iGamePlay implements MouseListener, MouseMotionLis
         setScene(null, null);
     }
 
-    private BufferedImage toBImage(String path) {
+    private BufferedImage toBImage(@NonNull String path) {
         try {
             return ImageIO.read(new File(path + picExtension));
         } catch (Exception e) {
@@ -458,7 +570,7 @@ public class GamePlay extends iGamePlay implements MouseListener, MouseMotionLis
     private void setInAc() {
         InputAction.add("game", GamePlay.this); // SwingUtilities.getWindowAncestor(basePane));
 
-        InputAction.set("game", "Ctrl+F4", KeyEvent.VK_F4, 512, new AbstractAction() {
+        InputAction.set(InputAction.FOCUS_TYPE.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT, "game", "Ctrl+F4", KeyEvent.VK_F4, 512, new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 showExitRequest();
@@ -470,7 +582,7 @@ public class GamePlay extends iGamePlay implements MouseListener, MouseMotionLis
                 showExitRequest();
             }
         });
-        InputAction.set("game", "fullscreen", KeyEvent.VK_F, 0, new AbstractAction() {
+        InputAction.set(InputAction.FOCUS_TYPE.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT, "game", "fullscreen", KeyEvent.VK_F, 0, new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 isPaused = true;
@@ -479,13 +591,13 @@ public class GamePlay extends iGamePlay implements MouseListener, MouseMotionLis
                 isPaused = false;
             }
         });
-        InputAction.set("game", "switchFPS", KeyEvent.VK_F11, 0, new AbstractAction() {
+        InputAction.set(InputAction.FOCUS_TYPE.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT, "game", "switchFPS", KeyEvent.VK_F11, 0, new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 configuration.setFpsShowed(!configuration.isFpsShowed());
             }
         });
-        InputAction.set("game", "switchQuality", KeyEvent.VK_F3, 0, new AbstractAction() {
+        InputAction.set(InputAction.FOCUS_TYPE.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT, "game", "switchQuality", KeyEvent.VK_F3, 0, new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 userConf.nextQuality();
@@ -493,7 +605,7 @@ public class GamePlay extends iGamePlay implements MouseListener, MouseMotionLis
             }
         });
 
-        InputAction.set("game", "next", KeyEvent.VK_SPACE, 0, new AbstractAction() {
+        InputAction.set(InputAction.FOCUS_TYPE.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT, "game", "next", KeyEvent.VK_SPACE, 0, new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (isDialogAnimated) {
@@ -504,7 +616,7 @@ public class GamePlay extends iGamePlay implements MouseListener, MouseMotionLis
                 answerList.clearSelection();
             }
         });
-        InputAction.set("game", "answer_1", KeyEvent.VK_1, 0, new AbstractAction() {
+        InputAction.set(InputAction.FOCUS_TYPE.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT, "game", "answer_1", KeyEvent.VK_1, 0, new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (dlm.size() < 1) {
@@ -514,7 +626,7 @@ public class GamePlay extends iGamePlay implements MouseListener, MouseMotionLis
                 scenario.choice(0);
             }
         });
-        InputAction.set("game", "answer_2", KeyEvent.VK_2, 0, new AbstractAction() {
+        InputAction.set(InputAction.FOCUS_TYPE.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT, "game", "answer_2", KeyEvent.VK_2, 0, new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (dlm.size() < 2) {
@@ -524,7 +636,7 @@ public class GamePlay extends iGamePlay implements MouseListener, MouseMotionLis
                 scenario.choice(1);
             }
         });
-        InputAction.set("game", "answer_3", KeyEvent.VK_3, 0, new AbstractAction() {
+        InputAction.set(InputAction.FOCUS_TYPE.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT, "game", "answer_3", KeyEvent.VK_3, 0, new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (dlm.size() < 3) {
@@ -534,7 +646,7 @@ public class GamePlay extends iGamePlay implements MouseListener, MouseMotionLis
                 scenario.choice(2);
             }
         });
-        InputAction.set("game", "answer_4", KeyEvent.VK_4, 0, new AbstractAction() {
+        InputAction.set(InputAction.FOCUS_TYPE.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT, "game", "answer_4", KeyEvent.VK_4, 0, new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (dlm.size() < 4) {
@@ -544,7 +656,7 @@ public class GamePlay extends iGamePlay implements MouseListener, MouseMotionLis
                 scenario.choice(3);
             }
         });
-        InputAction.set("game", "answer_5", KeyEvent.VK_5, 0, new AbstractAction() {
+        InputAction.set(InputAction.FOCUS_TYPE.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT, "game", "answer_5", KeyEvent.VK_5, 0, new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (dlm.size() < 5) {
@@ -554,7 +666,7 @@ public class GamePlay extends iGamePlay implements MouseListener, MouseMotionLis
                 scenario.choice(4);
             }
         });
-        InputAction.set("game", "answer_6", KeyEvent.VK_6, 0, new AbstractAction() {
+        InputAction.set(InputAction.FOCUS_TYPE.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT, "game", "answer_6", KeyEvent.VK_6, 0, new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (dlm.size() < 6) {
@@ -565,13 +677,13 @@ public class GamePlay extends iGamePlay implements MouseListener, MouseMotionLis
             }
         });
 
-        InputAction.set("game", "keyLeft", KeyEvent.VK_LEFT, 0, new AbstractAction() {
+        InputAction.set(InputAction.FOCUS_TYPE.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT, "game", "keyLeft", KeyEvent.VK_LEFT, 0, new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 System.out.println("Key left...");
             }
         });
-        InputAction.set("game", "keyRight", KeyEvent.VK_RIGHT, 0, new AbstractAction() {
+        InputAction.set(InputAction.FOCUS_TYPE.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT, "game", "keyRight", KeyEvent.VK_RIGHT, 0, new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 System.out.println("Key right...");
@@ -602,116 +714,9 @@ public class GamePlay extends iGamePlay implements MouseListener, MouseMotionLis
         setVisible(true);
         setLocationRelativeTo(null);
 
+        needsUpdateRectangles = true;
+
         Print(GamePlay.class, LEVEL.INFO, "GamePlay fullscreen checked. Thread: " + Thread.currentThread().getName());
-    }
-
-    // GAME CONTROLS:
-    @Override
-    public void setScene(String sceneName, String npcName) {
-        // scene:
-        if (sceneName == null) {
-            if (nullSceneImage == null) {
-                nullSceneImage = (BufferedImage) cache.get("blackpane");
-            }
-            currentSceneImage = nullSceneImage;
-        } else {
-            currentSceneImage = (BufferedImage) cache.get(sceneName);
-        }
-
-        // npc:
-        if (npcName == null) {
-            return;
-        } else {
-            currentNpcImage = (BufferedImage) cache.get(npcName);
-        }
-    }
-
-    @Override
-    public void setDialog(String dialogOwner, String dialogText, ArrayList<String> answers) {
-        stopAnimation();
-        n++;
-//        System.out.println("\nIncome data #" + n + ":\nTEXT: '[" + dialogOwner + "] " + dialogText + "'\nANSWERS: " + (answers == null ? "(next)" : Arrays.toString(answers.toArray())) + "\n");
-
-        // owner:
-        if (dialogOwner == null || dialogOwner.equals("NULL")) {
-            setAvatar(null);
-            this.dialogOwner = "Кто-то:";
-        } else {
-            setAvatar(dialogOwner);
-            this.dialogOwner = dialogOwner;
-        }
-
-        // text:
-        textAnimateThread = new Thread(() -> animateText(dialogText));
-        textAnimateThread.start();
-
-        // answers:
-        if (answers != null) {
-            setAnswers(answers);
-        } else {
-            setAnswers(new ArrayList<>() {{
-                add("Далее...");
-            }});
-        }
-    }
-
-    public void setAvatar(String avatar) {
-        if (avatar == null) {
-            currentHeroAvatar = (BufferedImage) cache.get("0");
-        } else {
-            currentHeroAvatar = (BufferedImage) cache.get(avatar);
-        }
-    }
-
-    private void animateText(String text) {
-        isDialogAnimated = false;
-
-        if (text != null) { //  && !text.equals(lastText)
-//            lastText = text;
-
-            isDialogAnimated = true;
-            dialogDelaySpeed = defaultDialogDefaultDelay;
-
-            StringBuilder sb = new StringBuilder(text);
-            dialogChars = new char[text.length()];
-
-            int shift = 0;
-            for (int i = 0; i < text.length(); i++) {
-                shift++;
-                if (charWidth * shift > dialogTextRext.getBounds().width - charWidth * 2 + 4) {
-                    for (int k = i; k > 0; k--) {
-                        if ((int) dialogChars[k] == 32) {
-                            sb.setCharAt(k, (char) 10);
-                            break;
-                        }
-                    }
-                    shift = 0;
-                }
-                try {sb.getChars(0, i + 1, dialogChars, 0);
-                } catch (Exception e) {
-                    /* IGNORE */
-                }
-
-                try {Thread.sleep(dialogDelaySpeed);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
-            }
-
-            isDialogAnimated = false;
-        }
-    }
-
-    public void setAnswers(ArrayList<String> answers) {
-        dlm.clear();
-        if (answers == null) {
-            dlm.addElement("Далее...");
-            return;
-        }
-
-        for (String answer : answers) {
-            dlm.addElement(dlm.size() + 1 + ": " + answer);
-        }
     }
 
     // EXIT:
@@ -742,25 +747,13 @@ public class GamePlay extends iGamePlay implements MouseListener, MouseMotionLis
     }
 
     private void stopGame() {
+        scenario.close();
         isPaused = false;
         isStoryPlayed = false;
         stopAnimation();
-
-        new GameMenu();
-        if (isVisible()) {
-            dispose();
-        }
-    }
-
-    private void stopAnimation() {
-        if (textAnimateThread != null) {
-            dialogDelaySpeed = 0;
-            textAnimateThread.interrupt();
-            try {
-                textAnimateThread.join(500);
-            } catch (InterruptedException ignore) {
-            }
-        }
+        GameMenu.setVisible();
+        dialogChars = null;
+        dispose();
     }
 
     // LISTENERS:
@@ -861,7 +854,7 @@ public class GamePlay extends iGamePlay implements MouseListener, MouseMotionLis
                 }
                 repaint();
                 try {
-                    Thread.currentThread().sleep(refDelay);
+                    Thread.sleep(refDelay);
                 } catch (InterruptedException e) {
                     System.out.println("Ошибка в потоке отрисовки: " + e.getMessage());
                     Thread.currentThread().interrupt();

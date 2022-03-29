@@ -16,16 +16,42 @@ import java.awt.image.BufferedImage;
 public class SaveGame extends JDialog implements Cached {
     private final Dimension toolk = Toolkit.getDefaultToolkit().getScreenSize();
     private final int WIDTH = (int) (this.toolk.getWidth() * 0.5D);
-    private final int HEIGHT = (int) (toolk.getHeight() * 0.75D);
     private final Double widthPercent = WIDTH / 100D;
-    private final Double heightPercent = HEIGHT / 100D;
     private final Double buttonsWidth = widthPercent * 20D - 10D;
-
+    private final int HEIGHT = (int) (toolk.getHeight() * 0.75D);
+    private final Double heightPercent = HEIGHT / 100D;
     private final Rectangle button0Rect;
     private final Rectangle button1Rect;
     private final Rectangle button2Rect;
 
     private final Boolean saveChosen = true; // temporary ON
+
+    public SaveGame(JFrame parent, GraphicsConfiguration gConfig) {
+        super(parent, "SaveLoadFrame", true, gConfig);
+        setSize(WIDTH, HEIGHT);
+        setFocusable(true);
+        setUndecorated(true);
+        setBackground(new Color(0, 0, 0, 0));
+        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+        setCursor(FoxCursor.createCursor((BufferedImage) cache.get("curGalleryCursor"), "galleryCursor"));
+        setAutoRequestFocus(true);
+
+        InputAction.add("save", this);
+        InputAction.set(InputAction.FOCUS_TYPE.WHEN_IN_FOCUSED_WINDOW, "save", "close", KeyEvent.VK_ESCAPE, 0, new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                dispose();
+            }
+        });
+
+        button0Rect = new Rectangle((int) (widthPercent * 4D), (int) (heightPercent * 92D), (int) (buttonsWidth * 1), (int) (heightPercent * 4D));
+        button1Rect = new Rectangle((int) (widthPercent * 24.5D), (int) (heightPercent * 92D), (int) (buttonsWidth * 1), (int) (heightPercent * 4D));
+        button2Rect = new Rectangle((int) (widthPercent * 45D), (int) (heightPercent * 92D), (int) (buttonsWidth * 1), (int) (heightPercent * 4D));
+
+        setLocationRelativeTo(null);
+        setModal(true);
+        setVisible(true);
+    }
 
     @Override
     public void paint(Graphics g) {
@@ -70,30 +96,5 @@ public class SaveGame extends JDialog implements Cached {
         }
 
         g2D.dispose();
-    }
-
-    public SaveGame(JFrame parent, GraphicsConfiguration gConfig) {
-        super(parent, "SaveLoadFrame", true, gConfig);
-        setSize(WIDTH, HEIGHT);
-        setUndecorated(true);
-        setBackground(new Color(0,0,0,0));
-        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-        setCursor(FoxCursor.createCursor((BufferedImage) cache.get("curGalleryCursor"), "galleryCursor"));
-
-        InputAction.add("save", this);
-        InputAction.set("save", "close", KeyEvent.VK_ESCAPE, 0, new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                dispose();
-            }
-        });
-
-        button0Rect = new Rectangle((int) (widthPercent * 4D), (int) (heightPercent * 92D), (int) (buttonsWidth * 1), (int) (heightPercent * 4D));
-        button1Rect = new Rectangle((int) (widthPercent * 24.5D), (int) (heightPercent * 92D), (int) (buttonsWidth * 1), (int) (heightPercent * 4D));
-        button2Rect = new Rectangle((int) (widthPercent * 45D), (int) (heightPercent * 92D), (int) (buttonsWidth * 1), (int) (heightPercent * 4D));
-
-        setLocationRelativeTo(null);
-        setModal(true);
-        setVisible(true);
     }
 }
