@@ -2,9 +2,9 @@ package GUI;
 
 import components.FOptionPane;
 import door.MainClass;
-import fox.FoxCursor;
-import fox.FoxFontBuilder;
-import fox.InputAction;
+import images.FoxCursor;
+import utils.FoxFontBuilder;
+import utils.InputAction;
 import fox.Out;
 import images.FoxSpritesCombiner;
 import interfaces.Cached;

@@ -1,6 +1,6 @@
 package interfaces;
 
-import fox.MediaCache;
+import utils.MediaCache;
 
 public interface Cached {
     MediaCache cache = MediaCache.getInstance();

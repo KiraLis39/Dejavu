@@ -1,8 +1,8 @@
 package secondGUI;
 
-import fox.FoxCursor;
-import fox.FoxFontBuilder;
-import fox.InputAction;
+import images.FoxCursor;
+import utils.FoxFontBuilder;
+import utils.InputAction;
 import interfaces.Cached;
 import registry.Registry;
 
@@ -18,18 +18,21 @@ import static fox.Out.Print;
 import static registry.Registry.userConf;
 
 public class AuthorsFrame extends JDialog implements Cached {
-    private static Dimension toolk = Toolkit.getDefaultToolkit().getScreenSize();
-    private static String aboutText = "\nИгра создана в 2022 г., "
-            + "является моей первой более-менее серьёзной игрой, написанной на языке Java!"
-            + "\n\"Дежавю\" полностью придумана, написана, протестирована и оптимизирована мной - KiraLis39."
-            + "\n\nПрошу прощения за возможные неудобства или недочеты!"
-            + "\nОб ошибках или с предложениями, пожалуйста, пишите на AngelicaLis39@mail.ru"
-            + "\nСПб, 2015-2022."
-            + "\n\nАвтор сценария (истории): KiraLis39"
-            + "\n"
-            + "\nЗвук, музыка, эффекты: KiraLis39"
-            + "\nКод, тест, оптимизация: KiraLis39"
-            + "\nТестировщик и прочее: KiraLis39";
+    private static final Dimension toolk = Toolkit.getDefaultToolkit().getScreenSize();
+    private static final String aboutText = """
+
+            Игра создана в 2022 г., является моей первой более-менее серьёзной игрой, написанной на языке Java!
+            "Дежавю" полностью придумана, написана, протестирована и оптимизирована мной - KiraLis39.
+
+            Прошу прощения за возможные неудобства или недочеты!
+            Об ошибках или с предложениями, пожалуйста, пишите на AngelicaLis39@mail.ru
+            СПб, 2015-2022.
+
+            Автор сценария (истории): KiraLis39
+
+            Звук, музыка, эффекты: KiraLis39
+            Код, тест, оптимизация: KiraLis39
+            Тестировщик и прочее: KiraLis39""";
     private static JTextArea textHelp;
 
     public AuthorsFrame(JFrame parent, GraphicsConfiguration gConfig) {

@@ -1,11 +1,10 @@
 package door;
 
-import fox.JIOM;
+import iom.JIOM;
 import fox.Out;
 import registry.Registry;
 
 import java.awt.*;
-import java.io.IOException;
 
 import static fox.Out.LEVEL;
 import static fox.Out.Print;

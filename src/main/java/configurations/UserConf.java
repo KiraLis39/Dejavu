@@ -1,11 +1,10 @@
 package configurations;
 
-import fox.interfaces.JConfigurable;
+import utils.JConfigurable;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.FieldDefaults;
-import render.FoxRender;
 import render.FoxRender.RENDER;
 
 import java.nio.file.Path;

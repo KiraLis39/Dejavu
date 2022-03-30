@@ -3,8 +3,8 @@ package secondGUI;
 import configurations.UserConf;
 import door.Exit;
 import door.MainClass;
-import fox.InputAction;
-import fox.JIOM;
+import utils.InputAction;
+import iom.JIOM;
 import registry.Registry;
 
 import javax.swing.*;
@@ -24,7 +24,7 @@ import static registry.Registry.backgPlayer;
 import static registry.Registry.musicPlayer;
 
 public class PlayersListDialog extends JDialog implements ActionListener {
-    private JFrame owner;
+    private final JFrame owner;
     private JList<UserConfPanel> playersList;
 
     public PlayersListDialog(JFrame owner) {

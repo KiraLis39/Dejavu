@@ -1,6 +1,6 @@
 package configurations;
 
-import fox.interfaces.JConfigurable;
+import utils.JConfigurable;
 
 import java.nio.file.Path;
 

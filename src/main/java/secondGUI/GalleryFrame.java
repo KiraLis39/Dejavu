@@ -1,7 +1,7 @@
 package secondGUI;
 
-import fox.FoxCursor;
-import fox.InputAction;
+import images.FoxCursor;
+import utils.InputAction;
 import fox.Out.LEVEL;
 import interfaces.Cached;
 import registry.Registry;

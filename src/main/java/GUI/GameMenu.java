@@ -2,10 +2,10 @@ package GUI;
 
 import components.FOptionPane;
 import components.FoxConsole;
-import components.FoxTipsEngine;
+import components.FoxTip;
 import door.Exit;
-import fox.FoxFontBuilder;
-import fox.InputAction;
+import utils.FoxFontBuilder;
+import utils.InputAction;
 import images.FoxSpritesCombiner;
 import interfaces.Cached;
 import registry.Registry;
@@ -38,7 +38,7 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
     private JPanel basePane;
     private JButton optionsButton, galleryButton, saveLoadButton, exitButton, aboutButton;
     private JLabel downTextLabel;
-    private FoxTipsEngine cd;
+    private FoxTip cd;
 
     private String downText;
     private Integer curFps = 0;
@@ -676,7 +676,7 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
                         };
 
                         try {
-                            cd = new FoxTipsEngine(downTextLabel, FoxTipsEngine.TYPE.INFO, ImageIO.read(new File("./resources/tipIco.png")),
+                            cd = new FoxTip(downTextLabel, FoxTip.TYPE.INFO, ImageIO.read(new File("./resources/tipIco.png")),
                                     "Смена или создание героя:",
                                     "Кликни сюда два раза для смены игрока<br>или создания нового профиля.", null
                             );
@@ -756,7 +756,7 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
             if (((JLabel) e.getSource()).getName().equals("downName")) {
                 setForeground(Color.ORANGE);
                 setStatusText("Сменить/создать игрока (2x click)");
-                cd.show();
+                cd.showTip();
             }
         }
     }

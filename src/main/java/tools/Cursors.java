@@ -1,6 +1,6 @@
 package tools;
 
-import fox.FoxCursor;
+import images.FoxCursor;
 import interfaces.Cached;
 
 import java.awt.*;

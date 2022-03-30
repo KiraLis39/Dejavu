@@ -4,17 +4,17 @@ import GUI.GameMenu;
 import configurations.Configuration;
 import configurations.UserConf;
 import fox.FoxLogo;
-import fox.JIOM;
+import iom.JIOM;
 import fox.Out;
 import fox.Out.LEVEL;
 import fox.player.FoxPlayer;
 import interfaces.Cached;
 import lombok.NonNull;
-import registry.Registry;
 import secondGUI.NewUserForm;
 import tools.ModsLoader;
 
 import javax.imageio.ImageIO;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -53,11 +53,13 @@ public class MainClass implements Cached {
 
         if (configuration.isShowLogo()) {
             fl = new FoxLogo();
-            fl.setImStyle(FoxLogo.IMAGE_STYLE.WRAP);
-            fl.setBStyle(FoxLogo.BACK_STYLE.OPAQUE);
+            fl.setColor(Color.BLACK);
             try {
                 fl.start("Версия: " + version,
-                        new BufferedImage[]{ImageIO.read(new File("./resources/logo.png"))});
+                        new BufferedImage[]{ImageIO.read(new File("./resources/logo.png"))},
+                        FoxLogo.IMAGE_STYLE.DEFAULT,
+                        FoxLogo.BACK_STYLE.ASIS
+                );
             } catch (IOException e) {
                 e.printStackTrace();
             }

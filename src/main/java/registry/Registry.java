@@ -2,8 +2,8 @@ package registry;
 
 import configurations.Configuration;
 import configurations.UserConf;
-import fox.FoxFontBuilder;
-import fox.FoxFontBuilder.FONT;
+import utils.FoxFontBuilder;
+import utils.FoxFontBuilder.FONT;
 import fox.player.FoxPlayer;
 
 import java.awt.*;

@@ -1,11 +1,10 @@
 package secondGUI;
 
-import fox.FoxCursor;
-import fox.FoxFontBuilder;
-import fox.InputAction;
+import images.FoxCursor;
+import utils.FoxFontBuilder;
+import utils.InputAction;
 import fox.Out;
 import fox.Out.LEVEL;
-import fox.player.VolumeConverter;
 import interfaces.Cached;
 import registry.Registry;
 import render.FoxRender;
