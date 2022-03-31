@@ -135,15 +135,21 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
 
             private void drawChapterAndDay(Graphics2D g2D) {
                 g2D.setColor(new Color(0.0f, 0.0f, 0.0f, 0.25f));
-                g2D.fill(new Polygon(new int[] {100, 200, 200, 150}, new int[] {100, 100, 200, 200}, 4));
+                g2D.fill(new Polygon(
+                        new int[] {(int) (getWidth() * 0.75f), getWidth(), getWidth(), (int) (getWidth() * 0.85f)},
+                        new int[] {(int) (getHeight() * 0.01f), (int) (getHeight() * 0.01f), (int) (getHeight() * 0.2f), (int) (getHeight() * 0.2f)},
+                        4));
 
+                g2D.setFont(f9);
+                g2D.setColor(Color.BLACK);
+                g2D.drawString(chapter + ": " + today, getWidth() * 0.822f, getHeight() * 0.122f);
                 if (isChapterUpdate) {
                     g2D.setColor(Color.YELLOW);
                     isChapterUpdate = false;
                 } else {
                     g2D.setColor(Color.WHITE);
                 }
-                g2D.drawString(chapter + ": " + today, 150, 150);
+                g2D.drawString(chapter + ": " + today, getWidth() * 0.82f, getHeight() * 0.125f);
             }
 
             private void drawNPC(Graphics2D g2D) {
