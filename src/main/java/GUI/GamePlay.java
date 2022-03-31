@@ -41,9 +41,9 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
     private static Thread textAnimateThread;
     private static long dialogDelaySpeed = 48, defaultDialogDefaultDelay = 48;
     private static BufferedImage currentSceneImage, currentNpcImage, currentHeroAvatar;
-    private static boolean isDialogAnimated;
+    private static boolean isDialogAnimated, isChapterUpdate;
     private static char[] dialogChars;
-    private static int n = 0;
+    private static int n = 0, today;
     private static Double charWidth = 12.2D;
     private static String dialogOwner;
     private static Shape dialogTextRext;
@@ -63,6 +63,7 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
     private int refDelay;
     private float fpsIterCount = 0;
     private String curFps;
+    private static String chapter;
     private static String lastText;
     private Point mouseNow, frameWas, mouseWasOnScreen;
     private Shape backBtnShape;
@@ -72,6 +73,13 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
     public GamePlay(GraphicsConfiguration gConfig) {
         super("GamePlayParent", gConfig);
         refDelay = 1000 / gConfig.getDevice().getDisplayMode().getRefreshRate();
+        today = 3;
+        chapter = "";
+        lastText = "";
+        needsUpdateRectangles = false;
+        currentSceneImage = null;
+        currentNpcImage = null;
+        dlm.clear();
 
         preInit();
         loadResources();
@@ -109,6 +117,8 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
 
                 drawNPC(g2D);
 
+                drawChapterAndDay(g2D);
+
                 g2D.drawImage(gameImageUp, 0, 0,
                         getWidth(), getHeight(),
                         this);
@@ -121,6 +131,19 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
 //                        Double.valueOf(GamePlay.this.getHeight() * 0.01d).intValue(),
 //                        getWidth() - Double.valueOf(GamePlay.this.getWidth() * 0.02d).intValue(),
 //                        getHeight() - Double.valueOf(GamePlay.this.getHeight() * 0.02d).intValue());
+            }
+
+            private void drawChapterAndDay(Graphics2D g2D) {
+                g2D.setColor(new Color(0.0f, 0.0f, 0.0f, 0.25f));
+                g2D.fill(new Polygon(new int[] {100, 200, 200, 150}, new int[] {100, 100, 200, 200}, 4));
+
+                if (isChapterUpdate) {
+                    g2D.setColor(Color.YELLOW);
+                    isChapterUpdate = false;
+                } else {
+                    g2D.setColor(Color.WHITE);
+                }
+                g2D.drawString(chapter + ": " + today, 150, 150);
             }
 
             private void drawNPC(Graphics2D g2D) {
@@ -370,7 +393,7 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
 
         try {
             // loading First block:
-            scenario.load("00NewStart");
+            scenario.load("00_INIT_SCENARIO");
         } catch (IOException e) {
             e.printStackTrace();
             dispose();
@@ -399,7 +422,7 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
         }
     }
 
-    public static void setDialog(String _dialogOwner, String dialogText, ArrayList<String> answers) {
+    public static void setDialog(String _dialogOwner, String dialogText, ArrayList<String> answers, int carma) {
         stopAnimation();
         n++;
 //        System.out.println("\nIncome data #" + n + ":\nTEXT: '[" + dialogOwner + "] " + dialogText + "'\nANSWERS: " + (answers == null ? "(next)" : Arrays.toString(answers.toArray())) + "\n");
@@ -490,6 +513,11 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
             return;
         }
 
+        if (answers.get(0).equals("Начать игру")) {
+            dlm.addElement("Начать игру");
+            return;
+        }
+
         for (String answer : answers) {
             dlm.addElement(dlm.size() + 1 + ") " + answer.split("R")[0]);
         }
@@ -500,6 +528,18 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
         if (textAnimateThread != null) {
             dialogDelaySpeed = 0;
             textAnimateThread.interrupt();
+        }
+    }
+
+    public static void setChapter(String _chapter) {
+        chapter = _chapter;
+        isChapterUpdate = true;
+    }
+
+    public static void dayAdd() {
+        today++;
+        if (today > 30) {
+            today = 1;
         }
     }
 

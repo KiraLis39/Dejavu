@@ -20,7 +20,6 @@ import static registry.Registry.userConf;
 public class AuthorsFrame extends JDialog implements Cached {
     private static final Dimension toolk = Toolkit.getDefaultToolkit().getScreenSize();
     private static final String aboutText = """
-
             Игра создана в 2022 г., является моей первой более-менее серьёзной игрой, написанной на языке Java!
             "Дежавю" полностью придумана, написана, протестирована и оптимизирована мной - KiraLis39.
 
@@ -101,7 +100,7 @@ public class AuthorsFrame extends JDialog implements Cached {
 
                 textHelp = new JTextArea() {
                     {
-                        setBorder(new EmptyBorder(0, 20, 10, 10));
+                        setBorder(new EmptyBorder(3, 20, 10, 10));
                         setBackground(new Color(0.0f, 0.0f, 0.0f, 0.0f));
                         setForeground(Color.ORANGE);
                         setFont(Registry.f10);

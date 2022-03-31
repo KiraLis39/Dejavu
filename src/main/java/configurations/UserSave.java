@@ -1,6 +1,6 @@
 package configurations;
 
-import utils.JConfigurable;
+import iom.interfaces.JConfigurable;
 
 import java.nio.file.Path;
 

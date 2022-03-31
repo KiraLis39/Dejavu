@@ -78,33 +78,11 @@ public class ScenarioEngine {
     }
 
     private void lineParser(@NonNull String line) {
-        if (line.startsWith("H-")) {
-            // NPC set:
-            switchNpc(line.split("-"));
-        } else {
-            // SCREEN set:
-            switchScreen(line.split(";"));
-        }
-    }
-
-    private void switchNpc(String[] lineData) {
-        // H-Ann-upWork-simple
-        if (lineData[1].equals("Clear")) {
-            GamePlay.setScene(null, "Clear");
-            choice(-1);
-            return;
-        }
-
-        File[] variants = new File(Registry.personasDir + "/" + lineData[1] + "/" + lineData[2] + "/" + lineData[3]).listFiles();
-        GamePlay.setScene(null, variants[rand.nextInt(variants.length)].getName().replace(picExtension, ""));
-        choice(-1);
-    }
-
-    private void switchScreen(String[] lineData) {
+        String[] lineData = line.split(";");
         String dialogOwner, dialogText;
         String sceneName = null;
         ArrayList<String> answers = null;
-        String meta = null;
+        int carma = 0;
 
         // dialog owner and dialog text:
         dialogOwner = lineData[0].split(":")[0].trim();
@@ -119,12 +97,15 @@ public class ScenarioEngine {
 
             for (String lineDatum : lineData) {
                 if (lineDatum.trim().startsWith("screen")) {
-                    sceneName = lineDatum.split(":")[1].replaceAll("\"", "").trim();
+                    mediaName = lineDatum.split(":")[1].replaceAll("\"", "").trim();
+                    if (mediaName.equals("-")) {continue;}
+                    sceneName = mediaName;
                     continue;
                 }
                 if (lineDatum.trim().startsWith("music")) {
                     mediaName = lineDatum.split(":")[1].replaceAll("\"", "").trim();
-                    if (mediaName.equals("STOP")) {
+                    if (mediaName.equals("-")) {continue;}
+                    if (mediaName.equalsIgnoreCase("STOP")) {
                         musicPlayer.stop();
                     } else {
                         musicPlayer.play(mediaName);
@@ -133,7 +114,8 @@ public class ScenarioEngine {
                 }
                 if (lineDatum.trim().startsWith("backg")) {
                     mediaName = lineDatum.split(":")[1].replaceAll("\"", "").trim();
-                    if (mediaName.equals("STOP")) {
+                    if (mediaName.equals("-")) {continue;}
+                    if (mediaName.equalsIgnoreCase("STOP")) {
                         backgPlayer.stop();
                     } else {
                         backgPlayer.play(mediaName);
@@ -141,30 +123,60 @@ public class ScenarioEngine {
                     continue;
                 }
                 if (lineDatum.trim().startsWith("sound")) {
-                    soundPlayer.play(lineDatum.split(":")[1].replaceAll("\"", "").trim());
+                    mediaName = lineDatum.split(":")[1].replaceAll("\"", "").trim();
+                    if (mediaName.equals("-")) {continue;}
+                    if (mediaName.equalsIgnoreCase("STOP")) {
+                        soundPlayer.stop();
+                    } else {
+                        soundPlayer.play(mediaName);
+                    }
+                    continue;
+                }
+//                if (lineDatum.trim().startsWith("voice")) {
+//                    mediaName = lineDatum.split(":")[1].replaceAll("\"", "").trim();
+//                    if (mediaName.equals("-")) {continue;}
+//                    voicePlayer.play(mediaName);
+//                    continue;
+//                }
+                if (lineDatum.trim().startsWith("npc")) {
+                    switchNpc(lineDatum.trim().split(":")[1].replaceAll("\"", "").split(","));
                     continue;
                 }
                 if (lineDatum.trim().startsWith("meta")) {
-                    meta = lineDatum.split(":")[1].replaceAll("\"", "").trim();
+                    metaProcessor(lineDatum.trim().split(":")[1].replaceAll("\"", "").split(","));
                     continue;
                 }
-                if (lineDatum.trim().startsWith("voice")) {
-//                  voicePlayer.play(lineData[i].split(":")[1].replaceAll("\"", "").trim());
-                    continue;
+                if (lineDatum.trim().startsWith("carma")) {
+                    carma = Integer.parseInt(lineDatum.split(":")[1].replaceAll("\"", "").trim());
                 }
             }
         }
 
         GamePlay.setScene(sceneName, null);
-        GamePlay.setDialog(dialogOwner, dialogText, answers);
-
-        if (meta != null) {
-            metaProcessor(meta);
-        }
+        GamePlay.setDialog(dialogOwner, dialogText, answers, carma);
     }
 
-    private void metaProcessor(String meta) {
-        System.out.println("Meta: " + meta);
+    private void switchNpc(String[] lineData) {
+        // npc:Ann,upWork,simple
+        if (lineData[0].equals("-")) {
+            GamePlay.setScene(null, "Clear");
+            return;
+        }
+
+        File[] variants = new File(Registry.personasDir + "/" + lineData[0] + "/" + lineData[1] + "/" + lineData[2]).listFiles();
+        GamePlay.setScene(null, variants[rand.nextInt(variants.length)].getName().replace(picExtension, ""));
+//        choice(-1);
+    }
+
+    private void metaProcessor(String[] meta) {
+        String chapter = meta[0].trim();
+        boolean isNextDay = Boolean.valueOf(meta[1].trim());
+        if (!chapter.equals("-")) {
+            GamePlay.setChapter(chapter);
+        }
+        if (isNextDay) {
+            GamePlay.dayAdd();
+        }
     }
 
     public void close() {

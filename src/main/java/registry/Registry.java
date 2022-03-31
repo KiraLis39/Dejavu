@@ -23,7 +23,7 @@ public class Registry {
     public static final String version = "0.1.4.6";
     public static final Charset charset = StandardCharsets.UTF_8;
     public static final String picExtension = ".png";
-    public static final String sBlockExtension = ".json";
+    public static final String sBlockExtension = ".dingo";
 
     // DIRECTORIES:
     public static final Path picDir = Paths.get("resources/pictures/");
