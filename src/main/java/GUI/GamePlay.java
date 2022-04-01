@@ -414,7 +414,7 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
             // loading First block:
             scenario.load("00_INIT_SCENARIO");
         } catch (IOException e) {
-            e.printStackTrace();
+            System.out.println("Script load exception: " + e.getMessage());
             dispose();
         }
         new Thread(new StoryPlayThread()) {
@@ -607,10 +607,11 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
 
     private void loadResources() {
         new Thread(() -> {
+            // add npc types and moods:
             try {
                 for (Path path : Files.walk(personasDir).toList()) {
                     if (Files.isRegularFile(path)) {
-                        cache.add(path.toFile().getName().replace(picExtension, ""),
+                        cache.addIfAbsent(path.toFile().getName().replace(picExtension, ""),
                                 toBImage(path.toString().replace(picExtension, "")));
                     }
                 }
@@ -619,26 +620,26 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
             }
         }).start();
 
-        // npc images:
+        // add npc images:
         try {
             for (Path path : Files.list(npcAvatarsDir).toList()) {
-                cache.add(path.toFile().getName().replace(picExtension, ""),
+                cache.addIfAbsent(path.toFile().getName().replace(picExtension, ""),
                         toBImage(path.toString().replace(picExtension, "")));
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
-        // scenes images:
+        // add scenes images:
         try {
             for (Path path : Files.list(scenesDir).toList()) {
-                cache.add(path.toFile().getName().replace(picExtension, ""),
+                cache.addIfAbsent(path.toFile().getName().replace(picExtension, ""),
                         toBImage(path.toString().replace(picExtension, "")));
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
 
-        // other images:
+        // get other images:
         try {
             nullAvatar = (BufferedImage) cache.get("0");
             backButtons = FoxSpritesCombiner.getSprites("picBackButBig",

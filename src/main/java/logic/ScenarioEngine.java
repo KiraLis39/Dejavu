@@ -28,12 +28,10 @@ public class ScenarioEngine {
     private boolean isChoice;
 
     public void load(@NonNull String scenarioFileName) throws IOException {
-        Path scenario = Paths.get(blockPath + "/" + scenarioFileName + sBlockExtension);
+        Path scenario = Paths.get(blockPath + "\\" + scenarioFileName + sBlockExtension);
         lines = Files.readAllLines(scenario, charset).stream().filter(s -> !s.isBlank()).toList();
         variants = lines.stream().filter(s -> s.startsWith("var ")).toList();
-
-        System.out.println("LOADED: " + lines + "; VARS: " + variants);
-
+//        System.out.println("LOADED: " + lines + "; VARS: " + variants);
         currentLineIndex = -1;
     }
 
