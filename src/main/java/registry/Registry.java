@@ -21,7 +21,7 @@ public class Registry {
 //	public static final FoxPlayer voicePlayer = new FoxPlayer("Voice");
 
     // GLOBAL DATA:
-    public static final String version = "0.1.4.6";
+    public static final String version = "0.1.4.7";
     public static final Charset charset = StandardCharsets.UTF_8;
     public static final String picExtension = ".png";
     public static final String sBlockExtension = ".dingo";
@@ -59,7 +59,7 @@ public class Registry {
     public static final Font f9 = FoxFontBuilder.setFoxFont(FONT.ARIAL, 30, true, gEnv);
     public static final Font f10 = FoxFontBuilder.setFoxFont(FONT.GEORGIA, 19, false, gEnv);
 
-    public static final Font fontAnswers = FoxFontBuilder.setFoxFont(FONT.HARLOW_S_I, 18, false, gEnv); // CANDARA
+    public static final Font fontAnswers = FoxFontBuilder.setFoxFont(FONT.BAHNSCHRIFT, 18, false, gEnv); // CANDARA
     public static final Font fontDialog = FoxFontBuilder.setFoxFont(FONT.CONSOLAS, 20, false, gEnv);
     public static final Font fontName = FoxFontBuilder.setFoxFont(FONT.CAMBRIA, 22, true, gEnv);
 
