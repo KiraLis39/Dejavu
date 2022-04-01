@@ -66,7 +66,7 @@ public class ScenarioEngine {
             // VARIANTS PARSE:
             isChoice = true;
             allowedVariants = new ArrayList<>(
-                    variants.stream().filter(s -> Integer.parseInt(s.split(" ")[1]) <= userConf.getCycleCount()).toList()
+                    variants.stream().filter(s -> Integer.parseInt(s.split(" ")[1]) <= userSave.getCycleCount()).toList()
                             .stream().map(s -> s.split("R")[1].replace("\"", "").trim()
                                     + "R" + s.split("R")[2].replace("\"", "").trim()).toList());
             GamePlay.setAnswers(allowedVariants);

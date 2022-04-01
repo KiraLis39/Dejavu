@@ -29,6 +29,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 import static fox.Out.LEVEL;
 import static fox.Out.Print;
@@ -44,7 +45,7 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
     private static boolean isDialogAnimated, isChapterUpdate;
     private static char[] dialogChars;
     private static int n = 0, today;
-    private static Double charWidth = 12.2D;
+    private static Double charWidth;
     private static String dialogOwner;
     private static MONTH month;
     private static Shape dialogTextRext;
@@ -52,7 +53,7 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
     private Double WINDOWED_WIDTH = Toolkit.getDefaultToolkit().getScreenSize().getWidth() * 0.75D;
     private Double WINDOWED_HEIGHT = Toolkit.getDefaultToolkit().getScreenSize().getHeight() * 0.9D;
     private JList<String> answerList;
-    private long was = System.currentTimeMillis();
+    private long was = System.currentTimeMillis(), autoSaveSeconds = 15_000;
     private BufferedImage nullAvatar, gameImageUp, gameImageDL, gameImageDC, gameImageDR;
     private BufferedImage[] backButtons;
     private JPanel basePane, downCenterPane;
@@ -69,7 +70,7 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
     private Point mouseNow, frameWas, mouseWasOnScreen;
     private Shape backBtnShape;
     private ScenarioEngine scenario = new ScenarioEngine();
-    private Color chapterColor = new Color(0.0f, 0.0f, 0.0f, 0.35f);
+    private Color chapterColor = new Color(0.0f, 0.0f, 0.0f, 0.5f);
     private Polygon chapterPolygon;
 
     // FRAME BUILD:
@@ -170,10 +171,13 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
                     return;
                 }
                 g2D.drawImage(currentNpcImage,
-                        (int) (GamePlay.this.getWidth() * 0.3f),
-                        (int) (GamePlay.this.getHeight() * 0.15f),
-                        (int) (GamePlay.this.getWidth() * 0.36f),
-                        GamePlay.this.getHeight(),
+
+                        getWidth() / 2 - currentNpcImage.getWidth() / 2,
+                        (int) (GamePlay.this.getHeight() * 0.1f),
+
+                        currentNpcImage.getWidth(),
+                        currentNpcImage.getHeight(),
+
                         this);
             }
         };
@@ -281,11 +285,13 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
                                     dy + 1);
                         }
 
+                        g2D.setFont(fontDialog);
+                        if (charWidth == null) {
+                            charWidth = g2D.getFontMetrics().getMaxCharBounds(g2D).getWidth();
+                        }
+
                         // dialog:
                         if (dialogChars != null) {
-                            g2D.setFont(fontDialog);
-                            charWidth = g2D.getFontMetrics().getMaxCharBounds(g2D).getWidth();
-
                             g2D.setColor(Color.GREEN);
                             int mem = 0, line = 1;
                             W:
@@ -333,7 +339,7 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
                                 setForeground(Color.WHITE);
                                 setBackground(new Color(0.5f, 0.5f, 1.0f, 0.1f));
                                 setBorder(new EmptyBorder(3, 3, 3, 3));
-                                setFont(fontDialog);
+                                setFont(fontAnswers);
                                 setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
                                 setSelectionBackground(new Color(1.0f, 1.0f, 1.0f, 0.2f));
                                 setSelectionForeground(new Color(1.0f, 1.0f, 0.0f, 1.0f));
@@ -414,12 +420,18 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
             // loading First block:
             scenario.load("00_INIT_SCENARIO");
         } catch (IOException e) {
-            System.out.println("Script load exception: " + e.getMessage());
-            dispose();
+            System.err.println("Script load exception: " + e.getMessage());
+            SwingUtilities.invokeLater(() -> stopGame());
         }
+
         new Thread(new StoryPlayThread()) {
             {
                 setName("StoryPlayed_thread");
+            }
+        }.start();
+        new Thread(new AutoSaveThread()) {
+            {
+                setName("AutoSaveThread_thread");
             }
         }.start();
     }
@@ -538,9 +550,21 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
         }
 
         for (String answer : answers) {
-            dlm.addElement(dlm.size() + 1 + ") " + answer.split("R")[0]);
+            dlm.addElement(getCountUnicodeChar(dlm.size() + 1) + answer.split("R")[0]);
         }
         needsUpdateRectangles = true;
+    }
+
+    private static char getCountUnicodeChar(int numberToUnicode) {
+        switch (numberToUnicode) {
+            case 1: return '⓵';//'①';
+            case 2: return '②';
+            case 3: return '③';
+            case 4: return '④';
+            case 5: return '⑤';
+            case 6: return '⑥';
+            default: return '?';
+        }
     }
 
     private static void stopAnimation() {
@@ -945,12 +969,12 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
 
             Print(GamePlay.class, LEVEL.INFO, "GameFrame.StoryPlayedThread: Start now.");
             while (isStoryPlayed) {
-                if (isPaused) {
-                    Thread.yield();
-                    continue;
-                }
-                repaint();
                 try {
+                    if (isPaused) {
+                        Thread.yield();
+                        continue;
+                    }
+                    repaint();
                     Thread.sleep(refDelay);
                 } catch (InterruptedException e) {
                     System.out.println("Ошибка в потоке отрисовки: " + e.getMessage());
@@ -958,6 +982,27 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
                 }
             }
             Print(GamePlay.class, LEVEL.INFO, "GameFrame.StoryPlayedThread: Stop!");
+        }
+    }
+
+    private class AutoSaveThread implements Runnable {
+        @Override
+        public void run() {
+            Print(GamePlay.class, LEVEL.INFO, "GameFrame.AutoSaveThread: Start now.");
+            while (isStoryPlayed) {
+                try {
+                    if (!userConf.isAutoSaveOn()) {
+                        Thread.yield();
+                        continue;
+                    }
+                    Thread.sleep(autoSaveSeconds);
+                    SaveGame.save();
+                } catch (InterruptedException e) {
+                    System.out.println("Ошибка в потоке автосохранения: " + e.getMessage());
+                    Thread.currentThread().interrupt();
+                }
+            }
+            Print(GamePlay.class, LEVEL.INFO, "GameFrame.AutoSaveThread: Stop!");
         }
     }
 

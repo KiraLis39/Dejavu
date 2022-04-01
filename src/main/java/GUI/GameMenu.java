@@ -676,7 +676,7 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
                         };
 
                         try {
-                            cd = new FoxTip(downTextLabel, FoxTip.TYPE.INFO, ImageIO.read(new File("./resources/tipIco.png")),
+                            cd = new FoxTip(FoxTip.TYPE.INFO, ImageIO.read(new File("./resources/tipIco.png")),
                                     "Смена или создание героя:",
                                     "Кликни сюда два раза для смены игрока<br>или создания нового профиля.", null
                             );
@@ -756,7 +756,7 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
             if (((JLabel) e.getSource()).getName().equals("downName")) {
                 setForeground(Color.ORANGE);
                 setStatusText("Сменить/создать игрока (2x click)");
-                cd.showTip();
+                cd.showTip(downTextLabel);
             }
         }
     }

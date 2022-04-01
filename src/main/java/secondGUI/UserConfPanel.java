@@ -1,6 +1,7 @@
 package secondGUI;
 
 import configurations.UserConf;
+import configurations.UserSave;
 import render.FoxRender;
 
 import javax.swing.*;
@@ -8,6 +9,7 @@ import java.awt.*;
 
 public class UserConfPanel extends JPanel {
     private final UserConf user;
+    private final UserSave save;
 
     @Override
     protected void paintComponent(Graphics g) {
@@ -16,11 +18,16 @@ public class UserConfPanel extends JPanel {
         super.paintComponent(g2D);
     }
 
-    public UserConfPanel(UserConf user) {
+    public UserConfPanel(UserConf user, UserSave save) {
         this.user = user;
+        this.save = save;
     }
 
     public UserConf getConfig() {
         return user;
+    }
+
+    public UserSave getSave() {
+        return save;
     }
 }

@@ -72,7 +72,7 @@ public class FoxCellRenderer implements ListCellRenderer<UserConfPanel>, Cached 
                         }, BorderLayout.CENTER);
                         add(new JLabel() {
                             {
-                                setText("<html>Цикл: " + ucPane.getConfig().getCycleCount());
+                                setText("<html>Цикл: " + ucPane.getSave().getCycleCount());
                                 setFont(Registry.f8);
                             }
                         }, BorderLayout.SOUTH);

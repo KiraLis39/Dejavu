@@ -31,16 +31,23 @@ public class Exit {
 
         Print(Exit.class, LEVEL.ACCENT, "Сохранение...");
         try {
-            JIOM.dtoToFile(Registry.configuration);
+            JIOM.dtoToFile(configuration);
         } catch (Exception e) {
 			i++;
             e.printStackTrace();
         }
 
         try {
-            JIOM.dtoToFile(Registry.userConf);
+            JIOM.dtoToFile(userConf);
         } catch (Exception e) {
 			i++;
+            e.printStackTrace();
+        }
+
+        try {
+            JIOM.dtoToFile(userSave);
+        } catch (Exception e) {
+            i++;
             e.printStackTrace();
         }
 

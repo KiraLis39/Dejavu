@@ -3,6 +3,7 @@ package door;
 import GUI.GameMenu;
 import configurations.Configuration;
 import configurations.UserConf;
+import configurations.UserSave;
 import fox.FoxLogo;
 import iom.JIOM;
 import fox.Out;
@@ -125,8 +126,9 @@ public class MainClass implements Cached {
                 userConf = regNewbie();
             } else {
                 usersSaveDir = Paths.get(usersDir + "/" + luHash + "/");
-                userConf = JIOM.fileToDto(Paths.get(usersSaveDir + "/save.dto"), UserConf.class);
+                userConf = JIOM.fileToDto(Paths.get(usersSaveDir + "/uconf.dto"), UserConf.class);
             }
+            userSave = JIOM.fileToDto(Paths.get(usersSaveDir + "\\save.dto"), UserSave.class);
         } catch (Exception e) {
             Out.Print(MainClass.class, LEVEL.ERROR, "Failed user load: " + e.getMessage());
             Exit.exit(13, e.getMessage());
@@ -158,7 +160,7 @@ public class MainClass implements Cached {
         JIOM.dtoToFile(configuration);
 
         usersSaveDir = Paths.get(usersDir + "/" + configuration.getLastUserHash());
-        uConf.setSource(Paths.get(usersSaveDir + "/save.dto"));
+        uConf.setSource(Paths.get(usersSaveDir + "/uconf.dto"));
         JIOM.dtoToFile(uConf);
 
         userConf = uConf;

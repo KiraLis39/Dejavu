@@ -282,7 +282,6 @@ public class NewUserForm extends JDialog implements Cached, ListSelectionListene
                 setMusicVolume(100);
                 setSoundVolume(100);
                 setVoiceVolume(100);
-                setCycleCount(0);
             }
         };
     }
@@ -352,7 +351,6 @@ public class NewUserForm extends JDialog implements Cached, ListSelectionListene
     @Override
     public void valueChanged(ListSelectionEvent e) {
         if (e.getValueIsAdjusting()) {return;}
-
         newUserConf.setAvatarIndex(newUserConf.getUserSex() == UserConf.USER_SEX.MALE ? avatarList.getSelectedIndex() : avatarList.getSelectedIndex() + 4);
         avatarPicPane.repaint();
     }

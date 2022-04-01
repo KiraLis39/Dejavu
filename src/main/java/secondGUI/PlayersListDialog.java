@@ -1,6 +1,7 @@
 package secondGUI;
 
 import configurations.UserConf;
+import configurations.UserSave;
 import door.Exit;
 import door.MainClass;
 import utils.InputAction;
@@ -48,7 +49,10 @@ public class PlayersListDialog extends JDialog implements ActionListener {
                         try {
                             List<Path> users = Files.list(Registry.usersDir).toList();
                             for (Path user : users) {
-                                players.add(new UserConfPanel(JIOM.fileToDto(Paths.get(user + "\\save.dto"), UserConf.class)));
+                                players.add(new UserConfPanel(
+                                        JIOM.fileToDto(Paths.get(user + "\\uconf.dto"), UserConf.class),
+                                        JIOM.fileToDto(Paths.get(user + "\\save.dto"), UserSave.class)
+                                ));
                             }
                         } catch (Exception e) {
                             e.printStackTrace();
