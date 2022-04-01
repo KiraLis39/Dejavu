@@ -24,7 +24,7 @@ public class SaveGame extends JDialog implements Cached {
     private final Rectangle button1Rect;
     private final Rectangle button2Rect;
 
-    private final Boolean saveChosen = true; // temporary ON
+    private boolean saveChosen; // temporary ON
 
     public SaveGame(JFrame parent, GraphicsConfiguration gConfig) {
         super(parent, "SaveLoadFrame", true, gConfig);
@@ -65,9 +65,9 @@ public class SaveGame extends JDialog implements Cached {
         g2D.setFont(Registry.f0);
         g2D.drawString("Загрузка и сохранение:", (int) (widthPercent * 4D), (int) (heightPercent * 3.5D));
 
-        g2D.drawRect((int) (widthPercent * 67D), (int) (heightPercent * 6D), (int) (widthPercent * 30D), (int) (heightPercent * 5D));
-
         if (saveChosen) {
+            g2D.drawRect((int) (widthPercent * 67D), (int) (heightPercent * 6D), (int) (widthPercent * 30D), (int) (heightPercent * 5D));
+
             g2D.setFont(Registry.f1);
             g2D.drawString("Info will be here soon...", (int) (widthPercent * 4D), (int) (heightPercent * 73D));
             g2D.drawString("Info will be here soon...", (int) (widthPercent * 4D), (int) (heightPercent * 77D));

@@ -46,6 +46,7 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
     private static int n = 0, today;
     private static Double charWidth = 12.2D;
     private static String dialogOwner;
+    private static MONTH month;
     private static Shape dialogTextRext;
 
     private Double WINDOWED_WIDTH = Toolkit.getDefaultToolkit().getScreenSize().getWidth() * 0.75D;
@@ -68,12 +69,15 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
     private Point mouseNow, frameWas, mouseWasOnScreen;
     private Shape backBtnShape;
     private ScenarioEngine scenario = new ScenarioEngine();
+    private Color chapterColor = new Color(0.0f, 0.0f, 0.0f, 0.35f);
+    private Polygon chapterPolygon;
 
     // FRAME BUILD:
     public GamePlay(GraphicsConfiguration gConfig) {
         super("GamePlayParent", gConfig);
         refDelay = 1000 / gConfig.getDevice().getDisplayMode().getRefreshRate();
         today = 3;
+        month = MONTH.июнь;
         chapter = "";
         lastText = "";
         needsUpdateRectangles = false;
@@ -134,22 +138,31 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
             }
 
             private void drawChapterAndDay(Graphics2D g2D) {
-                g2D.setColor(new Color(0.0f, 0.0f, 0.0f, 0.25f));
-                g2D.fill(new Polygon(
-                        new int[] {(int) (getWidth() * 0.75f), getWidth(), getWidth(), (int) (getWidth() * 0.85f)},
-                        new int[] {(int) (getHeight() * 0.01f), (int) (getHeight() * 0.01f), (int) (getHeight() * 0.2f), (int) (getHeight() * 0.2f)},
-                        4));
+                if (chapter != null && !chapter.isBlank()) {
+                    if (chapterPolygon == null || needsUpdateRectangles) {
+                        chapterPolygon = new Polygon(
+                                new int[] {(int) (getWidth() * 0.75f), getWidth(), getWidth(), (int) (getWidth() * 0.85f)},
+                                new int[] {(int) (getHeight() * 0.01f), (int) (getHeight() * 0.01f), (int) (getHeight() * 0.2f), (int) (getHeight() * 0.2f)},
+                                4);
+                    }
+                    g2D.setColor(chapterColor);
+                    g2D.fill(chapterPolygon);
 
-                g2D.setFont(f9);
-                g2D.setColor(Color.BLACK);
-                g2D.drawString(chapter + ": " + today, getWidth() * 0.822f, getHeight() * 0.122f);
-                if (isChapterUpdate) {
-                    g2D.setColor(Color.YELLOW);
-                    isChapterUpdate = false;
-                } else {
-                    g2D.setColor(Color.WHITE);
+                    g2D.setFont(f9);
+                    g2D.setColor(Color.BLACK);
+                    String secLine = month + ": " + today;
+
+                    g2D.drawString(chapter, getWidth() * 0.852f, getHeight() * 0.1075f);
+                    g2D.drawString(secLine, (float) (getWidth() - FoxFontBuilder.getStringBounds(g2D, secLine).getWidth()) - 59f, getHeight() * 0.1475f);
+                    if (isChapterUpdate) {
+                        g2D.setColor(Color.YELLOW);
+                        isChapterUpdate = false;
+                    } else {
+                        g2D.setColor(Color.WHITE);
+                    }
+                    g2D.drawString(chapter, getWidth() * 0.85f, getHeight() * 0.11f);
+                    g2D.drawString(secLine, (float) (getWidth() - FoxFontBuilder.getStringBounds(g2D, secLine).getWidth()) - 60f, getHeight() * 0.15f);
                 }
-                g2D.drawString(chapter + ": " + today, getWidth() * 0.82f, getHeight() * 0.125f);
             }
 
             private void drawNPC(Graphics2D g2D) {
@@ -546,6 +559,7 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
         today++;
         if (today > 30) {
             today = 1;
+            month = MONTH.values()[month.ordinal() + 1];
         }
     }
 
@@ -808,8 +822,8 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
 
         int closeQ = new FOptionPane(
                 "Подтверждение:",
-                "Да: Прервать игру и вернуться в меню.\nНет: Сохранение/загрузка.",
-                FOptionPane.TYPE.YES_NO_TYPE,
+                "Что нужно сделать?",
+                FOptionPane.TYPE.VARIANTS,
                 null,
                 true).get();
 
@@ -944,6 +958,12 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
             }
             Print(GamePlay.class, LEVEL.INFO, "GameFrame.StoryPlayedThread: Stop!");
         }
+    }
+
+    public enum MONTH {
+        июнь,
+        июль,
+        август
     }
 }
 //Choice choice = new Choice();

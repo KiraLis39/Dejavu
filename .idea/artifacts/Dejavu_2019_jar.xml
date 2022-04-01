@@ -1,6 +1,6 @@
 <component name="ArtifactManager">
   <artifact type="jar" name="Dejavu_2019:jar">
-    <output-path>$USER_HOME$/Desktop/Dejavu</output-path>
+    <output-path>$PROJECT_DIR$</output-path>
     <root id="archive" name="Dejavu_2019.jar">
       <element id="module-output" name="Dejavu_2019" />
       <element id="module-output" name="FoxOut" />
