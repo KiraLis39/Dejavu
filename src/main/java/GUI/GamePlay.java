@@ -550,19 +550,19 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
         }
 
         for (String answer : answers) {
-            dlm.addElement(getCountUnicodeChar(dlm.size() + 1) + answer.split("R")[0]);
+            dlm.addElement(getCountUnicodeChar(dlm.size() + 1) + " " + answer.split("R")[0]);
         }
         needsUpdateRectangles = true;
     }
 
     private static char getCountUnicodeChar(int numberToUnicode) {
         switch (numberToUnicode) {
-            case 1: return '⓵';//'①';
-            case 2: return '②';
-            case 3: return '③';
-            case 4: return '④';
-            case 5: return '⑤';
-            case 6: return '⑥';
+            case 1: return '1';
+            case 2: return '2';
+            case 3: return '3';
+            case 4: return '4';
+            case 5: return '5';
+            case 6: return '6';
             default: return '?';
         }
     }

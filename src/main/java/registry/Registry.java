@@ -59,9 +59,19 @@ public class Registry {
     public static final Font f9 = FoxFontBuilder.setFoxFont(FONT.ARIAL, 30, true, gEnv);
     public static final Font f10 = FoxFontBuilder.setFoxFont(FONT.GEORGIA, 19, false, gEnv);
 
-    public static final Font fontAnswers = FoxFontBuilder.setFoxFont(FONT.BAHNSCHRIFT, 18, false, gEnv); // CANDARA
+    public static final Font fontAnswers = FoxFontBuilder.setFoxFont(FONT.CANDARA, 18, false, gEnv);
     public static final Font fontDialog = FoxFontBuilder.setFoxFont(FONT.CONSOLAS, 20, false, gEnv);
     public static final Font fontName = FoxFontBuilder.setFoxFont(FONT.CAMBRIA, 22, true, gEnv);
+
+    public static final Font fontName2;
+    public static final Font fontName3;
+    static {
+        int ruf = FoxFontBuilder.addNewFont("Lucida Sans Unicode");
+        fontName2 = FoxFontBuilder.setFoxFont(ruf, 18, true, GraphicsEnvironment.getLocalGraphicsEnvironment());
+
+        ruf = FoxFontBuilder.addNewFont("Propaganda");
+        fontName3 = FoxFontBuilder.setFoxFont(ruf, 10, false, GraphicsEnvironment.getLocalGraphicsEnvironment());
+    }
 
     // CONFIGURATIONS:
     public static Configuration configuration;
