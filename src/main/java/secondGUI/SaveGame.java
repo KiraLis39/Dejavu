@@ -1,6 +1,7 @@
 package secondGUI;
 
 import GUI.GamePlay;
+import components.FOptionPane;
 import configurations.UserConf;
 import configurations.UserSave;
 import door.Exit;
@@ -42,6 +43,7 @@ public class SaveGame extends JDialog implements Cached, ActionListener, ListSel
     private JList<UserConfPanel> playersList;
     private JTextArea infoArea;
     private BufferedImage infoImage;
+    private final ArrayList<UserConfPanel> userSaveList = new ArrayList<>();
 
     public SaveGame(JFrame parent, GraphicsConfiguration gConfig) {
         super(parent, "SaveLoadFrame", true, gConfig);
@@ -59,9 +61,9 @@ public class SaveGame extends JDialog implements Cached, ActionListener, ListSel
         JPanel centerSaveInfoPane = new JPanel(new BorderLayout(0,0)) {
             @Override
             public void paintComponent(Graphics g) {
-                super.paintComponent(g);
+//                super.paintComponent(g);
                 Graphics2D g2D = (Graphics2D) g;
-                FoxRender.setRender(g2D, FoxRender.RENDER.MED);
+                FoxRender.setRender(g2D, FoxRender.RENDER.HIGH);
 
                 g2D.drawImage(backImage,
                         0,0,
@@ -107,9 +109,9 @@ public class SaveGame extends JDialog implements Cached, ActionListener, ListSel
         JPanel leftSavesPane = new JPanel(new BorderLayout(0,0)) {
             @Override
             public void paintComponent(Graphics g) {
-                super.paintComponent(g);
+//                super.paintComponent(g);
                 Graphics2D g2D = (Graphics2D) g;
-                FoxRender.setRender(g2D, FoxRender.RENDER.MED);
+                FoxRender.setRender(g2D, FoxRender.RENDER.HIGH);
 
                 g2D.drawImage(backImage,
                         0,0,
@@ -128,20 +130,7 @@ public class SaveGame extends JDialog implements Cached, ActionListener, ListSel
                 setBorder(new EmptyBorder(36,9,30,22));
                 setPreferredSize(new Dimension(300, 0));
 
-                ArrayList<UserConfPanel> userSaveList = new ArrayList<>();
-                try {
-                    List<Path> users = Files.list(Registry.usersSaveDir).toList();
-                    for (Path user : users) {
-                        if (user.toString().contains("save")) {
-                            userSaveList.add(new UserConfPanel(
-                                    JIOM.fileToDto(Paths.get(user.getParent() + "\\uconf.dto"), UserConf.class),
-                                    JIOM.fileToDto(user, UserSave.class)
-                            ));
-                        }
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
+                reloadSaves();
                 ListModel<UserConfPanel> ucModel = new AbstractListModel<>() {
                     @Override
                     public int getSize() {
@@ -165,18 +154,38 @@ public class SaveGame extends JDialog implements Cached, ActionListener, ListSel
                     }
                 };
 
-                JButton confirmBtn = new JButton("Загрузить это сохранение") {
+                JPanel btnsPane = new JPanel(new GridLayout(2,0,0,0)) {
                     {
-                        setBackground(Color.BLACK);
-                        setForeground(Color.WHITE);
-                        setActionCommand("choseSelected");
-                        addActionListener(SaveGame.this);
-                        setFocusPainted(false);
+                        setOpaque(false);
+
+                        JButton confirmBtn = new JButton("Загрузить это сохранение") {
+                            {
+                                setBackground(Color.BLACK);
+                                setForeground(Color.WHITE);
+                                setActionCommand("choseSelected");
+                                addActionListener(SaveGame.this);
+                                setFocusPainted(false);
+                            }
+                        };
+
+                        JButton createBtn = new JButton("Создать новое сохранение") {
+                            {
+                                setBackground(Color.BLACK);
+                                setForeground(Color.WHITE);
+                                setActionCommand("createNew");
+                                addActionListener(SaveGame.this);
+                                setFocusPainted(false);
+                            }
+                        };
+
+                        add(confirmBtn);
+                        add(createBtn);
                     }
                 };
 
+
                 add(playersList, BorderLayout.CENTER);
-                add(confirmBtn, BorderLayout.SOUTH);
+                add(btnsPane, BorderLayout.SOUTH);
             }
         };
 
@@ -188,6 +197,23 @@ public class SaveGame extends JDialog implements Cached, ActionListener, ListSel
         setLocationRelativeTo(null);
         setModal(true);
         setVisible(true);
+    }
+
+    private void reloadSaves() {
+        userSaveList.clear();
+        try {
+            List<Path> users = Files.list(Registry.usersSaveDir).toList();
+            for (Path user : users) {
+                if (user.toString().contains("save")) {
+                    userSaveList.add(new UserConfPanel(
+                            JIOM.fileToDto(Paths.get(user.getParent() + "\\uconf.dto"), UserConf.class),
+                            JIOM.fileToDto(user, UserSave.class)
+                    ));
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void inAc() {
@@ -203,12 +229,38 @@ public class SaveGame extends JDialog implements Cached, ActionListener, ListSel
     @Override
     public void actionPerformed(ActionEvent e) {
         if (e.getActionCommand().equals("choseSelected")) {
-            UserSave selectedSave = playersList.getSelectedValue().getSave();
-            parent.dispose();
-            musicPlayer.stop();
-            backgPlayer.stop();
-            new GamePlay(parent.getGraphicsConfiguration(), selectedSave, -1);
-            dispose();
+            if (playersList.getSelectedValue() == null) {
+                new FOptionPane("Ошибка:", "Нужно выбрать сохранение\nили нажать ESC");
+            } else {
+                UserSave selectedSave = playersList.getSelectedValue().getSave();
+                parent.dispose();
+                musicPlayer.stop();
+                backgPlayer.stop();
+                new GamePlay(parent.getGraphicsConfiguration(), selectedSave, -1);
+                dispose();
+            }
+        }
+
+        if (e.getActionCommand().equals("createNew")) {
+            String name = (String) new FOptionPane("Запись сохранения:", "Введи имя сохранения:", FOptionPane.TYPE.INPUT).get();
+            if (name != null && !name.isBlank()) {
+                SaveLoad.handleSave(Paths.get(usersSaveDir + "\\save_" + name), name);
+                reloadSaves();
+                playersList.setModel(new AbstractListModel<>() {
+                    @Override
+                    public int getSize() {
+                        return userSaveList.size();
+                    }
+
+                    @Override
+                    public UserConfPanel getElementAt(int index) {
+                        return userSaveList.get(index);
+                    }
+                });
+                revalidate();
+            } else {
+                new FOptionPane("Запись не сохранена:", "Неудачное имя сохранения!");
+            }
         }
     }
 
@@ -218,9 +270,9 @@ public class SaveGame extends JDialog implements Cached, ActionListener, ListSel
             UserConf up = playersList.getSelectedValue().getConfig();
             UserSave us = playersList.getSelectedValue().getSave();
             infoArea.setText(String.format(
-                    "Игрок: %s\n" +
+                    "%s\nИгрок: %s\n" +
                     "Часть: %s\tДата: %d %s\n" +
-                    "Круг: %d", up.getUserName(), us.getChapter(), us.getToday(), us.getMonth(), us.getCycleCount()
+                    "Круг: %d", us.getName() == null ? "auto" : us.getName(), up.getUserName(), us.getChapter(), us.getToday(), us.getMonth(), us.getCycleCount()
             ));
             try {
                 infoImage = ImageIO.read(new File(scenesDir + "\\" + us.getScreen() + picExtension));

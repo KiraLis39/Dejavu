@@ -858,7 +858,7 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
         backButPressed = false;
         isPaused = true;
 
-        int closeQ = new FOptionPane(
+        int closeQ = (int) new FOptionPane(
                 "Подтверждение:",
                 "Что нужно сделать?",
                 FOptionPane.TYPE.VARIANTS,

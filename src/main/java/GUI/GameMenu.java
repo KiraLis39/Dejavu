@@ -708,7 +708,7 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
     }
 
     private void showExitRequest() {
-        int exit = new FOptionPane(
+        int exit = (int) new FOptionPane(
                 "Подтверждение:", "Точно закрыть игру и выйти?",
                 FOptionPane.TYPE.YES_NO_TYPE, null, true).get();
         if (exit == 0) {

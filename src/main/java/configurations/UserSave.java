@@ -12,6 +12,7 @@ import java.nio.file.Path;
 @NoArgsConstructor
 @EqualsAndHashCode
 public class UserSave implements JConfigurable {
+    String name;
     Path source;
 
     int cycleCount = 0;

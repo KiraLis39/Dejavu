@@ -1,17 +1,11 @@
 package logic;
 
-import GUI.GamePlay;
 import configurations.UserSave;
-import fox.Out;
-import fox.Out.LEVEL;
 import iom.JIOM;
-import registry.Registry;
 
 import javax.swing.*;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 
 import static registry.Registry.*;
 import static registry.Registry.userSave;
@@ -32,8 +26,9 @@ public class SaveLoad {
         });
     }
 
-    public static void handleSave(Path newSavePath) {
+    public static void handleSave(Path newSavePath, String name) {
         UserSave newSaveDto = new UserSave(newSavePath);
+        newSaveDto.setName(name);
         try {
             newSaveDto.setCarmaAnn(userSave.getCarmaAnn());
             newSaveDto.setCarmaDmi(userSave.getCarmaDmi());
