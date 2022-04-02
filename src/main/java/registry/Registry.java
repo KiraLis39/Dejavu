@@ -59,8 +59,8 @@ public class Registry {
     public static final Font f9 = FoxFontBuilder.setFoxFont(FONT.ARIAL, 30, true, gEnv);
     public static final Font f10 = FoxFontBuilder.setFoxFont(FONT.GEORGIA, 19, false, gEnv);
 
-    public static final Font fontAnswers = FoxFontBuilder.setFoxFont(FONT.CANDARA, 18, false, gEnv);
-    public static final Font fontDialog = FoxFontBuilder.setFoxFont(FONT.CONSOLAS, 20, false, gEnv);
+    public static final Font fontAnswers = FoxFontBuilder.setFoxFont(FONT.CANDARA, 20, false, gEnv);
+    public static final Font fontDialog = FoxFontBuilder.setFoxFont(FONT.CONSOLAS, 24, false, gEnv);
     public static final Font fontName = FoxFontBuilder.setFoxFont(FONT.CAMBRIA, 22, true, gEnv);
 
     public static final Font fontName2;

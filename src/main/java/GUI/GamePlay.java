@@ -5,6 +5,7 @@ import configurations.UserSave;
 import door.MainClass;
 import images.FoxCursor;
 import logic.SaveLoad;
+import registry.Registry;
 import utils.FoxFontBuilder;
 import utils.InputAction;
 import fox.Out;
@@ -21,6 +22,7 @@ import tools.Cursors;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import javax.swing.plaf.synth.Region;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
@@ -39,6 +41,7 @@ import static registry.Registry.*;
 @EqualsAndHashCode(callSuper = true)
 @Data
 public class GamePlay extends JFrame implements MouseListener, MouseMotionListener, WindowListener, Cached {
+    public enum MONTH {июнь,июль,август}
     private static DefaultListModel<String> dlm = new DefaultListModel<>();
     private static Thread textAnimateThread;
     private static long dialogDelaySpeed = 48, defaultDialogDefaultDelay = 48;
@@ -51,7 +54,7 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
 
     private Double WINDOWED_WIDTH = Toolkit.getDefaultToolkit().getScreenSize().getWidth() * 0.75D;
     private Double WINDOWED_HEIGHT = Toolkit.getDefaultToolkit().getScreenSize().getHeight() * 0.9D;
-    private JList<String> answerList;
+    private static JList<String> answerList;
     private long was = System.currentTimeMillis(), autoSaveSeconds = 15_000;
     private BufferedImage nullAvatar, gameImageUp, gameImageDL, gameImageDC, gameImageDR;
     private BufferedImage[] backButtons;
@@ -60,16 +63,57 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
     private boolean backButOver;
     private boolean backButPressed;
     private boolean isPaused;
-    private static boolean needsUpdateRectangles;
-    private int refDelay;
+    private static boolean needsUpdateRectangles, showQualityChanged;
+    private int refDelay, infoShowedCycles = 100;
     private float fpsIterCount = 0;
-    private String curFps;
+    private double curFps;
     private static String lastText;
     private Point mouseNow, frameWas, mouseWasOnScreen;
     private Shape backBtnShape;
     private ScenarioEngine scenario = new ScenarioEngine();
     private Color chapterColor = new Color(0.0f, 0.0f, 0.0f, 0.5f);
     private Polygon chapterPolygon;
+
+    // FRAME DRAWING:
+    @Override
+    public void paint(Graphics g) {
+        super.paint(g);
+//        g.setColor(Color.GRAY);
+//        g.drawRoundRect(dialogTextRect.x, dialogTextRect.y, dialogTextRect.width, dialogTextRect.height, 16, 16);
+//        g.setColor(Color.GRAY);
+//        g.drawRoundRect(choseVariantRect.x, choseVariantRect.y, choseVariantRect.width, choseVariantRect.height, 8, 8);
+//        g.setColor(Color.YELLOW);
+//        g.drawRect(backButtonRect.x, backButtonRect.y, backButtonRect.width, backButtonRect.height);
+        drawFPS(g);
+
+        drawOther(g);
+    }
+
+    private void drawFPS(Graphics g) {
+        if (configuration.isFpsShowed()) {
+            fpsIterCount++;
+            if (System.currentTimeMillis() - was > 1000) {
+                curFps = Double.valueOf(Math.floor(fpsIterCount));
+                was = System.currentTimeMillis();
+                fpsIterCount = 0;
+            }
+
+            g.setColor(Color.GRAY);
+            g.drawString(String.format("%.0f", curFps), 10, 25);
+        }
+    }
+
+    private void drawOther(Graphics g) {
+        if (showQualityChanged && infoShowedCycles > 0) {
+            g.setColor(Color.ORANGE);
+            g.setFont(fontDialog);
+            g.drawString("Качество установлено: " + userConf.getQuality().name(), 100 - (infoShowedCycles / 10), 60);
+            infoShowedCycles--;
+        } else if (infoShowedCycles == 0) {
+            showQualityChanged = false;
+            infoShowedCycles = 100;
+        }
+    }
 
     // FRAME BUILD:
     public GamePlay(GraphicsConfiguration gConfig, UserSave loader, int linerMod) {
@@ -249,15 +293,13 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
 //                        g2D.setColor(Color.GREEN.darker());
 //                        g2D.draw(answerList.getBounds());
                         if (dialogTextRext == null || needsUpdateRectangles) {
-                            SwingUtilities.invokeLater(() -> {
-                                dialogTextRext = new Rectangle(
-                                        Double.valueOf(getWidth() * 0.0025d).intValue(),
-                                        Double.valueOf(getHeight() * 0.085d).intValue(),
-                                        Double.valueOf((getWidth() - answerList.getWidth()) * 0.985d).intValue(),
-                                        Double.valueOf(getHeight() * 0.75d).intValue()
-                                );
-                                needsUpdateRectangles = false;
-                            });
+                            dialogTextRext = new Rectangle(
+                                    Double.valueOf(getWidth() * 0.0025d).intValue(),
+                                    Double.valueOf(getHeight() * 0.095d).intValue(),
+                                    Double.valueOf((getWidth() - answerList.getWidth()) * 0.985d).intValue(),
+                                    Double.valueOf(getHeight() * 0.75d).intValue()
+                            );
+                            needsUpdateRectangles = false;
                         }
 //                        g2D.setColor(Color.GREEN.darker());
 //                        g2D.draw(dialogTextRext);
@@ -289,7 +331,6 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
 
                         // dialog:
                         if (dialogChars != null && dialogTextRext != null) {
-                            g2D.setColor(Color.GREEN);
                             int mem = 0, line = 1;
                             W:
                             while (true) {
@@ -301,9 +342,15 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
                                         mem = i + 1;
                                         break;
                                     } // next line marker detector (\n)
-
+                                    g2D.setColor(Color.GRAY.brighter());
                                     g2D.drawString(String.valueOf(dialogChars[i]),
-                                            Double.valueOf(dialogTextRext.getBounds().x + (shift * charWidth)).intValue(),
+                                            Double.valueOf(dialogTextRext.getBounds().x + (shift * charWidth) + 0.35d).floatValue(),
+                                            Double.valueOf(dialogTextRext.getBounds().y * line + 0.55d).floatValue()
+                                    );
+
+                                    g2D.setColor(Color.BLACK);
+                                    g2D.drawString(String.valueOf(dialogChars[i]),
+                                            Double.valueOf(dialogTextRext.getBounds().x + (shift * charWidth)).floatValue(),
                                             dialogTextRext.getBounds().y * line
                                     );
 
@@ -340,11 +387,11 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
                                 setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
                                 setSelectionBackground(new Color(1.0f, 1.0f, 1.0f, 0.2f));
                                 setSelectionForeground(new Color(1.0f, 1.0f, 0.0f, 1.0f));
-                                setVisibleRowCount(5);
+                                setVisibleRowCount(6);
+
                                 setCursor(FoxCursor.createCursor((BufferedImage) cache.get("curTextCursor"), "textCursor"));
                                 addMouseListener(GamePlay.this);
-
-//                                setPreferredSize(new Dimension(210, 0));
+                                setPreferredSize(new Dimension(210, 0));
                             }
                         };
 
@@ -417,7 +464,7 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
             scenario.load(userSave.getScript(), linerMod);
             if (linerMod == 0) {
                 setAnswers(new ArrayList<>() {{
-                    add("Начать игру");
+                    add("(нажми пробел)");
                 }});
             }
         } catch (IOException e) {
@@ -510,7 +557,7 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
     private static void animateText(String text) {
         isDialogAnimated = false;
 
-        if (text != null) { //  && !text.equals(lastText)
+        if (text != null) {
             lastText = text;
 
             isDialogAnimated = true;
@@ -522,25 +569,24 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
             if (charWidth == null) {return;}
             int shift = 0;
             for (int i = 0; i < text.length(); i++) {
-                shift++;
-                if (charWidth * shift > dialogTextRext.getBounds().width - charWidth * 3) {
-                    for (int k = i; k > 0; k--) {
-                        if ((int) dialogChars[k] == 32) {
-                            sb.setCharAt(k, (char) 10);
-                            break;
+                try {
+                    shift++;
+                    if (charWidth * shift > dialogTextRext.getBounds().width - charWidth * 3) {
+                        for (int k = i; k > 0; k--) {
+                            if ((int) dialogChars[k] == 32) {
+                                sb.setCharAt(k, (char) 10);
+                                break;
+                            }
                         }
+                        shift = 0;
                     }
-                    shift = 0;
-                }
-                try {
-                    sb.getChars(0, i + 1, dialogChars, 0);
-                } catch (Exception e) {
-                    /* IGNORE */
-                }
 
-                try {
-                    Thread.sleep(dialogDelaySpeed);
-                } catch (InterruptedException e) {
+                    sb.getChars(0, i + 1, dialogChars, 0);
+
+                    if (userConf.isTextAnimated()) {
+                        Thread.sleep(dialogDelaySpeed);
+                    }
+                } catch (Exception e) {
                     Thread.currentThread().interrupt();
                 }
             }
@@ -551,16 +597,18 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
 
     public static void setAnswers(ArrayList<String> answers) {
         dlm.clear();
+        answerList.setForeground(Color.WHITE);
         if (answers == null) {
             dlm.addElement("Далее...");
             return;
         }
 
-        if (answers.get(0).equals("Начать игру")) {
+        if (answers.get(0).equals("Начать игру") || answers.get(0).equals("(нажми пробел)")) {
             dlm.addElement("Начать игру");
             return;
         }
 
+        answerList.setForeground(Color.GREEN);
         for (String answer : answers) {
             dlm.addElement(getCountUnicodeChar(dlm.size() + 1) + " " + answer.split("R")[0]);
         }
@@ -612,34 +660,6 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
         addMouseMotionListener(this);
     }
 
-    // FRAME DRAWING:
-    @Override
-    public void paint(Graphics g) {
-        super.paint(g);
-
-//        g.setColor(Color.GRAY);
-//        g.drawRoundRect(dialogTextRect.x, dialogTextRect.y, dialogTextRect.width, dialogTextRect.height, 16, 16);
-//        g.setColor(Color.GRAY);
-//        g.drawRoundRect(choseVariantRect.x, choseVariantRect.y, choseVariantRect.width, choseVariantRect.height, 8, 8);
-//        g.setColor(Color.YELLOW);
-//        g.drawRect(backButtonRect.x, backButtonRect.y, backButtonRect.width, backButtonRect.height);
-
-        drawFPS(g);
-    }
-
-    private void drawFPS(Graphics g) {
-        if (configuration.isFpsShowed()) {
-            fpsIterCount++;
-            if (System.currentTimeMillis() - was > 1000) {
-                curFps = Double.valueOf(Math.floor(fpsIterCount)).toString();
-                was = System.currentTimeMillis();
-                fpsIterCount = 0;
-            }
-
-            g.setColor(Color.GRAY);
-            g.drawString(curFps, 10, 25);
-        }
-    }
 
     private void loadResources() {
         new Thread(() -> {
@@ -736,6 +756,7 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
             public void actionPerformed(ActionEvent e) {
                 userConf.nextQuality();
                 System.out.println("Quality: " + userConf.getQuality());
+                showQualityChanged = true;
             }
         });
 
@@ -756,6 +777,7 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
                 if (dlm.size() < 1) {
                     return;
                 }
+                dialogDelaySpeed = 0;
                 answerList.setSelectedIndex(0);
                 scenario.choice(0);
             }
@@ -766,6 +788,7 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
                 if (dlm.size() < 2) {
                     return;
                 }
+                dialogDelaySpeed = 0;
                 answerList.setSelectedIndex(1);
                 scenario.choice(1);
             }
@@ -776,6 +799,7 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
                 if (dlm.size() < 3) {
                     return;
                 }
+                dialogDelaySpeed = 0;
                 answerList.setSelectedIndex(2);
                 scenario.choice(2);
             }
@@ -786,6 +810,7 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
                 if (dlm.size() < 4) {
                     return;
                 }
+                dialogDelaySpeed = 0;
                 answerList.setSelectedIndex(3);
                 scenario.choice(3);
             }
@@ -796,6 +821,7 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
                 if (dlm.size() < 5) {
                     return;
                 }
+                dialogDelaySpeed = 0;
                 answerList.setSelectedIndex(4);
                 scenario.choice(4);
             }
@@ -806,6 +832,7 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
                 if (dlm.size() < 6) {
                     return;
                 }
+                dialogDelaySpeed = 0;
                 answerList.setSelectedIndex(5);
                 scenario.choice(5);
             }
@@ -942,7 +969,11 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
                 return;
             }
             Print(GamePlay.class, LEVEL.DEBUG, "Был выбран вариант " + answerList.getSelectedValue());
-            scenario.choice(answerList.getSelectedIndex());
+            if (answerList.getSelectedValue().equals("Далее...")) {
+                scenario.choice(-1);
+            } else {
+                scenario.choice(answerList.getSelectedIndex());
+            }
         }
     }
 
@@ -956,22 +987,16 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
     public void windowClosing(WindowEvent e) {
         showExitRequest();
     }
-
     public void windowOpened(WindowEvent e) {
     }
-
     public void windowClosed(WindowEvent e) {
     }
-
     public void windowIconified(WindowEvent e) {
     }
-
     public void windowDeiconified(WindowEvent e) {
     }
-
     public void windowActivated(WindowEvent e) {
     }
-
     public void windowDeactivated(WindowEvent e) {
     }
 
@@ -1000,12 +1025,6 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
             }
             Print(GamePlay.class, LEVEL.INFO, "GameFrame.StoryPlayedThread: Stop!");
         }
-    }
-
-    public enum MONTH {
-        июнь,
-        июль,
-        август
     }
 }
 

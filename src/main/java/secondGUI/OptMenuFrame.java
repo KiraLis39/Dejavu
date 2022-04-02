@@ -30,7 +30,7 @@ public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotion
     private final String stringValueBackg = "Заглушить эффекты:";
     private final String stringValueVoice = "Заглушить голоса:";
     private final String stringFullscreen = "Полный экран:";
-    private final String stringAutoSaving = "Автосохранение:";
+    private final String stringTextAnimated = "Анимация текста:";
     private final String stringUseMods = "Искать моды:";
     private final String stringAutoSkipping = "Автопрокрутка:";
     private final Rectangle musicMuteRect;
@@ -41,7 +41,7 @@ public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotion
     private final int[] polygonsDot;
     private VolatileImage baseBuffer;
     private Boolean isSoundMuteOver = false, isMusicMuteOver = false, isBackgMuteOver = false, isVoiceMuteOver = false,
-            isFullscreenOver = false, isModEnabledOver = false, isAutoSaveOver = false, isAutoSkippingOver = false;
+            isFullscreenOver = false, isModEnabledOver = false, isTextAnimation = false, isAutoSkippingOver = false;
     private JSlider volumeOfMusicSlider, volumeOfSoundSlider, volumeOfBackgSlider, volumeOfVoiceSlider;
     private Point mouseNow, titlePoint, musTitlePoint, soundTitlePoint, backgTitlePoint, voiceTitlePoint,
             down0Point, down1Point, down2Point, down3Point, downChecker0, downChecker1, downChecker2, downChecker3;
@@ -225,15 +225,15 @@ public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotion
                     new int[]{downChecker1.y, downChecker1.y + 9, downChecker1.y - 9, downChecker1.y + 3}, 4));
         }
 
-//        if (userConf.isAutoSaveOn()) {
-            if (isAutoSaveOver) {
+        if (userConf.isTextAnimated()) {
+            if (isTextAnimation) {
                 g2D.setColor(Color.ORANGE);
             } else {
                 g2D.setColor(Color.GREEN);
             }
             g2D.fillPolygon(new Polygon(new int[]{downChecker2.x, downChecker2.x + 6, downChecker2.x + 9, downChecker2.x + 5},
                     new int[]{downChecker2.y, downChecker2.y + 9, downChecker2.y - 9, downChecker2.y + 3}, 4));
-//        }
+        }
 
         if (userConf.isAutoSkipping()) {
             if (isAutoSkippingOver) {
@@ -258,7 +258,7 @@ public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotion
                     (int) (WIDTH / 4 * 3 - FoxFontBuilder.getStringBounds(g2D, stringUseMods).getWidth() / 2) - 5, (int) (heightPercent * 77D)
             );
 
-            down1Point = new Point((int) (WIDTH / 4 - FoxFontBuilder.getStringBounds(g2D, stringAutoSaving).getWidth() / 2), (int) (heightPercent * 89D));
+            down1Point = new Point((int) (WIDTH / 4 - FoxFontBuilder.getStringBounds(g2D, stringTextAnimated).getWidth() / 2), (int) (heightPercent * 89D));
             down3Point = new Point((int) (WIDTH / 4 * 3 - FoxFontBuilder.getStringBounds(g2D, stringAutoSkipping).getWidth() / 2) - 5, (int) (heightPercent * 89D));
 
             downChecker0 = new Point(WIDTH / 4 - 6, (int) (heightPercent * 80D));
@@ -286,7 +286,7 @@ public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotion
 
         g2D.setColor(Color.BLACK);
         g2D.drawString(stringFullscreen, down0Point.x - 2, down0Point.y + 2);
-        g2D.drawString(stringAutoSaving, down1Point.x - 2, down1Point.y + 2);
+        g2D.drawString(stringTextAnimated, down1Point.x - 2, down1Point.y + 2);
         g2D.drawString(stringUseMods, down2Point.x - 2, down2Point.y + 2);
         g2D.drawString(stringAutoSkipping, down3Point.x - 2, down3Point.y + 2);
 
@@ -297,7 +297,7 @@ public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotion
 
         g2D.setColor(Color.WHITE);
         g2D.drawString(stringFullscreen, down0Point.x, down0Point.y);
-        g2D.drawString(stringAutoSaving, down1Point.x, down1Point.y);
+        g2D.drawString(stringTextAnimated, down1Point.x, down1Point.y);
         g2D.drawString(stringUseMods, down2Point.x, down2Point.y);
         g2D.drawString(stringAutoSkipping, down3Point.x, down3Point.y);
     }
@@ -442,7 +442,7 @@ public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotion
         if (downBackFonRect.contains(mouseNow)) {
             isFullscreenOver = new Rectangle(downChecker0.x, downChecker0.y, 25, 25).contains(mouseNow);
             isModEnabledOver = new Rectangle(downChecker1.x, downChecker1.y, 25, 25).contains(mouseNow);
-            isAutoSaveOver = new Rectangle(downChecker2.x, downChecker2.y, 25, 25).contains(mouseNow);
+            isTextAnimation = new Rectangle(downChecker2.x, downChecker2.y, 25, 25).contains(mouseNow);
             isAutoSkippingOver = new Rectangle(downChecker3.x, downChecker3.y, 25, 25).contains(mouseNow);
         }
     }
@@ -482,8 +482,8 @@ public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotion
             configuration.setUseMods(!configuration.isUseMods());
         }
 
-        if (isAutoSaveOver) {
-//            userConf.setAutoSaveOn(!userConf.isAutoSaveOn());
+        if (isTextAnimation) {
+            userConf.setTextAnimated(!userConf.isTextAnimated());
         }
 
         if (isAutoSkippingOver) {
