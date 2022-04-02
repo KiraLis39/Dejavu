@@ -1,8 +1,10 @@
 package GUI;
 
 import components.FOptionPane;
+import configurations.UserSave;
 import door.MainClass;
 import images.FoxCursor;
+import logic.SaveLoad;
 import utils.FoxFontBuilder;
 import utils.InputAction;
 import fox.Out;
@@ -29,7 +31,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 
 import static fox.Out.LEVEL;
 import static fox.Out.Print;
@@ -44,10 +45,8 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
     private static BufferedImage currentSceneImage, currentNpcImage, currentHeroAvatar;
     private static boolean isDialogAnimated, isChapterUpdate;
     private static char[] dialogChars;
-    private static int n = 0, today;
     private static Double charWidth;
     private static String dialogOwner;
-    private static MONTH month;
     private static Shape dialogTextRext;
 
     private Double WINDOWED_WIDTH = Toolkit.getDefaultToolkit().getScreenSize().getWidth() * 0.75D;
@@ -65,7 +64,6 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
     private int refDelay;
     private float fpsIterCount = 0;
     private String curFps;
-    private static String chapter;
     private static String lastText;
     private Point mouseNow, frameWas, mouseWasOnScreen;
     private Shape backBtnShape;
@@ -74,21 +72,20 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
     private Polygon chapterPolygon;
 
     // FRAME BUILD:
-    public GamePlay(GraphicsConfiguration gConfig) {
+    public GamePlay(GraphicsConfiguration gConfig, UserSave loader, int linerMod) {
         super("GamePlayParent", gConfig);
         refDelay = 1000 / gConfig.getDevice().getDisplayMode().getRefreshRate();
-        today = 3;
-        month = MONTH.июнь;
-        chapter = "";
-        lastText = "";
-        needsUpdateRectangles = false;
-        currentSceneImage = null;
-        currentNpcImage = null;
-        dlm.clear();
+        userSave = loader;
 
         preInit();
         loadResources();
         setInAc();
+
+        lastText = "";
+        needsUpdateRectangles = false;
+        currentNpcImage = null;
+        dlm.clear();
+
         checkFullscreen();
 
         JPanel upPane = new JPanel() {
@@ -139,7 +136,7 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
             }
 
             private void drawChapterAndDay(Graphics2D g2D) {
-                if (chapter != null && !chapter.isBlank()) {
+                if (userSave.getChapter() != null && !userSave.getChapter().isBlank()) {
                     if (chapterPolygon == null || needsUpdateRectangles) {
                         chapterPolygon = new Polygon(
                                 new int[] {(int) (getWidth() * 0.75f), getWidth(), getWidth(), (int) (getWidth() * 0.85f)},
@@ -151,9 +148,9 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
 
                     g2D.setFont(f9);
                     g2D.setColor(Color.BLACK);
-                    String secLine = month + ": " + today;
+                    String secLine = userSave.getMonth() + ": " + userSave.getToday();
 
-                    g2D.drawString(chapter, getWidth() * 0.852f, getHeight() * 0.1075f);
+                    g2D.drawString(userSave.getChapter(), getWidth() * 0.852f, getHeight() * 0.1075f);
                     g2D.drawString(secLine, (float) (getWidth() - FoxFontBuilder.getStringBounds(g2D, secLine).getWidth()) - 59f, getHeight() * 0.1475f);
                     if (isChapterUpdate) {
                         g2D.setColor(Color.YELLOW);
@@ -161,7 +158,7 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
                     } else {
                         g2D.setColor(Color.WHITE);
                     }
-                    g2D.drawString(chapter, getWidth() * 0.85f, getHeight() * 0.11f);
+                    g2D.drawString(userSave.getChapter(), getWidth() * 0.85f, getHeight() * 0.11f);
                     g2D.drawString(secLine, (float) (getWidth() - FoxFontBuilder.getStringBounds(g2D, secLine).getWidth()) - 60f, getHeight() * 0.15f);
                 }
             }
@@ -268,7 +265,7 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
 
                     private void drawAutoDialog(Graphics2D g2D) {
                         // owner name:
-                        if (dialogOwner != null) {
+                        if (dialogOwner != null && dialogTextRext != null) {
                             g2D.setFont(fontName);
 
                             int dx = (int) (getWidth() * 0.09d - FoxFontBuilder.getStringBounds(g2D, dialogOwner).getWidth() / 2);
@@ -291,7 +288,7 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
                         }
 
                         // dialog:
-                        if (dialogChars != null) {
+                        if (dialogChars != null && dialogTextRext != null) {
                             g2D.setColor(Color.GREEN);
                             int mem = 0, line = 1;
                             W:
@@ -417,8 +414,12 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
         add(downPane, BorderLayout.SOUTH);
 
         try {
-            // loading First block:
-            scenario.load("00_INIT_SCENARIO");
+            scenario.load(userSave.getScript(), linerMod);
+            if (linerMod == 0) {
+                setAnswers(new ArrayList<>() {{
+                    add("Начать игру");
+                }});
+            }
         } catch (IOException e) {
             System.err.println("Script load exception: " + e.getMessage());
             SwingUtilities.invokeLater(() -> stopGame());
@@ -429,17 +430,13 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
                 setName("StoryPlayed_thread");
             }
         }.start();
-        new Thread(new AutoSaveThread()) {
-            {
-                setName("AutoSaveThread_thread");
-            }
-        }.start();
     }
 
     // GAME CONTROLS:
     public static void setScene(String sceneName, String npcImage) {
         // scene:
         if (sceneName != null) {
+            userSave.setScreen(sceneName);
             currentSceneImage = (BufferedImage) cache.get(sceneName);
         }
 
@@ -449,14 +446,15 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
         } else if (npcImage.equals("CLEAR")) {
             currentNpcImage = null;
         } else {
-            currentNpcImage = (BufferedImage) cache.get(npcImage); //Screenshot_2 ?...
+            currentNpcImage = (BufferedImage) cache.get(npcImage);
         }
     }
 
-    public static void setDialog(String _dialogOwner, String dialogText, ArrayList<String> answers, int carma) {
+    public static void setDialog(String _dialogOwner, String dialogText, int carma) {
         stopAnimation();
-        n++;
-//        System.out.println("\nIncome data #" + n + ":\nTEXT: '[" + dialogOwner + "] " + dialogText + "'\nANSWERS: " + (answers == null ? "(next)" : Arrays.toString(answers.toArray())) + "\n");
+        if (carma != 0) {
+            changeCarma(_dialogOwner, carma);
+        }
 
         // owner:
         if (_dialogOwner == null || _dialogOwner.equalsIgnoreCase("NULL")) {
@@ -473,11 +471,24 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
         textAnimateThread = new Thread(() -> animateText(dialogText));
         textAnimateThread.start();
 
-        // answers:
-//        setAnswers(Objects.requireNonNullElseGet(answers, () -> new ArrayList<>() {{
-//            add("Далее...");
-//        }}));
         setAnswers(null);
+    }
+
+    private static void changeCarma(String dialogOwner, int carma) {
+        switch (dialogOwner) {
+            case "Аня" -> userSave.setCarmaAnn(userSave.getCarmaAnn() + carma);
+            case "Дмитрий" -> userSave.setCarmaDmi(userSave.getCarmaDmi() + carma);
+            case "Куро" -> userSave.setCarmaKur(userSave.getCarmaKur() + carma);
+            case "Ольга" -> userSave.setCarmaOlg(userSave.getCarmaOlg() + carma);
+            case "Олег" -> userSave.setCarmaOle(userSave.getCarmaOle() + carma);
+            case "Оксана" -> userSave.setCarmaOks(userSave.getCarmaOks() + carma);
+            case "Мишка" -> userSave.setCarmaMsh(userSave.getCarmaMsh() + carma);
+            case "Мари" -> userSave.setCarmaMar(userSave.getCarmaMar() + carma);
+            case "Лисса" -> userSave.setCarmaLis(userSave.getCarmaLis() + carma);
+            default -> {
+                System.err.println("GamePlay.changeCarma: Странное имя в корректоре кармы: " + dialogOwner);
+            }
+        }
     }
 
     private static String convertRussianNpcNameToSourceImageName(String dialogOwner) {
@@ -508,6 +519,7 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
             StringBuilder sb = new StringBuilder(text);
             dialogChars = new char[text.length()];
 
+            if (charWidth == null) {return;}
             int shift = 0;
             for (int i = 0; i < text.length(); i++) {
                 shift++;
@@ -575,15 +587,15 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
     }
 
     public static void setChapter(String _chapter) {
-        chapter = _chapter;
+        userSave.setChapter(_chapter);
         isChapterUpdate = true;
     }
 
     public static void dayAdd() {
-        today++;
-        if (today > 30) {
-            today = 1;
-            month = MONTH.values()[month.ordinal() + 1];
+        userSave.setToday(userSave.getToday() + 1);
+        if (userSave.getToday() > 30) {
+            userSave.setToday(1);
+            userSave.setMonth(MONTH.values()[userSave.getMonth().ordinal() + 1]);
         }
     }
 
@@ -638,6 +650,7 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
                         cache.addIfAbsent(path.toFile().getName().replace(picExtension, ""),
                                 toBImage(path.toString().replace(picExtension, "")));
                     }
+                    Thread.yield();
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -676,7 +689,7 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
             e.printStackTrace();
         }
 
-        setScene(null, null);
+        setScene(userSave.getScreen(), null);
     }
 
     private BufferedImage toBImage(@NonNull String path) {
@@ -868,13 +881,20 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
     }
 
     private void stopGame() {
-        scenario.close();
-        isPaused = false;
-        isStoryPlayed = false;
-        stopAnimation();
-        GameMenu.setVisible();
-        dialogChars = null;
-        dispose();
+        try {
+            scenario.close();
+            userSave.setLineIndex(userSave.getLineIndex() - 1);
+            SaveLoad.save();
+            isPaused = false;
+            isStoryPlayed = false;
+            stopAnimation();
+            dialogChars = null;
+
+            GameMenu.setVisible();
+            dispose();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     // LISTENERS:
@@ -963,9 +983,6 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
             musicPlayer.stop();
             backgPlayer.stop();
             isStoryPlayed = true;
-            setAnswers(new ArrayList<>() {{
-                add("Начать игру");
-            }});
 
             Print(GamePlay.class, LEVEL.INFO, "GameFrame.StoryPlayedThread: Start now.");
             while (isStoryPlayed) {
@@ -985,42 +1002,31 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
         }
     }
 
-    private class AutoSaveThread implements Runnable {
-        @Override
-        public void run() {
-            Print(GamePlay.class, LEVEL.INFO, "GameFrame.AutoSaveThread: Start now.");
-            while (isStoryPlayed) {
-                try {
-                    if (!userConf.isAutoSaveOn()) {
-                        Thread.yield();
-                        continue;
-                    }
-                    Thread.sleep(autoSaveSeconds);
-                    SaveGame.save();
-                } catch (InterruptedException e) {
-                    System.out.println("Ошибка в потоке автосохранения: " + e.getMessage());
-                    Thread.currentThread().interrupt();
-                }
-            }
-            Print(GamePlay.class, LEVEL.INFO, "GameFrame.AutoSaveThread: Stop!");
-        }
-    }
-
     public enum MONTH {
         июнь,
         июль,
         август
     }
 }
+
+////		Полезные методы класса Choice:
+
 //Choice choice = new Choice();
 //choice.addItem("First");
 //choice.addItem("Second");
 //choice.addItem("Third");
 
-////		Полезные методы класса Choice:
 //countItems() - считать количество пунктов в списке; 
 //	getItem(int) - возвратить строку с определенным номером в списке; 
 //	select(int) - выбрать строку с определенным номером; 
-//	select(String) - выбрать определенную строку текста из списка. 
-
+//	select(String) - выбрать определенную строку текста из списка.
 //add(choice);
+
+////        Альтернативный способ создания потока:
+//        java.util.Timer t = new java.util.Timer();
+//        t.schedule(new TimerTask() {
+//            @Override
+//            public void run() {
+//
+//            }
+//        }, autoSaveSeconds);

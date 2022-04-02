@@ -1,15 +1,20 @@
 package configurations;
 
+import GUI.GamePlay;
 import iom.interfaces.JConfigurable;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 
 import java.nio.file.Path;
 
 @Data
+@NoArgsConstructor
+@EqualsAndHashCode
 public class UserSave implements JConfigurable {
     Path source;
 
-    int cycleCount;
+    int cycleCount = 0;
 
     int carmaAnn = 0;
     int carmaDmi = 0;
@@ -21,22 +26,22 @@ public class UserSave implements JConfigurable {
     int carmaOle = 0;
     int carmaLis = 0;
 
-    String chapter;
-    int today;
+    String chapter = null;
+    GamePlay.MONTH month = GamePlay.MONTH.июнь;
+    int today = 3;
 
-    String screen;
+    String screen = null;
 
-    String musicPlayed;
-    String backgPlayed;
-    String soundPlayed;
-    String voicePlayed;
+    String musicPlayed = null;
+    String backgPlayed = null;
+    String soundPlayed = null;
+    String voicePlayed = null;
 
-    String script;
-    int lineIndex;
+    String script = "00_INIT_SCENARIO";
+    int lineIndex = -1;
 
-    @Override
-    public void setSource(Path path) {
-        source = path;
+    public UserSave(Path source) {
+        this.source = source;
     }
 
     @Override

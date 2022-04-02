@@ -12,7 +12,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
@@ -24,30 +23,32 @@ public class ScenarioEngine {
     private List<String> lines;
     private List<String> variants;
     private ArrayList<String> allowedVariants;
-    private int currentLineIndex;
     private boolean isChoice;
 
-    public void load(@NonNull String scenarioFileName) throws IOException {
-        Path scenario = Paths.get(blockPath + "\\" + scenarioFileName + sBlockExtension);
-        lines = Files.readAllLines(scenario, charset).stream().filter(s -> !s.isBlank()).toList();
-        variants = lines.stream().filter(s -> s.startsWith("var ")).toList();
-//        System.out.println("LOADED: " + lines + "; VARS: " + variants);
-        currentLineIndex = -1;
+    public void load(@NonNull String scenarioFileName, int linerMod) throws IOException {
+        Path scenario = Paths.get(blockPath + "\\" + scenarioFileName.trim() + sBlockExtension);
+        lines = Files.readAllLines(scenario, charset).stream().filter(s -> !s.isBlank() && !s.startsWith("var ")).toList();
+        variants = Files.readAllLines(scenario, charset).stream().filter(s -> !s.isBlank() && s.startsWith("var ")).toList();
     }
 
     public void choice(int chosenVariantIndex) {
+        if (chosenVariantIndex != -1 && allowedVariants == null) {
+            System.err.println("Быд выбран вариант, но лист вариантов пуст!");
+            return;
+        }
+
         if (isChoice) {
             if (chosenVariantIndex == -1) {
                 System.out.println("Denied there. Need to choice.");
-            } else if (chosenVariantIndex > allowedVariants.size()) {
-                System.out.println("Variant is too high!");
-            } else {
-                System.out.println("Variant chosen: " + chosenVariantIndex);
+            } else if (chosenVariantIndex <= allowedVariants.size()) {
                 isChoice = false;
                 try {
-                    load(allowedVariants.get(chosenVariantIndex).split("R")[1]);
-                    choice(-1);
-                } catch (IOException e) {
+                    String loadedScript = allowedVariants.get(chosenVariantIndex).split("R ")[1];
+                    load(loadedScript, 0);
+                    userSave.setScript(loadedScript);
+                    userSave.setLineIndex(-1);
+                    choice(userSave.getLineIndex());
+                } catch (Exception e) {
                     e.printStackTrace();
                     new FOptionPane("Ошибка сценария:", "Не удалось загрузить файл сценария.");
                 }
@@ -55,30 +56,32 @@ public class ScenarioEngine {
             return;
         }
 
-        if (currentLineIndex < lines.size() - 1) {
-            currentLineIndex++;
+        // иначе переводим маркер на новую строку:
+        if (userSave.getLineIndex() < lines.size() - 2) {
+            userSave.setLineIndex(userSave.getLineIndex() + 1);
+            lineParser(lines.get(userSave.getLineIndex()));
         } else {
-            System.out.println("=== END OF SCENARIO ===");
-            return;
-        }
-        lineParser(lines.get(currentLineIndex));
-        if (lines.get(currentLineIndex + 1).startsWith("var ")) {
-            // VARIANTS PARSE:
+            userSave.setLineIndex(userSave.getLineIndex() + 1);
+            if (userSave.getLineIndex() == lines.size() - 1 && (variants != null && variants.size() > 0)) {
+                lineParser(lines.get(userSave.getLineIndex()));
+                takeAnswers();
+            }
             isChoice = true;
-            allowedVariants = new ArrayList<>(
-                    variants.stream().filter(s -> Integer.parseInt(s.split(" ")[1]) <= userSave.getCycleCount()).toList()
-                            .stream().map(s -> s.split("R")[1].replace("\"", "").trim()
-                                    + "R" + s.split("R")[2].replace("\"", "").trim()).toList());
-            GamePlay.setAnswers(allowedVariants);
-        } else if (lines.get(currentLineIndex + 1).startsWith("nf ")) {
-            System.out.println("=== NEXT FILE PLEASE ===");
         }
+    }
+
+    private void takeAnswers() {
+        allowedVariants = new ArrayList<>(
+                variants.stream().filter(s -> Integer.parseInt(s.split(" ")[1]) <= userSave.getCycleCount()).toList()
+                        .stream().map(s -> s.split("R ")[1].replace("\"", "").trim()
+                                + "R " + s.split("R ")[2].replace("\"", "").trim()).toList());
+        GamePlay.setAnswers(allowedVariants);
     }
 
     private void lineParser(@NonNull String line) {
         String[] lineData = line.split(";");
         String dialogOwner, dialogText;
-        String sceneName = null;
+        String sceneName = null, npcImage = null;
         ArrayList<String> answers = null;
         int carma = 0;
 
@@ -137,7 +140,7 @@ public class ScenarioEngine {
 //                    continue;
 //                }
                 if (lineDatum.trim().startsWith("npc")) {
-                    switchNpc(lineDatum.trim().split(":")[1].replaceAll("\"", "").split(","));
+                    npcImage = switchNpc(lineDatum.trim().split(":")[1].replaceAll("\"", "").split(","));
                     continue;
                 }
                 if (lineDatum.trim().startsWith("meta")) {
@@ -150,20 +153,18 @@ public class ScenarioEngine {
             }
         }
 
-        GamePlay.setScene(sceneName, null);
-        GamePlay.setDialog(dialogOwner, dialogText, answers, carma);
+        GamePlay.setScene(sceneName, npcImage);
+        GamePlay.setDialog(dialogOwner, dialogText, carma);
     }
 
-    private void switchNpc(String[] lineData) {
+    private String switchNpc(String[] lineData) {
         // npc:Ann,upWork,simple
         if (lineData[0].equals("-")) {
-            GamePlay.setScene(null, "Clear");
-            return;
+            return "Clear";
         }
 
         File[] variants = new File(Registry.personasDir + "/" + lineData[0] + "/" + lineData[1] + "/" + lineData[2]).listFiles();
-        GamePlay.setScene(null, variants[rand.nextInt(variants.length)].getName().replace(picExtension, ""));
-//        choice(-1);
+        return variants[rand.nextInt(variants.length)].getName().replace(picExtension, "");
     }
 
     private void metaProcessor(String[] meta) {
@@ -183,7 +184,7 @@ public class ScenarioEngine {
         soundPlayer.stop();
 //        voicePlayer.stop();
 
-        currentLineIndex = -1;
+//        currentLineIndex = -1;
 //        lines.clear();
     }
 }

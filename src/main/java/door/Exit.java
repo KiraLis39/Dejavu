@@ -44,13 +44,6 @@ public class Exit {
             e.printStackTrace();
         }
 
-        try {
-            JIOM.dtoToFile(userSave);
-        } catch (Exception e) {
-            i++;
-            e.printStackTrace();
-        }
-
         Print(Exit.class, LEVEL.ERROR, "Код #" + i);
         if (comment != null) {
             Print(Exit.class, LEVEL.ACCENT, "Комментарий завершения: " + comment);

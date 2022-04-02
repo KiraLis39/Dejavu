@@ -3,6 +3,7 @@ package GUI;
 import components.FOptionPane;
 import components.FoxConsole;
 import components.FoxTip;
+import configurations.UserSave;
 import door.Exit;
 import utils.FoxFontBuilder;
 import utils.InputAction;
@@ -75,6 +76,14 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
 
         backgPlayer.play("fonKricket");
         musicPlayer.play("musMainMenu");
+
+        try {
+            cd = new FoxTip(FoxTip.TYPE.INFO, ImageIO.read(new File("./resources/tipIco.png")),
+                    "Смена или создание героя:",
+                    "Кликни сюда два раза для смены игрока<br>или создания нового профиля.", null, downTextLabel);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         FoxConsole cons = new FoxConsole(this);
 
@@ -253,9 +262,11 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
                                     if (bImage == startImages[1]) {
                                         g.drawString(getName(),
                                                 (int) (getWidth() / 2 - FoxFontBuilder.getStringBounds(g, getName()).getWidth() / 2D) - 2,
-                                                getHeight() / 2 + 6 + 2);
+                                                getHeight() / 2 + 10);
                                     } else {
-                                        g.drawString(getName(), (int) (getWidth() / 2 - FoxFontBuilder.getStringBounds(g, getName()).getWidth() / 2D), getHeight() / 2 + 6);
+                                        g.drawString(getName(),
+                                                (int) (getWidth() / 2 - FoxFontBuilder.getStringBounds(g, getName()).getWidth() / 2D),
+                                                getHeight() / 2 + 8);
                                     }
                                 } else {
                                     super.paintComponent(g);
@@ -263,7 +274,7 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
                             }
 
                             {
-                                setName("Играть");
+                                setName("Новая игра");
                                 setFont(Registry.f5);
                                 setForeground(Color.BLACK);
                                 setBorderPainted(false);
@@ -675,15 +686,6 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
                             }
                         };
 
-                        try {
-                            cd = new FoxTip(FoxTip.TYPE.INFO, ImageIO.read(new File("./resources/tipIco.png")),
-                                    "Смена или создание героя:",
-                                    "Кликни сюда два раза для смены игрока<br>или создания нового профиля.", null
-                            );
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-
                         add(downTextLabel, BorderLayout.SOUTH);
                     }
                 };
@@ -756,7 +758,7 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
             if (((JLabel) e.getSource()).getName().equals("downName")) {
                 setForeground(Color.ORANGE);
                 setStatusText("Сменить/создать игрока (2x click)");
-                cd.showTip(downTextLabel);
+                cd.showTip();
             }
         }
     }
@@ -774,7 +776,8 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
     public void actionPerformed(ActionEvent e) {
         switch (e.getActionCommand()) {
             case "play" -> {
-                new GamePlay(gc);
+                // начинаем новую игру:
+                new GamePlay(gc, userSave = new UserSave(userSave.getSource()), 0);
                 dispose();
             }
             case "exit" -> showExitRequest();

@@ -225,7 +225,7 @@ public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotion
                     new int[]{downChecker1.y, downChecker1.y + 9, downChecker1.y - 9, downChecker1.y + 3}, 4));
         }
 
-        if (userConf.isAutoSaveOn()) {
+//        if (userConf.isAutoSaveOn()) {
             if (isAutoSaveOver) {
                 g2D.setColor(Color.ORANGE);
             } else {
@@ -233,7 +233,7 @@ public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotion
             }
             g2D.fillPolygon(new Polygon(new int[]{downChecker2.x, downChecker2.x + 6, downChecker2.x + 9, downChecker2.x + 5},
                     new int[]{downChecker2.y, downChecker2.y + 9, downChecker2.y - 9, downChecker2.y + 3}, 4));
-        }
+//        }
 
         if (userConf.isAutoSkipping()) {
             if (isAutoSkippingOver) {
@@ -483,7 +483,7 @@ public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotion
         }
 
         if (isAutoSaveOver) {
-            userConf.setAutoSaveOn(!userConf.isAutoSaveOn());
+//            userConf.setAutoSaveOn(!userConf.isAutoSaveOn());
         }
 
         if (isAutoSkippingOver) {

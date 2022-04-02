@@ -264,7 +264,7 @@ public class NewUserForm extends JDialog implements Cached, ListSelectionListene
     }
 
     private void prepareNewUserConfig() {
-        newUserConf = new UserConf() {
+        newUserConf = new UserConf(null) {
             {
                 setUserName("newEmptyUser");
                 setUserSex(UserConf.USER_SEX.MALE);
@@ -272,7 +272,6 @@ public class NewUserForm extends JDialog implements Cached, ListSelectionListene
                 setUserAge(14);
                 setQuality(FoxRender.RENDER.MED);
                 setFullScreen(false);
-                setAutoSaveOn(true);
                 setAutoSkipping(false);
                 setVoiceMuted(false);
                 setBackgMuted(false);

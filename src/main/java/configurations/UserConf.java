@@ -4,6 +4,7 @@ import iom.interfaces.JConfigurable;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import render.FoxRender.RENDER;
 
@@ -11,6 +12,7 @@ import java.nio.file.Path;
 
 @Data
 @EqualsAndHashCode
+@NoArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class UserConf implements JConfigurable {
     public enum USER_SEX {MALE, FEMALE}
@@ -23,7 +25,6 @@ public class UserConf implements JConfigurable {
     int userAge;
     int avatarIndex;
     boolean fullScreen;
-    boolean autoSaveOn;
     boolean autoSkipping;
 
     int musicVolume;
@@ -35,7 +36,10 @@ public class UserConf implements JConfigurable {
     int voiceVolume;
     boolean voiceMuted;
 
-    @Override
+    public UserConf(Path source) {
+        this.source = source;
+    }
+
     public void setSource(Path source) {
         this.source = source;
     }
