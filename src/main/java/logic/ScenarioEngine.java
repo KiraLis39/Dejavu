@@ -29,10 +29,12 @@ public class ScenarioEngine {
         Path scenario = Paths.get(blockPath + "\\" + scenarioFileName.trim() + sBlockExtension);
         lines = Files.readAllLines(scenario, charset).stream().filter(s -> !s.isBlank() && !s.startsWith("var ")).toList();
         variants = Files.readAllLines(scenario, charset).stream().filter(s -> !s.isBlank() && s.startsWith("var ")).toList();
-        choice(-1);
+//        choice(-1);
     }
 
     public void choice(int chosenVariantIndex) {
+        String loadedScript = null;
+
         if (chosenVariantIndex != -1 && allowedVariants == null && !lines.get(userSave.getLineIndex()).startsWith("nf ")) {
             System.err.println("Быд выбран вариант, но лист вариантов пуст!");
             return;
@@ -40,9 +42,14 @@ public class ScenarioEngine {
 
         try {
             if (lines.get(userSave.getLineIndex()).startsWith("nf ")) {
-                load(lines.get(userSave.getLineIndex()).replace("nf ", ""));
+                loadedScript = lines.get(userSave.getLineIndex()).replace("nf ", "");
+                load(loadedScript);
+                userSave.setScript(loadedScript);
+                userSave.setLineIndex(-1);
             }
-        } catch (Exception ignore) {
+        } catch (Exception e) {
+            e.printStackTrace();
+            new FOptionPane("Ошибка сценария:", "Не удалось загрузить файл сценария: " + loadedScript);
         }
 
         if (isChoice) {
@@ -51,30 +58,28 @@ public class ScenarioEngine {
             } else if (chosenVariantIndex <= allowedVariants.size()) {
                 isChoice = false;
                 try {
-                    String loadedScript = allowedVariants.get(chosenVariantIndex).split("R ")[1];
+                    loadedScript = allowedVariants.get(chosenVariantIndex).split("R ")[1];
                     load(loadedScript);
                     userSave.setScript(loadedScript);
                     userSave.setLineIndex(-1);
                     choice(userSave.getLineIndex());
                 } catch (Exception e) {
                     e.printStackTrace();
-                    new FOptionPane("Ошибка сценария:", "Не удалось загрузить файл сценария.");
+                    new FOptionPane("Ошибка сценария:", "Не удалось загрузить файл сценария: " + loadedScript);
                 }
             }
-            return;
-        }
-
-        // иначе переводим маркер на новую строку:
-        if (userSave.getLineIndex() < lines.size() - 2) {
-            userSave.setLineIndex(userSave.getLineIndex() + 1);
-            lineParser(lines.get(userSave.getLineIndex()));
         } else {
-            userSave.setLineIndex(userSave.getLineIndex() + 1);
-            if (userSave.getLineIndex() == lines.size() - 1 && (variants != null && variants.size() > 0)) {
+            if (userSave.getLineIndex() < lines.size() - 2) {
+                userSave.setLineIndex(userSave.getLineIndex() + 1);
                 lineParser(lines.get(userSave.getLineIndex()));
-                takeAnswers();
+            } else {
+                userSave.setLineIndex(userSave.getLineIndex() + 1);
+                if (userSave.getLineIndex() == lines.size() - 1 && (variants != null && variants.size() > 0)) {
+                    lineParser(lines.get(userSave.getLineIndex()));
+                    takeAnswers();
+                }
+                isChoice = true;
             }
-            isChoice = true;
         }
     }
 
