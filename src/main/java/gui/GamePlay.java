@@ -885,7 +885,7 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
         int closeQ = (int) new FOptionPane(
                 "Завершить игру?",
                 "Сохранить и выйти?",
-                FOptionPane.TYPE.VARIANTS,
+                FOptionPane.TYPE.YES_NO_TYPE,
                 null,
                 true).get();
 
