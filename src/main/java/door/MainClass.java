@@ -1,6 +1,6 @@
 package door;
 
-import GUI.GameMenu;
+import gui.GameMenu;
 import configurations.Configuration;
 import configurations.UserConf;
 import configurations.UserSave;

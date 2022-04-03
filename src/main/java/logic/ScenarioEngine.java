@@ -1,6 +1,6 @@
 package logic;
 
-import GUI.GamePlay;
+import gui.GamePlay;
 import components.FOptionPane;
 import lombok.Data;
 import lombok.NonNull;
@@ -25,16 +25,24 @@ public class ScenarioEngine {
     private ArrayList<String> allowedVariants;
     private boolean isChoice;
 
-    public void load(@NonNull String scenarioFileName, int linerMod) throws IOException {
+    public void load(@NonNull String scenarioFileName) throws IOException {
         Path scenario = Paths.get(blockPath + "\\" + scenarioFileName.trim() + sBlockExtension);
         lines = Files.readAllLines(scenario, charset).stream().filter(s -> !s.isBlank() && !s.startsWith("var ")).toList();
         variants = Files.readAllLines(scenario, charset).stream().filter(s -> !s.isBlank() && s.startsWith("var ")).toList();
+        choice(-1);
     }
 
     public void choice(int chosenVariantIndex) {
-        if (chosenVariantIndex != -1 && allowedVariants == null) {
+        if (chosenVariantIndex != -1 && allowedVariants == null && !lines.get(userSave.getLineIndex()).startsWith("nf ")) {
             System.err.println("Быд выбран вариант, но лист вариантов пуст!");
             return;
+        }
+
+        try {
+            if (lines.get(userSave.getLineIndex()).startsWith("nf ")) {
+                load(lines.get(userSave.getLineIndex()).replace("nf ", ""));
+            }
+        } catch (Exception ignore) {
         }
 
         if (isChoice) {
@@ -44,7 +52,7 @@ public class ScenarioEngine {
                 isChoice = false;
                 try {
                     String loadedScript = allowedVariants.get(chosenVariantIndex).split("R ")[1];
-                    load(loadedScript, 0);
+                    load(loadedScript);
                     userSave.setScript(loadedScript);
                     userSave.setLineIndex(-1);
                     choice(userSave.getLineIndex());
@@ -74,7 +82,7 @@ public class ScenarioEngine {
         allowedVariants = new ArrayList<>(
                 variants.stream().filter(s -> Integer.parseInt(s.split(" ")[1]) <= userSave.getCycleCount()).toList()
                         .stream().map(s -> s.split("R ")[1].replace("\"", "").trim()
-                                + "R " + s.split("R ")[2].replace("\"", "").trim()).toList());
+                                + " R " + s.split("R ")[2].replace("\"", "").trim()).toList());
         GamePlay.setAnswers(allowedVariants);
     }
 
@@ -110,6 +118,7 @@ public class ScenarioEngine {
                         musicPlayer.stop();
                     } else {
                         musicPlayer.play(mediaName);
+                        userSave.setMusicPlayed(mediaName);
                     }
                     continue;
                 }
@@ -120,6 +129,7 @@ public class ScenarioEngine {
                         backgPlayer.stop();
                     } else {
                         backgPlayer.play(mediaName);
+                        userSave.setBackgPlayed(mediaName);
                     }
                     continue;
                 }
@@ -130,6 +140,7 @@ public class ScenarioEngine {
                         soundPlayer.stop();
                     } else {
                         soundPlayer.play(mediaName);
+                        userSave.setSoundPlayed(mediaName);
                     }
                     continue;
                 }

@@ -1,10 +1,9 @@
-package GUI;
+package gui;
 
 import lombok.NoArgsConstructor;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.ArrayList;
 
 @NoArgsConstructor
 public abstract class iGamePlay extends JFrame {

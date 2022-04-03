@@ -1,6 +1,6 @@
 package configurations;
 
-import GUI.GamePlay;
+import gui.GamePlay;
 import iom.interfaces.JConfigurable;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
