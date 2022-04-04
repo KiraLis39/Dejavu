@@ -398,7 +398,7 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
                             {
                                 setFocusable(false);
                                 setForeground(Color.WHITE);
-                                setBackground(new Color(0.5f, 0.5f, 1.0f, 0.1f));
+                                setBackground(new Color(0.5f, 0.5f, 1.0f, 0.0f));
                                 setBorder(new EmptyBorder(3, 3, 3, 3));
                                 setFont(fontAnswers);
                                 setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
@@ -619,7 +619,7 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
             return;
         }
 
-        answerList.setForeground(Color.GREEN);
+        answerList.setForeground(Color.YELLOW);
         for (String answer : answers) {
             dlm.addElement(getCountUnicodeChar(dlm.size() + 1) + " " + answer.split("R")[0]);
         }
