@@ -41,7 +41,7 @@ public class ScenarioEngine {
         }
 
         try {
-            if (lines.get(userSave.getLineIndex()).startsWith("nf ")) {
+            if (userSave.getLineIndex() > -1 && lines.get(userSave.getLineIndex()).startsWith("nf ")) {
                 loadedScript = lines.get(userSave.getLineIndex()).replace("nf ", "");
                 load(loadedScript);
                 userSave.setScript(loadedScript);
