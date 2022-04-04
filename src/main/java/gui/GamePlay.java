@@ -342,7 +342,7 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
                         }
 
                         g2D.setFont(fontDialog);
-                        if (charWidth == null || charWidth == 13.9d) {
+                        if (charWidth == null) {
                             charWidth = g2D.getFontMetrics().getMaxCharBounds(g2D).getWidth();
                         }
 
@@ -484,10 +484,10 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
         }.start();
 
         try {
+            setAnswers(new ArrayList<>() {{
+                add("(нажми пробел)");
+            }});
             scenario.load(userSave.getScript());
-//            setAnswers(new ArrayList<>() {{
-//                add("(нажми пробел)");
-//            }});
         } catch (IOException e) {
             System.err.println("Script load exception: " + e.getMessage());
             SwingUtilities.invokeLater(this::stopGame);
@@ -546,7 +546,7 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
                     while (isDialogAnimated && i < dialogText.length()) {
                         shift++;
 
-                            if (charWidth * shift > dialogTextRect.getBounds().width - charWidth * 3) {
+                            if (charWidth * shift > dialogTextRect.getBounds().width - charWidth * 4) {
                                 for (int k = i; k > 0; k--) {
                                     if ((int) dialogChars[k] == 32) {
                                         sb.setCharAt(k, (char) 10);
@@ -613,8 +613,8 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
             return;
         }
 
-        if (answers.get(0).equals("Начать игру") || answers.get(0).equals("(нажми пробел)")) {
-            dlm.addElement("Начать игру");
+        if (answers.get(0).equals("(нажми пробел)")) {
+            dlm.addElement("(нажми пробел)");
             return;
         }
 
@@ -901,18 +901,21 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
 
     private void stopGame() {
         try {
-            scenario.close();
-            userSave.setLineIndex(userSave.getLineIndex() - 1);
-            SwingUtilities.invokeLater(() -> {
-                try {
-                    JIOM.dtoToFile(userSave);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            });
-            isStoryPlayed = false;
             stopAnimation();
+            userSave.setLineIndex(userSave.getLineIndex() - 1);
+            scenario.close();
+            isStoryPlayed = false;
             dialogChars = null;
+            int req = (int) new FOptionPane("Выход из игры:", "Сохранить игру перед выходом?", FOptionPane.TYPE.YES_NO_TYPE).get();
+            if (req == 0) {
+                SwingUtilities.invokeLater(() -> {
+                    try {
+                        JIOM.dtoToFile(userSave);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                });
+            }
 
             GameMenu.setVisible();
             dispose();
