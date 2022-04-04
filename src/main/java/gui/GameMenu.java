@@ -36,9 +36,11 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
     private BufferedImage centerImage, botTopImage, botRightImage, botLeftImage;
     private Point2D mouseWasOnScreen, frameWas;
     private JPanel basePane;
-    private JButton optionsButton, galleryButton, exitButton, aboutButton, playButton;
+    private static JPanel downPane;
+    private JButton optionsButton, galleryButton, exitButton, aboutButton, newGameBtn;
+    private static JButton continueBtn;
     private JLabel downTextLabel;
-    private FoxTip cd, cd2;
+//    private FoxTip cd, cd2;
 
     private String downText;
     private Integer curFps = 0;
@@ -76,16 +78,16 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
         backgPlayer.play("fonKricket");
         musicPlayer.play("musMainMenu");
 
-        try {
-            cd = new FoxTip(FoxTip.TYPE.INFO, ImageIO.read(new File("./resources/tipIco.png")),
-                    "Смена или создание героя:",
-                    "Кликни сюда два раза для смены игрока<br>или создания нового профиля.", null, downTextLabel);
-            cd2 = new FoxTip(FoxTip.TYPE.INFO, ImageIO.read(new File("./resources/tipIco.png")),
-                    "Продолжить или начать игру:",
-                    "Кликни сюда для начала новой игры<br>или для продолжения имеющейся.", null, playButton);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+//        try {
+//            cd = new FoxTip(FoxTip.TYPE.INFO, ImageIO.read(new File("./resources/tipIco.png")),
+//                    "Смена или создание героя:",
+//                    "Кликни сюда два раза для смены игрока<br>или создания нового профиля.", null, downTextLabel);
+//            cd2 = new FoxTip(FoxTip.TYPE.INFO, ImageIO.read(new File("./resources/tipIco.png")),
+//                    "Начать новую игру:",
+//                    "Кликни сюда для начала новой игры<br>(!старая будет затёрта!)", null, newGameBtn);
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
 
         FoxConsole cons = new FoxConsole(this);
 
@@ -105,6 +107,8 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
         menuFrame.setVisible(true);
         backgPlayer.play("fonKricket");
         musicPlayer.play("musMainMenu");
+
+        downPane.setVisible(userSave != null && userSave.getToday() != 3);
     }
 
     @Override
@@ -253,71 +257,6 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
                                 Double.valueOf(GameMenu.this.getHeight() * 0.01d).intValue(),
                                 Double.valueOf(GameMenu.this.getWidth() * 0.02d).intValue()
                         ));
-
-                        playButton = new JButton() {
-                            BufferedImage bImage = startImages[0];
-
-                            @Override
-                            public void paintComponent(Graphics g) {
-                                if (startImages != null) {
-                                    g.drawImage(bImage, 0, 0, getWidth(), getHeight(), null, null);
-                                    if (bImage == startImages[1]) {
-                                        g.drawString(getName(),
-                                                (int) (getWidth() / 2 - FoxFontBuilder.getStringBounds(g, getName()).getWidth() / 2D) - 2,
-                                                getHeight() / 2 + 10);
-                                    } else {
-                                        g.drawString(getName(),
-                                                (int) (getWidth() / 2 - FoxFontBuilder.getStringBounds(g, getName()).getWidth() / 2D),
-                                                getHeight() / 2 + 8);
-                                    }
-                                } else {
-                                    super.paintComponent(g);
-                                }
-                            }
-
-                            {
-                                if (userSave.getChapter() != null) {
-                                    setName("Продолжить");
-                                } else {
-                                    setName("Новая игра");
-                                }
-                                setFont(Registry.f5);
-                                setForeground(Color.BLACK);
-                                setBorderPainted(false);
-                                setFocusPainted(false);
-                                setFocusable(false);
-                                setOpaque(false);
-
-                                setActionCommand("play");
-                                addActionListener(GameMenu.this);
-                                addMouseListener(new MouseAdapter() {
-                                    public void mouseEntered(MouseEvent me) {
-                                        cd2.showTip();
-                                        setStatusText("Начать/продолжить игру");
-                                        bImage = startImages[1];
-                                        repaint();
-                                    }
-
-                                    public void mouseExited(MouseEvent me) {
-                                        setStatusText(null);
-                                        bImage = startImages[0];
-                                        repaint();
-                                    }
-
-                                    public void mousePressed(MouseEvent me) {
-                                        bImage = startImages[2];
-                                        repaint();
-                                    }
-
-                                    public void mouseReleased(MouseEvent me) {
-                                        bImage = startImages[0];
-                                        repaint();
-                                    }
-                                });
-                            }
-                        };
-
-                        add(playButton);
                     }
                 };
 
@@ -336,65 +275,69 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
                                 Double.valueOf(GameMenu.this.getWidth() * 0.02425d).intValue()
                         ));
 
-                        JPanel buttonsPane = new JPanel(new GridLayout(12, 0, 0, 2)) {
+                        JPanel rightPane = new JPanel(new BorderLayout(0,0)) {
                             {
                                 setOpaque(false);
 
-                                optionsButton = new JButton("Настройки") {
-                                    BufferedImage bImage = menuImages[0];
-
-                                    @Override
-                                    public void paintComponent(Graphics g) {
-                                        if (menuImages != null) {
-                                            g.drawImage(bImage, 0, 0, getWidth(), getHeight(), this);
-                                            if (bImage == menuImages[1]) {
-                                                g.drawString(getName(),
-                                                        (int) (getWidth() / 2 - FoxFontBuilder.getStringBounds(g, getName()).getWidth() / 2D) - 2,
-                                                        getHeight() / 2 + 6 + 2);
-                                            } else {
-                                                g.drawString(getName(), (int) (getWidth() / 2 - FoxFontBuilder.getStringBounds(g, getName()).getWidth() / 2D), getHeight() / 2 + 6);
-                                            }
-                                        } else {
-                                            super.paintComponent(g);
-                                        }
-                                    }
-
+                                JPanel buttonsPane = new JPanel(new GridLayout(10, 0, 0, 2)) {
                                     {
-                                        setName("Настройки");
-                                        setFont(Registry.f5);
-                                        setForeground(Color.BLACK);
-                                        setBorderPainted(false);
-                                        setFocusPainted(false);
-                                        setFocusable(false);
                                         setOpaque(false);
 
-                                        setActionCommand("options");
-                                        addActionListener(GameMenu.this);
-                                        addMouseListener(new MouseAdapter() {
-                                            public void mouseEntered(MouseEvent me) {
-                                                setStatusText("Настройки игры");
-                                                bImage = menuImages[1];
-                                                repaint();
+                                        optionsButton = new JButton("Настройки") {
+                                            BufferedImage bImage = menuImages[0];
+
+                                            @Override
+                                            public void paintComponent(Graphics g) {
+                                                if (menuImages != null) {
+                                                    g.drawImage(bImage, 0, 0, getWidth(), getHeight(), this);
+                                                    if (bImage == menuImages[1]) {
+                                                        g.drawString(getName(),
+                                                                (int) (getWidth() / 2 - FoxFontBuilder.getStringBounds(g, getName()).getWidth() / 2D) - 2,
+                                                                getHeight() / 2 + 6 + 2);
+                                                    } else {
+                                                        g.drawString(getName(), (int) (getWidth() / 2 - FoxFontBuilder.getStringBounds(g, getName()).getWidth() / 2D), getHeight() / 2 + 6);
+                                                    }
+                                                } else {
+                                                    super.paintComponent(g);
+                                                }
                                             }
 
-                                            public void mouseExited(MouseEvent me) {
-                                                setStatusText(null);
-                                                bImage = menuImages[0];
-                                                repaint();
-                                            }
+                                            {
+                                                setName("Настройки");
+                                                setFont(Registry.f5);
+                                                setForeground(Color.BLACK);
+                                                setBorderPainted(false);
+                                                setFocusPainted(false);
+                                                setFocusable(false);
+                                                setOpaque(false);
 
-                                            public void mousePressed(MouseEvent me) {
-                                                bImage = menuImages[2];
-                                                repaint();
-                                            }
+                                                setActionCommand("options");
+                                                addActionListener(GameMenu.this);
+                                                addMouseListener(new MouseAdapter() {
+                                                    public void mouseEntered(MouseEvent me) {
+                                                        setStatusText("Настройки игры");
+                                                        bImage = menuImages[1];
+                                                        repaint();
+                                                    }
 
-                                            public void mouseReleased(MouseEvent me) {
-                                                bImage = menuImages[0];
-                                                repaint();
+                                                    public void mouseExited(MouseEvent me) {
+                                                        setStatusText(null);
+                                                        bImage = menuImages[0];
+                                                        repaint();
+                                                    }
+
+                                                    public void mousePressed(MouseEvent me) {
+                                                        bImage = menuImages[2];
+                                                        repaint();
+                                                    }
+
+                                                    public void mouseReleased(MouseEvent me) {
+                                                        bImage = menuImages[0];
+                                                        repaint();
+                                                    }
+                                                });
                                             }
-                                        });
-                                    }
-                                };
+                                        };
 
 //                                saveLoadButton = new JButton("Сохранение/загрузка") {
 //                                    BufferedImage bImage = menuImages[0];
@@ -453,125 +396,263 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
 //                                    }
 //                                };
 
-                                galleryButton = new JButton("Галерея") {
-                                    BufferedImage bImage = menuImages[0];
+                                        galleryButton = new JButton("Галерея") {
+                                            BufferedImage bImage = menuImages[0];
 
-                                    @Override
-                                    public void paintComponent(Graphics g) {
-                                        if (menuImages != null) {
-                                            g.drawImage(bImage, 0, 0, getWidth(), getHeight(), this);
-                                            if (bImage == menuImages[1]) {
-                                                g.drawString(getName(),
-                                                        (int) (getWidth() / 2 - FoxFontBuilder.getStringBounds(g, getName()).getWidth() / 2D) - 2,
-                                                        getHeight() / 2 + 6 + 2);
-                                            } else {
-                                                g.drawString(getName(), (int) (getWidth() / 2 - FoxFontBuilder.getStringBounds(g, getName()).getWidth() / 2D), getHeight() / 2 + 6);
+                                            @Override
+                                            public void paintComponent(Graphics g) {
+                                                if (menuImages != null) {
+                                                    g.drawImage(bImage, 0, 0, getWidth(), getHeight(), this);
+                                                    if (bImage == menuImages[1]) {
+                                                        g.drawString(getName(),
+                                                                (int) (getWidth() / 2 - FoxFontBuilder.getStringBounds(g, getName()).getWidth() / 2D) - 2,
+                                                                getHeight() / 2 + 6 + 2);
+                                                    } else {
+                                                        g.drawString(getName(), (int) (getWidth() / 2 - FoxFontBuilder.getStringBounds(g, getName()).getWidth() / 2D), getHeight() / 2 + 6);
+                                                    }
+                                                } else {
+                                                    super.paintComponent(g);
+                                                }
                                             }
-                                        } else {
-                                            super.paintComponent(g);
-                                        }
-                                    }
 
-                                    {
-                                        setName("Галерея");
+                                            {
+                                                setName("Галерея");
 //								setPreferredSize(new Dimension(410, 50));
-                                        setFont(Registry.f5);
-                                        setForeground(Color.BLACK);
-                                        setBorderPainted(false);
-                                        setFocusPainted(false);
-                                        setFocusable(false);
-                                        setOpaque(false);
+                                                setFont(Registry.f5);
+                                                setForeground(Color.BLACK);
+                                                setBorderPainted(false);
+                                                setFocusPainted(false);
+                                                setFocusable(false);
+                                                setOpaque(false);
 
-                                        setActionCommand("gallery");
-                                        addActionListener(GameMenu.this);
-                                        addMouseListener(new MouseAdapter() {
-                                            public void mouseEntered(MouseEvent me) {
-                                                setStatusText("Галерея воспоминаний");
-                                                bImage = menuImages[1];
-                                                repaint();
+                                                setActionCommand("gallery");
+                                                addActionListener(GameMenu.this);
+                                                addMouseListener(new MouseAdapter() {
+                                                    public void mouseEntered(MouseEvent me) {
+                                                        setStatusText("Галерея воспоминаний");
+                                                        bImage = menuImages[1];
+                                                        repaint();
+                                                    }
+
+                                                    public void mouseExited(MouseEvent me) {
+                                                        setStatusText(null);
+                                                        bImage = menuImages[0];
+                                                        repaint();
+                                                    }
+
+                                                    public void mousePressed(MouseEvent me) {
+                                                        bImage = menuImages[2];
+                                                        repaint();
+                                                    }
+
+                                                    public void mouseReleased(MouseEvent me) {
+                                                        bImage = menuImages[0];
+                                                        repaint();
+                                                    }
+                                                });
+                                            }
+                                        };
+
+                                        aboutButton = new JButton("Об игре") {
+                                            BufferedImage bImage = menuImages[0];
+
+                                            @Override
+                                            public void paintComponent(Graphics g) {
+                                                if (menuImages != null) {
+                                                    g.drawImage(bImage, 0, 0, getWidth(), getHeight(), this);
+
+                                                    if (bImage == menuImages[1]) {
+                                                        g.drawString(getName(),
+                                                                (int) (getWidth() / 2 - FoxFontBuilder.getStringBounds(g, getName()).getWidth() / 2D) - 2,
+                                                                getHeight() / 2 + 6 + 2);
+                                                    } else {
+                                                        g.drawString(getName(), (int) (getWidth() / 2 - FoxFontBuilder.getStringBounds(g, getName()).getWidth() / 2D), getHeight() / 2 + 6);
+                                                    }
+                                                } else {
+                                                    super.paintComponent(g);
+                                                }
                                             }
 
-                                            public void mouseExited(MouseEvent me) {
-                                                setStatusText(null);
-                                                bImage = menuImages[0];
-                                                repaint();
-                                            }
-
-                                            public void mousePressed(MouseEvent me) {
-                                                bImage = menuImages[2];
-                                                repaint();
-                                            }
-
-                                            public void mouseReleased(MouseEvent me) {
-                                                bImage = menuImages[0];
-                                                repaint();
-                                            }
-                                        });
-                                    }
-                                };
-
-                                aboutButton = new JButton("Об игре") {
-                                    BufferedImage bImage = menuImages[0];
-
-                                    @Override
-                                    public void paintComponent(Graphics g) {
-                                        if (menuImages != null) {
-                                            g.drawImage(bImage, 0, 0, getWidth(), getHeight(), this);
-
-                                            if (bImage == menuImages[1]) {
-                                                g.drawString(getName(),
-                                                        (int) (getWidth() / 2 - FoxFontBuilder.getStringBounds(g, getName()).getWidth() / 2D) - 2,
-                                                        getHeight() / 2 + 6 + 2);
-                                            } else {
-                                                g.drawString(getName(), (int) (getWidth() / 2 - FoxFontBuilder.getStringBounds(g, getName()).getWidth() / 2D), getHeight() / 2 + 6);
-                                            }
-                                        } else {
-                                            super.paintComponent(g);
-                                        }
-                                    }
-
-                                    {
-                                        setName("Об игре");
+                                            {
+                                                setName("Об игре");
 //								setPreferredSize(new Dimension(410, 50));
-                                        setFont(Registry.f5);
-                                        setForeground(Color.BLACK);
-                                        setBorderPainted(false);
-                                        setFocusPainted(false);
-                                        setFocusable(false);
-                                        setOpaque(false);
+                                                setFont(Registry.f5);
+                                                setForeground(Color.BLACK);
+                                                setBorderPainted(false);
+                                                setFocusPainted(false);
+                                                setFocusable(false);
+                                                setOpaque(false);
 
-                                        setActionCommand("about");
-                                        addActionListener(GameMenu.this);
-                                        addMouseListener(new MouseAdapter() {
-                                            public void mouseEntered(MouseEvent me) {
-                                                setStatusText("Об игре и создателях");
-                                                bImage = menuImages[1];
-                                                repaint();
+                                                setActionCommand("about");
+                                                addActionListener(GameMenu.this);
+                                                addMouseListener(new MouseAdapter() {
+                                                    public void mouseEntered(MouseEvent me) {
+                                                        setStatusText("Об игре и создателях");
+                                                        bImage = menuImages[1];
+                                                        repaint();
+                                                    }
+
+                                                    public void mouseExited(MouseEvent me) {
+                                                        setStatusText(null);
+                                                        bImage = menuImages[0];
+                                                        repaint();
+                                                    }
+
+                                                    public void mousePressed(MouseEvent me) {
+                                                        bImage = menuImages[2];
+                                                        repaint();
+                                                    }
+
+                                                    public void mouseReleased(MouseEvent me) {
+                                                        bImage = menuImages[0];
+                                                        repaint();
+                                                    }
+                                                });
+                                            }
+                                        };
+
+                                        newGameBtn = new JButton("Начать новую игру") {
+                                            BufferedImage bImage = startImages[0];
+
+                                            @Override
+                                            public void paintComponent(Graphics g) {
+                                                if (startImages != null) {
+                                                    g.drawImage(bImage, 0, 0, getWidth(), getHeight(), null, null);
+                                                    if (bImage == startImages[1]) {
+                                                        g.drawString(getName(),
+                                                                (int) (getWidth() / 2 - FoxFontBuilder.getStringBounds(g, getName()).getWidth() / 2D) - 2,
+                                                                getHeight() / 2 + 10);
+                                                    } else {
+                                                        g.drawString(getName(),
+                                                                (int) (getWidth() / 2 - FoxFontBuilder.getStringBounds(g, getName()).getWidth() / 2D),
+                                                                getHeight() / 2 + 8);
+                                                    }
+                                                } else {
+                                                    super.paintComponent(g);
+                                                }
                                             }
 
-                                            public void mouseExited(MouseEvent me) {
-                                                setStatusText(null);
-                                                bImage = menuImages[0];
-                                                repaint();
-                                            }
+                                            {
+                                                setName("Новая игра");
+                                                setFont(Registry.f5);
+                                                setForeground(Color.BLACK);
+                                                setBorderPainted(false);
+                                                setFocusPainted(false);
+                                                setFocusable(false);
+                                                setOpaque(false);
 
-                                            public void mousePressed(MouseEvent me) {
-                                                bImage = menuImages[2];
-                                                repaint();
-                                            }
+                                                setActionCommand("playNew");
+                                                addActionListener(GameMenu.this);
+                                                addMouseListener(new MouseAdapter() {
+                                                    public void mouseEntered(MouseEvent me) {
+//                                                        cd2.showTip();
+                                                        setStatusText("Начать/продолжить игру");
+                                                        bImage = startImages[1];
+                                                        repaint();
+                                                    }
 
-                                            public void mouseReleased(MouseEvent me) {
-                                                bImage = menuImages[0];
-                                                repaint();
-                                            }
-                                        });
-                                    }
-                                };
+                                                    public void mouseExited(MouseEvent me) {
+                                                        setStatusText(null);
+                                                        bImage = startImages[0];
+                                                        repaint();
+                                                    }
 
-                                add(optionsButton);
+                                                    public void mousePressed(MouseEvent me) {
+                                                        bImage = startImages[2];
+                                                        repaint();
+                                                    }
+
+                                                    public void mouseReleased(MouseEvent me) {
+                                                        bImage = startImages[0];
+                                                        repaint();
+                                                    }
+                                                });
+                                            }
+                                        };
+
+
+                                        add(optionsButton);
 //                                add(saveLoadButton);
-                                add(galleryButton);
-                                add(aboutButton);
+                                        add(galleryButton);
+                                        add(aboutButton);
+                                        add(newGameBtn);
+                                    }
+                                };
+
+                                downPane = new JPanel(new BorderLayout(0,0)) {
+                                    {
+                                        setOpaque(false);
+                                        setBorder(new EmptyBorder(0,0,20,0));
+
+                                        continueBtn = new JButton("Продолжить") {
+                                            BufferedImage bImage2 = startImages[0];
+
+                                            @Override
+                                            public void paintComponent(Graphics g) {
+                                                if (startImages != null) {
+                                                    g.drawImage(bImage2, 0, 0, getWidth(), getHeight(), null, null);
+                                                    if (bImage2 == startImages[1]) {
+                                                        g.drawString(getName(),
+                                                                (int) (getWidth() / 2 - FoxFontBuilder.getStringBounds(g, getName()).getWidth() / 2D) - 2,
+                                                                getHeight() / 2 + 10);
+                                                    } else {
+                                                        g.drawString(getName(),
+                                                                (int) (getWidth() / 2 - FoxFontBuilder.getStringBounds(g, getName()).getWidth() / 2D),
+                                                                getHeight() / 2 + 8);
+                                                    }
+                                                } else {
+                                                    super.paintComponent(g);
+                                                }
+                                            }
+
+                                            {
+                                                setName("Продолжить");
+                                                setFont(Registry.f5);
+                                                setForeground(Color.YELLOW);
+                                                setBorderPainted(false);
+                                                setFocusPainted(false);
+                                                setFocusable(false);
+                                                setOpaque(false);
+                                                setPreferredSize(new Dimension(0, 60));
+
+                                                setActionCommand("continue");
+                                                addActionListener(GameMenu.this);
+                                                addMouseListener(new MouseAdapter() {
+                                                    public void mouseEntered(MouseEvent me) {
+//                                                        cd2.showTip();
+                                                        setStatusText("Продолжить игру");
+                                                        bImage2 = startImages[1];
+                                                        repaint();
+                                                    }
+
+                                                    public void mouseExited(MouseEvent me) {
+                                                        setStatusText(null);
+                                                        bImage2 = startImages[0];
+                                                        repaint();
+                                                    }
+
+                                                    public void mousePressed(MouseEvent me) {
+                                                        bImage2 = startImages[2];
+                                                        repaint();
+                                                    }
+
+                                                    public void mouseReleased(MouseEvent me) {
+                                                        bImage2 = startImages[0];
+                                                        repaint();
+                                                    }
+                                                });
+                                            }
+                                        };
+
+                                        add(continueBtn);
+                                    }
+                                };
+
+                                add(buttonsPane, BorderLayout.CENTER);
+
+                                if (userSave.getChapter() != null) {
+                                    add(downPane, BorderLayout.SOUTH);
+                                }
                             }
                         };
 
@@ -644,7 +725,7 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
                             }
                         };
 
-                        add(buttonsPane, BorderLayout.CENTER);
+                        add(rightPane, BorderLayout.CENTER);
                         add(downExitPane, BorderLayout.SOUTH);
                     }
                 };
@@ -662,11 +743,11 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
                                     this);
 
                             g.setColor(Color.BLACK);
-                            g.drawString("v." + Registry.version, Double.valueOf(GameMenu.this.getWidth() * 0.05d).intValue(),
-                                    Double.valueOf(GameMenu.this.getHeight() * 0.05d).intValue());
+                            g.drawString("v." + Registry.version, Double.valueOf(GameMenu.this.getWidth() * 0.04d).intValue(),
+                                    Double.valueOf(GameMenu.this.getHeight() * 0.04d).intValue());
                             g.setColor(Color.ORANGE);
-                            g.drawString("v." + Registry.version, Double.valueOf(GameMenu.this.getWidth() * 0.049d).intValue(),
-                                    Double.valueOf(GameMenu.this.getHeight() * 0.0475d).intValue());
+                            g.drawString("v." + Registry.version, Double.valueOf(GameMenu.this.getWidth() * 0.039d).intValue(),
+                                    Double.valueOf(GameMenu.this.getHeight() * 0.0375d).intValue());
 
 //                            g.setColor(Color.PINK);
 //                            g.drawRect(0,0,getWidth() - 1,getHeight() - 1);
@@ -677,7 +758,7 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
 
                     {
                         setOpaque(false);
-                        setBorder(new EmptyBorder(0, 0, Double.valueOf(GameMenu.this.getWidth() * 0.0235d).intValue(), 0));
+                        setBorder(new EmptyBorder(0, 0, Double.valueOf(GameMenu.this.getHeight() * 0.0425d).intValue(), 0));
 
                         downTextLabel = new JLabel() {
                             {
@@ -762,7 +843,7 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
             if (((JLabel) e.getSource()).getName().equals("downName")) {
                 setForeground(Color.ORANGE);
                 setStatusText("Сменить/создать игрока (2x click)");
-                cd.showTip();
+//                cd.showTip();
             }
         }
     }
@@ -775,8 +856,13 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
     @Override
     public void actionPerformed(ActionEvent e) {
         switch (e.getActionCommand()) {
-            case "play" -> {
+            case "playNew" -> {
                 // начинаем новую игру:
+                userSave.reset();
+                new GamePlay(gc, userSave);
+                dispose();
+            }
+            case "continue" -> {
                 new GamePlay(gc, userSave);
                 dispose();
             }

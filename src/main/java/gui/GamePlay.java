@@ -45,12 +45,12 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
     private static long dialogDelaySpeed = 32, defaultDialogDefaultDelay = 48;
     private static BufferedImage currentSceneImage, currentNpcImage, currentHeroAvatar;
     private static volatile boolean isDialogAnimated, isChapterUpdate;
+    private static volatile boolean needsUpdateRectangles;
     private static char[] dialogChars;
     private static Double charWidth;
     private static String dialogOwner;
     private static Shape dialogTextRect;
     private static JList<String> answerList;
-    private static boolean needsUpdateRectangles;
 
     private Double WINDOWED_WIDTH = Toolkit.getDefaultToolkit().getScreenSize().getWidth() * 0.75D;
     private Double WINDOWED_HEIGHT = Toolkit.getDefaultToolkit().getScreenSize().getHeight() * 0.9D;
@@ -129,7 +129,7 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
         dlm = new DefaultListModel<>();
         lastText = "";
         currentNpcImage = null;
-        isDialogAnimated = isChapterUpdate = needsUpdateRectangles = false;
+        isDialogAnimated = isChapterUpdate = false;
         dialogChars = null;
         charWidth = null;
         currentHeroAvatar = null;
@@ -317,7 +317,7 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
                             needsUpdateRectangles = false;
                         }
 //                        g2D.setColor(Color.GREEN.darker());
-//                        g2D.draw(dialogTextRext);
+//                        g2D.draw(dialogTextRect);
 
                         drawAutoDialog(g2D);
                     }
@@ -608,6 +608,7 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
     public static void setAnswers(ArrayList<String> answers) {
         dlm.clear();
         answerList.setForeground(Color.WHITE);
+        needsUpdateRectangles = true;
         if (answers == null) {
             dlm.addElement("Далее...");
             return;
@@ -622,7 +623,6 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
         for (String answer : answers) {
             dlm.addElement(getCountUnicodeChar(dlm.size() + 1) + " " + answer.split("R")[0]);
         }
-        needsUpdateRectangles = true;
     }
 
     private static char getCountUnicodeChar(int numberToUnicode) {
@@ -883,8 +883,8 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
         backButPressed = false;
 
         int closeQ = (int) new FOptionPane(
-                "Завершить игру?",
-                "Сохранить и выйти?",
+                "Подтверждение:",
+                "Желаешь завершить игру?",
                 FOptionPane.TYPE.YES_NO_TYPE,
                 null,
                 true).get();
@@ -936,7 +936,7 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
     @Override
     public void mouseReleased(MouseEvent e) {
         if (backButOver) {
-            showExitRequest();
+//            showExitRequest();
             backButPressed = backButOver = false;
         }
     }

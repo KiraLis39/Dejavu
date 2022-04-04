@@ -49,4 +49,32 @@ public class UserSave implements JConfigurable {
     public Path getSource() {
         return source;
     }
+
+    public void reset() {
+        cycleCount = 0;
+
+        carmaAnn = 0;
+        carmaDmi = 0;
+        carmaKur = 0;
+        carmaMar = 0;
+        carmaMsh = 0;
+        carmaOks = 0;
+        carmaOlg = 0;
+        carmaOle = 0;
+        carmaLis = 0;
+
+        chapter = null;
+        month = GamePlay.MONTH.июнь;
+        today = 3;
+
+        screen = null;
+
+        musicPlayed = null;
+        backgPlayed = null;
+        soundPlayed = null;
+        voicePlayed = null;
+
+        script = "00_INIT_SCENARIO";
+        lineIndex = -1;
+    }
 }
