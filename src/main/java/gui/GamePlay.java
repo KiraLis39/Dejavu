@@ -5,23 +5,26 @@ import configurations.UserSave;
 import door.MainClass;
 import fox.Out;
 import images.FoxCursor;
-import images.FoxSpritesCombiner;
 import interfaces.Cached;
 import iom.JIOM;
 import logic.ScenarioEngine;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 import lombok.NonNull;
 import render.FoxRender;
+import secondGUI.OptMenuFrame;
 import tools.Cursors;
 import utils.FoxFontBuilder;
-import utils.InputAction;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.*;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Ellipse2D;
+import java.awt.geom.Rectangle2D;
+import java.awt.geom.RoundRectangle2D;
+import java.awt.image.BufferStrategy;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -30,452 +33,464 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 
 import static fox.Out.LEVEL;
 import static fox.Out.Print;
 import static registry.Registry.*;
 
-@EqualsAndHashCode(callSuper = true)
 @Data
 public class GamePlay extends JFrame implements MouseListener, MouseMotionListener, WindowListener, Cached {
-    public enum MONTH {июнь,июль,август}
-    private static Thread textAnimateThread;
-    private static DefaultListModel<String> dlm;
-    private static long dialogDelaySpeed = 32, defaultDialogDefaultDelay = 48;
-    private static BufferedImage currentSceneImage, currentNpcImage, currentHeroAvatar;
-    private static volatile boolean isDialogAnimated, isChapterUpdate;
-    private static volatile boolean needsUpdateRectangles;
-    private static char[] dialogChars;
-    private static Double charWidth;
-    private static String dialogOwner;
-    private static Shape dialogTextRect;
-    private static JList<String> answerList;
-
+    public enum MONTH {июнь, июль, август}
     private Double WINDOWED_WIDTH = Toolkit.getDefaultToolkit().getScreenSize().getWidth() * 0.75D;
     private Double WINDOWED_HEIGHT = Toolkit.getDefaultToolkit().getScreenSize().getHeight() * 0.9D;
+
+    static DefaultListModel<String> dlm;
+    static JList<String> answerList;
+    static long dialogDelaySpeed = 32;
+    static volatile boolean isDialogAnimated;
+
+    private static Thread textAnimateThread;
+    private static long defaultDialogDefaultDelay = 48;
+    private static volatile BufferedImage currentSceneImage, currentNpcImage, currentHeroAvatar;
+    private static volatile boolean isChapterUpdate;
+    private static volatile boolean needsUpdateRectangles;
+    private static char[] dialogChars;
+    private static Double charWidth, charHeight;
+    private static String dialogOwner;
+    private static Shape dialogTextRect, downArea, avatarRect, backBtnShape;
+    private static String lastText;
     private long was = System.currentTimeMillis(), autoSaveSeconds = 15_000;
-    private BufferedImage nullAvatar, gameImageUp, gameImageDL, gameImageDC, gameImageDR;
-    private BufferedImage[] backButtons;
+    private BufferedImage nullAvatar, gameImageUp, backButtons;
     private JPanel basePane, downCenterPane;
-    private boolean showQualityChanged;
-    private boolean isStoryPlayed;
-    private boolean backButOver;
-    private boolean backButPressed;
+    private boolean showQualityChanged, isStoryPlayed, backButOver, backButPressed, showDebugGraphic = false;
     private int refDelay, infoShowedCycles = 100;
     private float fpsIterCount = 0;
     private double curFps;
-    private static String lastText;
     private Point mouseNow, frameWas, mouseWasOnScreen;
-    private Shape backBtnShape;
     private ScenarioEngine scenario = new ScenarioEngine();
     private Color chapterColor = new Color(0.0f, 0.0f, 0.0f, 0.5f);
     private Polygon chapterPolygon;
+    private Canvas canvas;
 
-    // FRAME DRAWING:
-    @Override
-    public void paint(Graphics g) {
-        super.paint(g);
-//        g.setColor(Color.GRAY);
-//        g.drawRoundRect(dialogTextRect.x, dialogTextRect.y, dialogTextRect.width, dialogTextRect.height, 16, 16);
-//        g.setColor(Color.GRAY);
-//        g.drawRoundRect(choseVariantRect.x, choseVariantRect.y, choseVariantRect.width, choseVariantRect.height, 8, 8);
-//        g.setColor(Color.YELLOW);
-//        g.drawRect(backButtonRect.x, backButtonRect.y, backButtonRect.width, backButtonRect.height);
-        drawFPS(g);
+    // DRAW CANVAS THREAD:
+    private class StoryPlayThread implements Runnable {
+        AffineTransform tr;
+        BufferedImage avatar;
 
-        drawOther(g);
-    }
-
-    private void drawFPS(Graphics g) {
-        if (configuration.isFpsShowed()) {
-            fpsIterCount++;
-            if (System.currentTimeMillis() - was > 1000) {
-                curFps = Math.floor(fpsIterCount);
-                was = System.currentTimeMillis();
-                fpsIterCount = 0;
+        @Override
+        public void run() {
+            if (userSave.getMusicPlayed() != null) {
+                musicPlayer.play(userSave.getMusicPlayed());
+            }
+            if (userSave.getBackgPlayed() != null) {
+                backgPlayer.play(userSave.getBackgPlayed());
+            }
+            if (userSave.getScreen() != null) {
+                currentSceneImage = (BufferedImage) cache.get(userSave.getScreen());
             }
 
-            g.setColor(Color.GRAY);
-            g.drawString(String.format("%.0f", curFps), 10, 25);
+            needsUpdateRectangles = true;
+            isStoryPlayed = true;
+            BufferStrategy bs;
+
+            Print(GamePlay.class, LEVEL.ACCENT, "GameFrame.StoryPlayedThread: Start now.");
+            while (isStoryPlayed) {
+                if (canvas.getBufferStrategy() == null || !canvas.isValid()) {
+                    canvas.createBufferStrategy(2);
+                }
+
+                try {
+                    bs = canvas.getBufferStrategy();
+                    do {
+                        do {
+                            Graphics2D g2D = (Graphics2D) bs.getDrawGraphics();
+                            tr = g2D.getTransform();
+                            FoxRender.setRender(g2D, userConf.getQuality());
+
+                            drawScene(g2D);
+                            drawNPC(g2D);
+                            drawChapterAndDay(g2D);
+                            drawUI(g2D);
+                            updateAndDrawDialogZones(g2D);
+
+                            drawFPS(g2D);
+                            drawOther(g2D);
+
+                            g2D.dispose();
+                        } while (bs.contentsRestored());
+                    } while (bs.contentsLost());
+
+                    bs.show();
+//                    Toolkit.getDefaultToolkit().sync();
+                    Thread.sleep(refDelay);
+                } catch (Exception e) {
+                    System.err.println("Ошибка в потоке отрисовки: " + e.getMessage());
+                    Thread.currentThread().interrupt();
+                }
+            }
+            Print(GamePlay.class, LEVEL.ACCENT, "GameFrame.StoryPlayedThread: Stop!");
+        }
+
+        private void updateAndDrawDialogZones(Graphics2D g2D) {
+            if (dialogTextRect == null || needsUpdateRectangles) {
+                downArea = new RoundRectangle2D.Float(
+                        0,0,
+                        getWidth() * 0.96f,getHeight() * 0.25f,
+                        12f, 12f
+                );
+
+                if (currentHeroAvatar == null) {
+                    avatar = nullAvatar;
+                } else {
+                    avatar = currentHeroAvatar;
+                }
+
+                avatarRect = new Rectangle(3,3,downArea.getBounds().height - 6, downArea.getBounds().height - 6);
+
+                dialogTextRect = new Rectangle(
+                        avatarRect.getBounds().width + 6,
+                        avatarRect.getBounds().y,
+                        downArea.getBounds().width - avatarRect.getBounds().width - 9, // - right button width,
+                        downArea.getBounds().height - 6
+                );
+
+                backBtnShape = new Ellipse2D.Float(
+                        downArea.getBounds().width - 64 - 3,
+                        downArea.getBounds().height - 64 - 3,
+                        64,
+                        64);
+
+                answerList.setBounds(
+                        (int) (getWidth() * 0.832f),
+                        (int) (getHeight() * 0.575f),
+                        (int) (getWidth() * 0.15f),
+                        120);
+
+                needsUpdateRectangles = false;
+            }
+
+            g2D.translate(getWidth() * 0.02f, getHeight() * 0.71f);
+            {
+                drawDownArea(g2D);
+                drawAvatar(g2D);
+                drawOwnerText(g2D);
+                drawBackButton(g2D);
+            }
+            g2D.setTransform(tr);
+            drawAnswers(g2D);
+            g2D.setTransform(tr);
+        }
+
+        private void drawDownArea(Graphics2D g2D) {
+            g2D.setColor(new Color(0.25f, 0.35f, 0.5f, 0.25f));
+            g2D.fill(downArea);
+
+            if (showDebugGraphic) {
+                g2D.setColor(Color.GREEN);
+                g2D.draw(downArea);
+            }
+        }
+
+        private void drawAvatar(Graphics2D g2D) {
+            Rectangle avr = avatarRect.getBounds();
+            g2D.drawImage(avatar, avr.x, avr.y, avr.width, avr.height, canvas);
+            if (showDebugGraphic) {
+                g2D.setColor(Color.RED.brighter());
+                g2D.draw(avatarRect);
+            }
+        }
+
+        private void drawOwnerText(Graphics2D g2D) {
+            drawOwnerName(g2D);
+            drawAutoDialog(g2D);
+            if (showDebugGraphic) {
+                g2D.setColor(Color.BLUE.brighter());
+                g2D.draw(dialogTextRect);
+            }
+        }
+
+        private void drawOwnerName(Graphics2D g2D) {
+            if (dialogOwner != null) {
+                Rectangle avr = avatarRect.getBounds();
+                g2D.setFont(fontName);
+
+                g2D.setColor(Color.BLACK);
+                g2D.drawString(dialogOwner,
+                        (int) (avr.width / 2 - FoxFontBuilder.getStringBounds(g2D, dialogOwner).getWidth() / 2) - 1,
+                        avr.height - 13);
+
+                g2D.setColor(Color.ORANGE);
+                g2D.drawString(dialogOwner,
+                        (int) (avr.width / 2 - FoxFontBuilder.getStringBounds(g2D, dialogOwner).getWidth() / 2),
+                        avr.height - 12);
+            }
+        }
+
+        private void drawAutoDialog(Graphics2D g2D) {
+            g2D.setFont(fontDialog);
+            if (charWidth == null || charHeight == null) {
+                charWidth = g2D.getFontMetrics().getMaxCharBounds(g2D).getWidth();
+                charHeight = g2D.getFontMetrics().getMaxCharBounds(g2D).getHeight();
+            }
+
+            if (dialogChars != null) {
+                int mem = 0, line = 0;
+                W:
+                while (true) {
+                    float shift = 0f;
+                    line++;
+
+                    for (int i = mem; i < dialogChars.length; i++) {
+                        if (dialogChars[i] == 10) {
+                            mem = i + 1;
+                            break;
+                        } // next line marker detector (\n)
+                        g2D.setColor(Color.DARK_GRAY);
+                        g2D.drawString(String.valueOf(dialogChars[i]),
+                                Double.valueOf(dialogTextRect.getBounds().x + (shift * charWidth) + 1.0d).floatValue(),
+                                Double.valueOf(dialogTextRect.getBounds().y + (line * charHeight) + 1.0f).floatValue()
+                        );
+
+                        g2D.setColor(Color.WHITE);
+                        g2D.drawString(String.valueOf(dialogChars[i]),
+                                Double.valueOf(dialogTextRect.getBounds().x + (shift * charWidth)).floatValue(),
+                                Double.valueOf(dialogTextRect.getBounds().y + (line * charHeight)).floatValue()
+                        );
+
+                        shift++;
+                        if (i >= dialogChars.length - 1) {
+                            break W;
+                        }
+                    }
+                }
+            }
+        }
+
+        private void drawBackButton(Graphics2D g2D) {
+            Rectangle bbe = backBtnShape.getBounds();
+            if (backButOver) {
+                g2D.drawImage(backButtons,
+                        bbe.x + 3, bbe.y + 3,
+                        bbe.width - 6, bbe.height - 6,
+                        canvas);
+            } else {
+                g2D.drawImage(backButtons,
+                        bbe.x, bbe.y,
+                        bbe.width, bbe.height,
+                        canvas);
+            }
+
+            if (showDebugGraphic) {
+                g2D.setColor(Color.MAGENTA.darker());
+                g2D.draw(backBtnShape);
+            }
+        }
+
+        private void drawAnswers(Graphics2D g2D) {
+            Rectangle alr = answerList.getBounds();
+            g2D.translate(alr.getX(), alr.getY());
+            if (showDebugGraphic) {
+                g2D.setColor(Color.ORANGE);
+                g2D.draw(alr);
+            }
+            answerList.paint(g2D);
+        }
+
+        private void drawScene(Graphics2D g2D) {
+            try {
+                if (currentSceneImage == null) {
+                    g2D.setColor(Color.BLACK);
+                    g2D.fillRect(30, 30, getWidth() - 60, getHeight() - 60);
+                } else {
+                    g2D.drawImage(currentSceneImage,
+                            30, 30,
+                            getWidth() - 60, getHeight() - 60,
+                            canvas);
+                }
+            } catch (Exception e) {
+                g2D.setColor(Color.DARK_GRAY);
+                g2D.fillRect(30, 30, getWidth() - 60, getHeight() - 60);
+                g2D.setColor(Color.RED);
+                g2D.drawString("NO IMAGE",
+                        (int) (getWidth() / 2 - FoxFontBuilder.getStringBounds(g2D, "NO IMAGE").getWidth() / 2),
+                        getHeight() / 2 - 96);
+            }
+
+            if (showDebugGraphic) {
+                g2D.setColor(Color.CYAN);
+                g2D.drawRect(30, 30, getWidth() - 60, getHeight() - 60);
+            }
+        }
+
+        private void drawNPC(Graphics2D g2D) {
+            if (currentNpcImage == null) {
+                return;
+            }
+            g2D.drawImage(currentNpcImage,
+                getWidth() / 2 - currentNpcImage.getWidth() / 2,
+                (int) (GamePlay.this.getHeight() * 0.1f),
+
+                currentNpcImage.getWidth(),
+                currentNpcImage.getHeight(),
+
+                canvas);
+        }
+
+        private void drawUI(Graphics2D g2D) {
+            g2D.drawImage(gameImageUp,
+                    0, 0,
+                    getWidth(), getHeight(),
+                    canvas);
+        }
+
+        private void drawChapterAndDay(Graphics2D g2D) {
+            if (userSave.getChapter() != null && !userSave.getChapter().isBlank()) {
+                if (chapterPolygon == null || needsUpdateRectangles) {
+                    chapterPolygon = new Polygon(
+                            new int[]{(int) (getWidth() * 0.75f), getWidth(), getWidth(), (int) (getWidth() * 0.85f)},
+                            new int[]{(int) (getHeight() * 0.01f), (int) (getHeight() * 0.01f), (int) (getHeight() * 0.125f), (int) (getHeight() * 0.125f)},
+                            4);
+                }
+                g2D.setColor(chapterColor);
+                g2D.fill(chapterPolygon);
+
+                g2D.setFont(f9);
+                g2D.setColor(Color.BLACK);
+                String secLine = userSave.getMonth() + ": " + userSave.getToday();
+                Rectangle2D chBW = FoxFontBuilder.getStringBounds(g2D, userSave.getChapter());
+
+                g2D.drawString(userSave.getChapter(),
+                        (int) (getWidth() - chapterPolygon.getBounds().width / 2 - chBW.getWidth() / 2 + 0.75d),
+                        (int) (chapterPolygon.getBounds().height / 2 + chBW.getHeight() / 2 - 0.5d));
+
+                g2D.drawString(secLine,
+                        (int) (getWidth() - chapterPolygon.getBounds().width / 2 + 0.5d),
+                        (int) (chapterPolygon.getBounds().height / 2 + FoxFontBuilder.getStringBounds(g2D, secLine).getHeight() * 1.45d));
+
+                g2D.setColor(isChapterUpdate ? Color.YELLOW : Color.WHITE);
+                if (isChapterUpdate) {
+                    isChapterUpdate = false;
+                }
+
+                g2D.drawString(userSave.getChapter(),
+                        (int) (getWidth() - chapterPolygon.getBounds().width / 2 - chBW.getWidth() / 2),
+                        (int) (chapterPolygon.getBounds().height / 2 + chBW.getHeight() / 2));
+
+                g2D.drawString(secLine,
+                        getWidth() - chapterPolygon.getBounds().width / 2,
+                        (int) (chapterPolygon.getBounds().height / 2 + FoxFontBuilder.getStringBounds(g2D, secLine).getHeight() * 1.5d));
+
+                if (showDebugGraphic) {
+                    g2D.setColor(Color.RED);
+                    g2D.draw(chapterPolygon);
+                }
+            }
+        }
+
+        private void drawFPS(Graphics g) {
+            if (configuration.isFpsShowed()) {
+                fpsIterCount++;
+                if (System.currentTimeMillis() - was > 1000) {
+                    curFps = Math.floor(fpsIterCount);
+                    was = System.currentTimeMillis();
+                    fpsIterCount = 0;
+                }
+
+                g.setColor(Color.GRAY);
+                g.drawString(String.format("%.0f", curFps), 10, 25);
+            }
+        }
+
+        private void drawOther(Graphics g) {
+            if (showQualityChanged && infoShowedCycles > 0) {
+                g.setColor(Color.ORANGE);
+                g.setFont(fontDialog);
+                g.drawString("Качество установлено: " + userConf.getQuality().name(), 100 - (infoShowedCycles / 10), 60);
+                infoShowedCycles--;
+            } else if (infoShowedCycles == 0) {
+                showQualityChanged = false;
+                infoShowedCycles = 100;
+            }
         }
     }
 
-    private void drawOther(Graphics g) {
-        if (showQualityChanged && infoShowedCycles > 0) {
-            g.setColor(Color.ORANGE);
-            g.setFont(fontDialog);
-            g.drawString("Качество установлено: " + userConf.getQuality().name(), 100 - (infoShowedCycles / 10), 60);
-            infoShowedCycles--;
-        } else if (infoShowedCycles == 0) {
-            showQualityChanged = false;
-            infoShowedCycles = 100;
-        }
-    }
+    public GamePlay(GraphicsConfiguration gConfig, UserSave loader) {
+        super("GamePlayParent", gConfig);
+        new PlayInAcSetter(this);
+        refDelay = (int) (1000f / gConfig.getDevice().getDisplayMode().getRefreshRate() - 0.5f);
+        userSave = loader;
 
-    // FRAME BUILD:
-    private void preInit() {
         setName("GamePlay");
         setUndecorated(true);
+        setPreferredSize(new Dimension(WINDOWED_WIDTH.intValue(), WINDOWED_HEIGHT.intValue()));
         setResizable(false);
         setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         setCursor(Cursors.PinkCursor.get());
         setAutoRequestFocus(true);
 
         addWindowListener(this);
-        addMouseListener(this);
-        addMouseMotionListener(this);
+
+        loadResources();
+        resetGame();
+        setLayout(null);
+
+        getContentPane().setBackground(Color.BLACK);
+        setExtendedState(MAXIMIZED_BOTH);
+        getGraphicsConfiguration().getDevice().setFullScreenWindow(GamePlay.this);
+        canvas = new Canvas(getGraphicsConfiguration()) {
+            @Override
+            public void paint(Graphics g) {
+                g.setColor(getBackground());
+                g.fillRect(0,0,getWidth(),getHeight());
+            }
+
+            {
+                setFocusable(false);
+            }
+        };
+        canvas.setFocusable(false);
+        canvas.setBackground(new Color(0.0f, 0.0f, 0.0f, 0.0f));
+        canvas.addMouseListener(this);
+        canvas.addMouseMotionListener(this);
 
         dlm = new DefaultListModel<>();
-        lastText = "";
-        currentNpcImage = null;
-        isDialogAnimated = isChapterUpdate = false;
-        dialogChars = null;
-        charWidth = null;
-        currentHeroAvatar = null;
-        dialogOwner = null;
-        dialogTextRect = null;
-        answerList = null;
-    }
-
-    public GamePlay(GraphicsConfiguration gConfig, UserSave loader) {
-        super("GamePlayParent", gConfig);
-        refDelay = 1000 / gConfig.getDevice().getDisplayMode().getRefreshRate();
-        userSave = loader;
-
-        preInit();
-        loadResources();
-        setInAc();
-
-        checkFullscreen();
-
-        JPanel upPane = new JPanel() {
-            {
-                setOpaque(false);
-            }
-
+        answerList = new JList<>(dlm) {
             @Override
-            protected void paintComponent(Graphics g) {
-                Graphics2D g2D = (Graphics2D) g;
-                FoxRender.setRender(g2D, userConf.getQuality());
-
-                try {
-                    if (currentSceneImage == null) {
-                        g2D.setColor(Color.BLACK);
-                        g2D.fillRect(0, 0, getWidth(), getHeight());
-                    } else {
-                        g2D.drawImage(currentSceneImage,
-                                Double.valueOf(GamePlay.this.getWidth() * 0.01d).intValue(),
-                                Double.valueOf(GamePlay.this.getHeight() * 0.01d).intValue(),
-                                getWidth() - Double.valueOf(GamePlay.this.getWidth() * 0.02d).intValue(),
-                                getHeight() - Double.valueOf(GamePlay.this.getHeight() * 0.01d).intValue(),
-                                this);
-                    }
-                } catch (Exception e) {
-                    g2D.setColor(Color.DARK_GRAY);
-                    g2D.fillRect(16, 16, getWidth() - 32, getHeight() - 32);
-                    g2D.setColor(Color.RED);
-                    g2D.drawString("NO IMAGE", (int) (getWidth() / 2 - FoxFontBuilder.getStringBounds(g2D, "NO IMAGE").getWidth() / 2), getHeight() / 2 - 96);
+            public int locationToIndex(Point location) {
+                int index = super.locationToIndex(location);
+                if (index != -1 && !getCellBounds(index, index).contains(location)) {
+                    return -1;
+                } else {
+                    return index;
                 }
-
-                drawNPC(g2D);
-
-                drawChapterAndDay(g2D);
-
-                g2D.drawImage(gameImageUp, 0, 0,
-                        getWidth(), getHeight(),
-                        this);
-
-//                g2D.setColor(Color.GREEN);
-//                g2D.drawRect(1,1,getWidth()-2,getHeight()-2);
-//                g2D.setColor(Color.BLUE);
-//                g2D.drawRect(
-//                        Double.valueOf(GamePlay.this.getWidth() * 0.01d).intValue(),
-//                        Double.valueOf(GamePlay.this.getHeight() * 0.01d).intValue(),
-//                        getWidth() - Double.valueOf(GamePlay.this.getWidth() * 0.02d).intValue(),
-//                        getHeight() - Double.valueOf(GamePlay.this.getHeight() * 0.02d).intValue());
-            }
-
-            private void drawChapterAndDay(Graphics2D g2D) {
-                if (userSave.getChapter() != null && !userSave.getChapter().isBlank()) {
-                    if (chapterPolygon == null || needsUpdateRectangles) {
-                        chapterPolygon = new Polygon(
-                                new int[] {(int) (getWidth() * 0.75f), getWidth(), getWidth(), (int) (getWidth() * 0.85f)},
-                                new int[] {(int) (getHeight() * 0.01f), (int) (getHeight() * 0.01f), (int) (getHeight() * 0.2f), (int) (getHeight() * 0.2f)},
-                                4);
-                    }
-                    g2D.setColor(chapterColor);
-                    g2D.fill(chapterPolygon);
-
-                    g2D.setFont(f9);
-                    g2D.setColor(Color.BLACK);
-                    String secLine = userSave.getMonth() + ": " + userSave.getToday();
-
-                    g2D.drawString(userSave.getChapter(), getWidth() * 0.852f, getHeight() * 0.1075f);
-                    g2D.drawString(secLine, (float) (getWidth() - FoxFontBuilder.getStringBounds(g2D, secLine).getWidth()) - 59f, getHeight() * 0.1475f);
-                    if (isChapterUpdate) {
-                        g2D.setColor(Color.YELLOW);
-                        isChapterUpdate = false;
-                    } else {
-                        g2D.setColor(Color.WHITE);
-                    }
-                    g2D.drawString(userSave.getChapter(), getWidth() * 0.85f, getHeight() * 0.11f);
-                    g2D.drawString(secLine, (float) (getWidth() - FoxFontBuilder.getStringBounds(g2D, secLine).getWidth()) - 60f, getHeight() * 0.15f);
-                }
-            }
-
-            private void drawNPC(Graphics2D g2D) {
-                if (currentNpcImage == null) {
-                    return;
-                }
-                g2D.drawImage(currentNpcImage,
-
-                        getWidth() / 2 - currentNpcImage.getWidth() / 2,
-                        (int) (GamePlay.this.getHeight() * 0.1f),
-
-                        currentNpcImage.getWidth(),
-                        currentNpcImage.getHeight(),
-
-                        this);
-            }
-        };
-
-        JPanel downPane = new JPanel(new BorderLayout(0, 0)) {
-            @Override
-            protected void paintComponent(Graphics g) {
-                Graphics2D g2D = (Graphics2D) g;
-                FoxRender.setRender(g2D, userConf.getQuality());
-
-                super.paintComponents(g2D);
-
-//                g2D.setColor(Color.ORANGE);
-//                g2D.drawRect(0,0,getWidth()-1,getHeight()-1);
             }
 
             {
+                setFocusable(false);
+                setPreferredSize(new Dimension(0, 60));
+                setBorder(new EmptyBorder(3, 3, 3, 3));
+                setFont(fontAnswers);
+
+                setForeground(Color.WHITE);
                 setOpaque(false);
-                setPreferredSize(new Dimension(0, Double.valueOf(GamePlay.this.getHeight() * 0.25d).intValue()));
+                setBackground(new Color(0, 0, 0, 0));
 
-                JPanel downLeftPane = new JPanel() {
-                    BufferedImage avatar;
+                setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+                setSelectionBackground(new Color(1.0f, 1.0f, 1.0f, 0.2f));
+                setSelectionForeground(new Color(1.0f, 1.0f, 0.0f, 1.0f));
+                setVisibleRowCount(6);
 
-                    @Override
-                    protected void paintComponent(Graphics g) {
-                        Graphics2D g2D = (Graphics2D) g;
-                        FoxRender.setRender(g2D, userConf.getQuality());
-
-                        g2D.drawImage(gameImageDL, 0, 0, getWidth(), getHeight(), this);
-                        drawAvatar(g2D);
-
-//                        g2D.setColor(Color.RED);
-//                        g2D.drawRect(1,1,getWidth()-2,getHeight()-2);
-                    }
-
-                    private void drawAvatar(Graphics2D g2D) {
-                        if (currentHeroAvatar == null) {
-//                            if (nullAvatar == null) {
-//                                nullAvatar = (BufferedImage) cache.get("0");
-//                            }
-                            avatar = nullAvatar;
-                        } else {
-                            avatar = currentHeroAvatar;
-                        }
-
-                        g2D.drawImage(avatar,
-                                Double.valueOf(getWidth() * 0.1d).intValue(),
-                                Double.valueOf(getHeight() * 0.04d).intValue(),
-                                getWidth() - Double.valueOf(getWidth() * 0.19d).intValue(),
-                                getHeight() - Double.valueOf(getHeight() * 0.16d).intValue(),
-                                this);
-                    }
-
-                    {
-                        setOpaque(false);
-                        setPreferredSize(new Dimension(Double.valueOf(GamePlay.this.getWidth() * 0.17d).intValue(), 0));
-                    }
-                };
-
-                downCenterPane = new JPanel(new BorderLayout(0, 0)) {
-                    @Override
-                    protected void paintComponent(Graphics g) {
-                        Graphics2D g2D = (Graphics2D) g;
-                        FoxRender.setRender(g2D, userConf.getQuality());
-
-                        g2D.drawImage(gameImageDC, 0, 0, getWidth(), getHeight(), this);
-
-//                        g2D.setColor(Color.YELLOW);
-//                        g2D.drawRect(0,0,getWidth()-1,getHeight()-1);
-//                        g2D.setColor(Color.GREEN.darker());
-//                        g2D.draw(answerList.getBounds());
-                        if (dialogTextRect == null || needsUpdateRectangles) {
-                            dialogTextRect = new Rectangle(
-                                    Double.valueOf(getWidth() * 0.0025d).intValue(),
-                                    Double.valueOf(getHeight() * 0.095d).intValue(),
-                                    Double.valueOf((getWidth() - answerList.getWidth()) * 0.985d).intValue(),
-                                    Double.valueOf(getHeight() * 0.75d).intValue()
-                            );
-                            needsUpdateRectangles = false;
-                        }
-//                        g2D.setColor(Color.GREEN.darker());
-//                        g2D.draw(dialogTextRect);
-
-                        drawAutoDialog(g2D);
-                    }
-
-                    private void drawAutoDialog(Graphics2D g2D) {
-                        // owner name:
-                        if (dialogOwner != null) {
-                            g2D.setFont(fontName);
-
-                            int dx = (int) (getWidth() * 0.09d - FoxFontBuilder.getStringBounds(g2D, dialogOwner).getWidth() / 2);
-                            int dy = dialogTextRect.getBounds().y - 3;
-
-                            g2D.setColor(Color.BLACK);
-                            g2D.drawString(dialogOwner,
-                                    dx,
-                                    dy);
-
-                            g2D.setColor(Color.ORANGE);
-                            g2D.drawString(dialogOwner,
-                                    dx - 1,
-                                    dy + 1);
-                        }
-
-                        g2D.setFont(fontDialog);
-                        if (charWidth == null) {
-                            charWidth = g2D.getFontMetrics().getMaxCharBounds(g2D).getWidth();
-                        }
-
-                        // dialog:
-                        if (dialogChars != null) {
-                            int mem = 0, line = 1;
-                            W:
-                            while (true) {
-                                float shift = 0f;
-                                line++;
-
-                                for (int i = mem; i < dialogChars.length; i++) {
-                                    if (dialogChars[i] == 10) {
-                                        mem = i + 1;
-                                        break;
-                                    } // next line marker detector (\n)
-                                    g2D.setColor(Color.GRAY.brighter());
-                                    g2D.drawString(String.valueOf(dialogChars[i]),
-                                            Double.valueOf(dialogTextRect.getBounds().x + (shift * charWidth) + 0.35d).floatValue(),
-                                            Double.valueOf(dialogTextRect.getBounds().y * line + 0.55d).floatValue()
-                                    );
-
-                                    g2D.setColor(Color.BLACK);
-                                    g2D.drawString(String.valueOf(dialogChars[i]),
-                                            Double.valueOf(dialogTextRect.getBounds().x + (shift * charWidth)).floatValue(),
-                                            dialogTextRect.getBounds().y * line
-                                    );
-
-                                    shift++;
-                                    if (i >= dialogChars.length - 1) {
-                                        break W;
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    {
-                        setOpaque(false);
-                        setBorder(new EmptyBorder(6, 0, 32, 0));
-
-                        answerList = new JList<>(dlm) {
-                            @Override
-                            public int locationToIndex(Point location) {
-                                int index = super.locationToIndex(location);
-                                if (index != -1 && !getCellBounds(index, index).contains(location)) {
-                                    return -1;
-                                } else {
-                                    return index;
-                                }
-                            }
-
-                            {
-                                setFocusable(false);
-                                setForeground(Color.WHITE);
-                                setBackground(new Color(0.5f, 0.5f, 1.0f, 0.0f));
-                                setBorder(new EmptyBorder(3, 3, 3, 3));
-                                setFont(fontAnswers);
-                                setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-                                setSelectionBackground(new Color(1.0f, 1.0f, 1.0f, 0.2f));
-                                setSelectionForeground(new Color(1.0f, 1.0f, 0.0f, 1.0f));
-                                setVisibleRowCount(6);
-
-                                setCursor(FoxCursor.createCursor((BufferedImage) cache.get("curTextCursor"), "textCursor"));
-                                addMouseListener(GamePlay.this);
-                                setPreferredSize(new Dimension(210, 0));
-                            }
-                        };
-
-                        add(answerList, BorderLayout.EAST);
-                    }
-                };
-
-                JPanel downRightPane = new JPanel() {
-                    @Override
-                    protected void paintComponent(Graphics g) {
-                        Graphics2D g2D = (Graphics2D) g;
-                        FoxRender.setRender(g2D, userConf.getQuality());
-
-                        g2D.drawImage(gameImageDR, 0, 0, getWidth(), getHeight(), this);
-
-//                        g2D.setColor(Color.CYAN);
-//                        g2D.drawRect(1,1,getWidth()-2,getHeight()-2);
-
-                        if (backBtnShape == null) {
-                            backBtnShape = new Polygon() {
-                                {
-                                    addPoint(24, 6);
-                                    addPoint(getWidth() - 18, 6);
-                                    addPoint(getWidth() - 18, getHeight() - 48);
-
-                                    addPoint((int) (getWidth() * 0.475f), (int) (getHeight() * 0.6f));
-                                    addPoint((int) (getWidth() * 0.25f), (int) (getHeight() * 0.3f));
-                                }
-                            };
-                        }
-
-                        drawBackButton(g2D);
-//                        g2D.setColor(Color.PINK);
-//                        g2D.draw(backBtnShape);
-                    }
-
-                    private void drawBackButton(Graphics2D g2D) {
-                        if (backButOver) {
-                            g2D.drawImage(backButtons[1],
-                                    backBtnShape.getBounds().x + 6, backBtnShape.getBounds().y - 3,
-                                    backBtnShape.getBounds().width, backBtnShape.getBounds().height,
-                                    this);
-                        } else {
-                            g2D.drawImage(backButtons[0],
-                                    backBtnShape.getBounds().x, backBtnShape.getBounds().y,
-                                    backBtnShape.getBounds().width, backBtnShape.getBounds().height,
-                                    this);
-                        }
-                    }
-
-                    {
-                        setName("btnPane");
-//                        setOpaque(false);
-                        setPreferredSize(new Dimension(Double.valueOf(GamePlay.this.getWidth() * 0.1d).intValue(), 0));
-                        addMouseMotionListener(GamePlay.this);
-                        addMouseListener(GamePlay.this);
-                    }
-                };
-
-                add(downLeftPane, BorderLayout.WEST);
-                add(downCenterPane, BorderLayout.CENTER);
-                add(downRightPane, BorderLayout.EAST);
+                setCursor(FoxCursor.createCursor((BufferedImage) cache.get("curTextCursor"), "textCursor"));
+                addMouseListener(GamePlay.this);
             }
         };
 
-        add(upPane, BorderLayout.CENTER);
-        add(downPane, BorderLayout.SOUTH);
+        add(canvas);
+        add(answerList);
+
+        setVisible(true);
+
+        canvas.setBounds(0, 0, getWidth(), getHeight());
 
         new Thread(new StoryPlayThread()) {
             {
@@ -492,170 +507,21 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
             System.err.println("Script load exception: " + e.getMessage());
             SwingUtilities.invokeLater(this::stopGame);
         }
+
+        checkFullscreen();
     }
 
-    // GAME CONTROLS:
-    public static void setScene(String sceneName, String npcImage) {
-        // scene:
-        if (sceneName != null) {
-            userSave.setScreen(sceneName);
-            currentSceneImage = (BufferedImage) cache.get(sceneName);
-        }
-
-        // npc:
-        if (npcImage != null) {
-            if (npcImage.equals("CLEAR") || npcImage.equals("-")) {
-                currentNpcImage = null;
-            } else {
-                currentNpcImage = (BufferedImage) cache.get(npcImage);
-            }
-        }
+    private void resetGame() {
+        lastText = "";
+        currentNpcImage = null;
+        isDialogAnimated = isChapterUpdate = false;
+        dialogChars = null;
+        charWidth = null;
+        currentHeroAvatar = null;
+        dialogOwner = null;
+        dialogTextRect = null;
+        answerList = null;
     }
-
-    public static void setDialog(String _dialogOwner, String dialogText, int carma) {
-        if (carma != 0) {
-            changeCarma(_dialogOwner, carma);
-        }
-
-        // owner:
-        if (_dialogOwner == null || _dialogOwner.equalsIgnoreCase("NULL")) {
-            dialogOwner = "Кто-то:";
-            setAvatar(null);
-        } else if (_dialogOwner.equals(userConf.getUserName())) {
-            dialogOwner = _dialogOwner;
-            setAvatar(String.valueOf(userConf.getAvatarIndex() + 1));
-        } else {
-            setAvatar(convertRussianNpcNameToSourceImageName(_dialogOwner));
-        }
-
-        // text:
-        if (textAnimateThread != null) {
-            textAnimateThread.interrupt();
-        }
-        textAnimateThread = new Thread(() -> {
-            if (dialogText != null) {
-                lastText = dialogText;
-                dialogDelaySpeed = defaultDialogDefaultDelay;
-
-                try {
-                    StringBuilder sb = new StringBuilder(dialogText);
-                    dialogChars = new char[dialogText.length()];
-
-                    int shift = 0, i = 0;
-                    isDialogAnimated = true;
-                    while (isDialogAnimated && i < dialogText.length()) {
-                        shift++;
-
-                            if (charWidth * shift > dialogTextRect.getBounds().width - charWidth * 4) {
-                                for (int k = i; k > 0; k--) {
-                                    if ((int) dialogChars[k] == 32) {
-                                        sb.setCharAt(k, (char) 10);
-                                        break;
-                                    }
-                                }
-                                shift = 0;
-                            }
-                            sb.getChars(0, i + 1, dialogChars, 0);
-                            if (userConf.isTextAnimated()) {
-                                Thread.sleep(dialogDelaySpeed);
-                            }
-                        i++;
-                    }
-
-                    isDialogAnimated = false;
-                } catch (Exception e) {
-                    dialogChars = null;
-                    Thread.currentThread().interrupt();
-                }
-            }
-        });
-        textAnimateThread.start();
-
-        setAnswers(null);
-    }
-
-    private static void changeCarma(String dialogOwner, int carma) {
-        switch (dialogOwner) {
-            case "Аня" -> userSave.setCarmaAnn(userSave.getCarmaAnn() + carma);
-            case "Дмитрий" -> userSave.setCarmaDmi(userSave.getCarmaDmi() + carma);
-            case "Куро" -> userSave.setCarmaKur(userSave.getCarmaKur() + carma);
-            case "Ольга" -> userSave.setCarmaOlg(userSave.getCarmaOlg() + carma);
-            case "Олег" -> userSave.setCarmaOle(userSave.getCarmaOle() + carma);
-            case "Оксана" -> userSave.setCarmaOks(userSave.getCarmaOks() + carma);
-            case "Мишка" -> userSave.setCarmaMsh(userSave.getCarmaMsh() + carma);
-            case "Мари" -> userSave.setCarmaMar(userSave.getCarmaMar() + carma);
-            case "Лисса" -> userSave.setCarmaLis(userSave.getCarmaLis() + carma);
-            default -> System.err.println("GamePlay.changeCarma: Странное имя в корректоре кармы: " + dialogOwner);
-        }
-    }
-
-    private static String convertRussianNpcNameToSourceImageName(String dialogOwner) {
-        switch (dialogOwner) {
-            case "Аня" -> {
-                return "Ann";
-            }
-
-            default -> {
-                return "NA";
-            }
-        }
-    }
-
-    public static void setAvatar(String avatar) {
-        currentHeroAvatar = (BufferedImage) cache.get(Objects.requireNonNullElse(avatar, "0"));
-    }
-
-    public static void setAnswers(ArrayList<String> answers) {
-        dlm.clear();
-        answerList.setForeground(Color.WHITE);
-        needsUpdateRectangles = true;
-        if (answers == null) {
-            dlm.addElement("Далее...");
-            return;
-        }
-
-        if (answers.get(0).equals("(нажми пробел)")) {
-            dlm.addElement("(нажми пробел)");
-            return;
-        }
-
-        answerList.setForeground(Color.YELLOW);
-        for (String answer : answers) {
-            dlm.addElement(getCountUnicodeChar(dlm.size() + 1) + " " + answer.split("R")[0]);
-        }
-    }
-
-    private static char getCountUnicodeChar(int numberToUnicode) {
-        return switch (numberToUnicode) {
-            case 1 -> '1';
-            case 2 -> '2';
-            case 3 -> '3';
-            case 4 -> '4';
-            case 5 -> '5';
-            case 6 -> '6';
-            default -> '?';
-        };
-    }
-
-    private static void stopAnimation() {
-        if (textAnimateThread != null) {
-            textAnimateThread.interrupt();
-        }
-    }
-
-    public static void setChapter(String _chapter) {
-        userSave.setChapter(_chapter);
-        isChapterUpdate = true;
-    }
-
-    public static void dayAdd() {
-        userSave.setToday(userSave.getToday() + 1);
-        if (userSave.getToday() > 30) {
-            userSave.setToday(1);
-            userSave.setMonth(MONTH.values()[userSave.getMonth().ordinal() + 1]);
-        }
-    }
-
 
     private void loadResources() {
         new Thread(() -> {
@@ -695,12 +561,11 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
         // get other images:
         try {
             nullAvatar = (BufferedImage) cache.get("0");
-            backButtons = FoxSpritesCombiner.getSprites("picBackButBig",
-                    (BufferedImage) cache.get("picBackButBig"), 1, 3);
-            gameImageUp = (BufferedImage) cache.get("picGamepaneUp");
-            gameImageDL = (BufferedImage) cache.get("picGamepaneDL");
-            gameImageDC = (BufferedImage) cache.get("picGamepaneDC");
-            gameImageDR = (BufferedImage) cache.get("picGamepaneDR");
+            backButtons = (BufferedImage) cache.get("picBackButBig");
+            gameImageUp = (BufferedImage) cache.get("picGamepane");
+//            gameImageDL = (BufferedImage) cache.get("picGamepaneDL");
+//            gameImageDC = (BufferedImage) cache.get("picGamepaneDC");
+//            gameImageDR = (BufferedImage) cache.get("picGamepaneDR");
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -717,160 +582,21 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
         return null;
     }
 
-    private void setInAc() {
-        InputAction.add("game", GamePlay.this); // SwingUtilities.getWindowAncestor(basePane));
-
-        InputAction.set(InputAction.FOCUS_TYPE.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT, "game", "Ctrl+F4", KeyEvent.VK_F4, 512, new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                showExitRequest();
-            }
-        });
-        InputAction.set(InputAction.FOCUS_TYPE.WHEN_FOCUSED, "game", "close", KeyEvent.VK_ESCAPE, 0, new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                showExitRequest();
-            }
-        });
-        InputAction.set(InputAction.FOCUS_TYPE.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT, "game", "fullscreen", KeyEvent.VK_F, 0, new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                userConf.setFullScreen(!userConf.isFullScreen());
-                checkFullscreen();
-            }
-        });
-        InputAction.set(InputAction.FOCUS_TYPE.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT, "game", "switchFPS", KeyEvent.VK_F11, 0, new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                configuration.setFpsShowed(!configuration.isFpsShowed());
-            }
-        });
-        InputAction.set(InputAction.FOCUS_TYPE.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT, "game", "switchQuality", KeyEvent.VK_F3, 0, new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                userConf.nextQuality();
-                System.out.println("Quality: " + userConf.getQuality());
-                showQualityChanged = true;
-            }
-        });
-
-        InputAction.set(InputAction.FOCUS_TYPE.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT, "game", "next", KeyEvent.VK_SPACE, 0, new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if (isDialogAnimated) {
-                    dialogDelaySpeed = 0;
-                    return;
-                }
-                scenario.choice(-1);
-                answerList.clearSelection();
-            }
-        });
-        InputAction.set(InputAction.FOCUS_TYPE.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT, "game", "answer_1", KeyEvent.VK_1, 0, new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                answerList.setSelectedIndex(0);
-                if (dlm.size() < 1) {
-                    return;
-                } else if (dlm.size() == 1 && answerList.getSelectedValue().startsWith("Далее")) {
-                    dialogDelaySpeed = 0;
-                    scenario.choice(-1);
-                }
-                isDialogAnimated = false;
-                answerList.setSelectedIndex(0);
-                scenario.choice(0);
-            }
-        });
-        InputAction.set(InputAction.FOCUS_TYPE.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT, "game", "answer_2", KeyEvent.VK_2, 0, new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if (dlm.size() < 2) {
-                    return;
-                }
-                dialogDelaySpeed = 0;
-                answerList.setSelectedIndex(1);
-                scenario.choice(1);
-            }
-        });
-        InputAction.set(InputAction.FOCUS_TYPE.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT, "game", "answer_3", KeyEvent.VK_3, 0, new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if (dlm.size() < 3) {
-                    return;
-                }
-                dialogDelaySpeed = 0;
-                answerList.setSelectedIndex(2);
-                scenario.choice(2);
-            }
-        });
-        InputAction.set(InputAction.FOCUS_TYPE.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT, "game", "answer_4", KeyEvent.VK_4, 0, new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if (dlm.size() < 4) {
-                    return;
-                }
-                dialogDelaySpeed = 0;
-                answerList.setSelectedIndex(3);
-                scenario.choice(3);
-            }
-        });
-        InputAction.set(InputAction.FOCUS_TYPE.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT, "game", "answer_5", KeyEvent.VK_5, 0, new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if (dlm.size() < 5) {
-                    return;
-                }
-                dialogDelaySpeed = 0;
-                answerList.setSelectedIndex(4);
-                scenario.choice(4);
-            }
-        });
-        InputAction.set(InputAction.FOCUS_TYPE.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT, "game", "answer_6", KeyEvent.VK_6, 0, new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if (dlm.size() < 6) {
-                    return;
-                }
-                dialogDelaySpeed = 0;
-                answerList.setSelectedIndex(5);
-                scenario.choice(5);
-            }
-        });
-
-        InputAction.set(InputAction.FOCUS_TYPE.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT, "game", "keyLeft", KeyEvent.VK_LEFT, 0, new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                System.out.println("Key left...");
-            }
-        });
-        InputAction.set(InputAction.FOCUS_TYPE.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT, "game", "keyRight", KeyEvent.VK_RIGHT, 0, new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                System.out.println("Key right...");
-            }
-        });
-    }
-
-    private void checkFullscreen() {
+    void checkFullscreen() {
         if (isVisible() && (userConf.isFullScreen() && getExtendedState() == MAXIMIZED_BOTH || !userConf.isFullScreen() && getExtendedState() == NORMAL)) {
             return;
         }
 
-        Print(GamePlay.class, LEVEL.INFO, "\nGamePlay fullscreen switch...");
-        dispose();
-
         if (userConf.isFullScreen()) {
             getContentPane().setBackground(Color.BLACK);
             setExtendedState(MAXIMIZED_BOTH);
-//            gDevice.setFullScreenWindow(GameMenu.this);
+            getGraphicsConfiguration().getDevice().setFullScreenWindow(GamePlay.this);
         } else {
-//            gDevice.setFullScreenWindow(null);
+            getContentPane().setBackground(new Color(0.0f, 0.0f, 0.0f, 0.0f));
             setExtendedState(NORMAL);
-            setBackground(new Color(0, 0, 0, 0));
-            setPreferredSize(new Dimension(WINDOWED_WIDTH.intValue(), WINDOWED_HEIGHT.intValue()));
+            getGraphicsConfiguration().getDevice().setFullScreenWindow(null);
             pack();
         }
-
-        setVisible(true);
         setLocationRelativeTo(null);
 
         needsUpdateRectangles = true;
@@ -878,8 +604,195 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
         Print(GamePlay.class, LEVEL.INFO, "GamePlay fullscreen checked. Thread: " + Thread.currentThread().getName());
     }
 
+
+    // GAME CONTROLS:
+    public static void setScene(String sceneName, String npcImage) {
+        // scene:
+        if (sceneName != null) {
+            userSave.setScreen(sceneName);
+            currentSceneImage = (BufferedImage) cache.get(sceneName);
+        }
+
+        // npc:
+        if (npcImage != null) {
+            if (npcImage.equals("CLEAR") || npcImage.equals("-")) {
+                currentNpcImage = null;
+            } else {
+                currentNpcImage = (BufferedImage) cache.get(npcImage);
+            }
+        }
+    }
+
+    public static void setDialog(String _dialogOwner, String dialogText, int carma) {
+        if (carma != 0) {
+            changeCarma(_dialogOwner, carma);
+        }
+
+        // owner:
+        if (_dialogOwner == null || _dialogOwner.equalsIgnoreCase("NULL")) {
+            dialogOwner = "Кто-то:";
+            setAvatar(null);
+        } else if (_dialogOwner.equals(userConf.getUserName())) {
+            dialogOwner = _dialogOwner;
+            setAvatar(String.valueOf(userConf.getAvatarIndex() + 1));
+        } else {
+            dialogOwner = _dialogOwner;
+            setAvatar(convertRussianNpcNameToSourceImageName(_dialogOwner));
+        }
+
+        // text:
+        if (textAnimateThread != null) {
+            textAnimateThread.interrupt();
+        }
+        textAnimateThread = new Thread(() -> {
+            if (dialogText != null) {
+                lastText = dialogText;
+                dialogDelaySpeed = defaultDialogDefaultDelay;
+
+                try {
+                    StringBuilder sb = new StringBuilder(dialogText);
+                    dialogChars = new char[dialogText.length()];
+
+                    int shift = 0, i = 0;
+                    isDialogAnimated = true;
+                    while (isDialogAnimated && i < dialogText.length()) {
+                        shift++;
+
+                        if (charWidth * shift > dialogTextRect.getBounds().width - charWidth * 4) {
+                            for (int k = i; k > 0; k--) {
+                                if ((int) dialogChars[k] == 32) {
+                                    sb.setCharAt(k, (char) 10);
+                                    break;
+                                }
+                            }
+                            shift = 0;
+                        }
+                        sb.getChars(0, i + 1, dialogChars, 0);
+                        if (userConf.isTextAnimated()) {
+                            Thread.sleep(dialogDelaySpeed);
+                        }
+                        i++;
+                    }
+                } catch (Exception e) {
+                    Thread.currentThread().interrupt();
+                } finally {
+                    isDialogAnimated = false;
+                }
+            }
+        });
+        textAnimateThread.start();
+
+        setAnswers(null);
+    }
+
+    public static void setAvatar(String avatar) {
+        currentHeroAvatar = (BufferedImage) cache.get(Objects.requireNonNullElse(avatar, "0"));
+    }
+
+    public static void setAnswers(ArrayList<String> answers) {
+        if (answerList == null) {
+            return;
+        }
+
+        dlm.clear();
+        answerList.setForeground(Color.WHITE);
+        needsUpdateRectangles = true;
+        if (answers == null) {
+            dlm.addElement("Далее...");
+            return;
+        }
+
+        if (answers.get(0).equals("(нажми пробел)")) {
+            dlm.addElement("(нажми пробел)");
+            return;
+        }
+
+        answerList.setForeground(Color.YELLOW);
+        for (String answer : answers) {
+            dlm.addElement(getCountUnicodeChar(dlm.size() + 1) + " " + answer.split("R")[0]);
+        }
+    }
+
+    public static void setChapter(String _chapter) {
+        userSave.setChapter(_chapter);
+        isChapterUpdate = true;
+    }
+
+    public static void dayAdd() {
+        userSave.setToday(userSave.getToday() + 1);
+        if (userSave.getToday() > 30) {
+            userSave.setToday(1);
+            userSave.setMonth(MONTH.values()[userSave.getMonth().ordinal() + 1]);
+        }
+    }
+
+    private static void changeCarma(String dialogOwner, int carma) {
+        switch (dialogOwner) {
+            case "Аня" -> userSave.setCarmaAnn(userSave.getCarmaAnn() + carma);
+            case "Дмитрий" -> userSave.setCarmaDmi(userSave.getCarmaDmi() + carma);
+            case "Куро" -> userSave.setCarmaKur(userSave.getCarmaKur() + carma);
+            case "Ольга" -> userSave.setCarmaOlg(userSave.getCarmaOlg() + carma);
+            case "Олег" -> userSave.setCarmaOle(userSave.getCarmaOle() + carma);
+            case "Оксана" -> userSave.setCarmaOks(userSave.getCarmaOks() + carma);
+            case "Мишка" -> userSave.setCarmaMsh(userSave.getCarmaMsh() + carma);
+            case "Мари" -> userSave.setCarmaMar(userSave.getCarmaMar() + carma);
+            case "Лисса" -> userSave.setCarmaLis(userSave.getCarmaLis() + carma);
+            default -> System.err.println("GamePlay.changeCarma: Странное имя в корректоре кармы: " + dialogOwner);
+        }
+    }
+
+
+    private static String convertRussianNpcNameToSourceImageName(String dialogOwner) {
+        switch (dialogOwner) {
+            case "Аня" -> {
+                return "Ann";
+            }
+            case "Дмитрий" -> {
+                return "Dmitrii";
+            }
+            case "Куро" -> {
+                return "Kuro";
+            }
+            case "Ольга" -> {
+                return "Olga";
+            }
+            case "Олег" -> {
+                return "Oleg";
+            }
+            case "Оксана" -> {
+                return "Oksana";
+            }
+            case "Мишка" -> {
+                return "Mishka";
+            }
+            case "Мари" -> {
+                return "Mary";
+            }
+            case "Лисса" -> {
+                return "Lissa";
+            }
+
+            default -> {
+                return "NA";
+            }
+        }
+    }
+
+    private static char getCountUnicodeChar(int numberToUnicode) {
+        return switch (numberToUnicode) {
+            case 1 -> '1';
+            case 2 -> '2';
+            case 3 -> '3';
+            case 4 -> '4';
+            case 5 -> '5';
+            case 6 -> '6';
+            default -> '?';
+        };
+    }
+
+
     // EXIT:
-    private void showExitRequest() {
+    void showExitRequest() {
         backButPressed = false;
 
         int closeQ = (int) new FOptionPane(
@@ -924,23 +837,28 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
         }
     }
 
+    private static void stopAnimation() {
+        if (textAnimateThread != null) {
+            textAnimateThread.interrupt();
+        }
+    }
+
+
     // LISTENERS:
     @Override
     public void mousePressed(MouseEvent e) {
         mouseWasOnScreen = e.getLocationOnScreen();
         frameWas = getLocation();
-
         backButPressed = backButOver;
     }
-
     @Override
     public void mouseReleased(MouseEvent e) {
         if (backButOver) {
-//            showExitRequest();
+            new OptMenuFrame(GamePlay.this, getGraphicsConfiguration());
+            checkFullscreen();
             backButPressed = backButOver = false;
         }
     }
-
     @Override
     public void mouseDragged(MouseEvent e) {
         if (!userConf.isFullScreen() && frameWas != null) {
@@ -949,19 +867,11 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
                     (int) (frameWas.getY() - (mouseWasOnScreen.getY() - e.getYOnScreen())));
         }
     }
-
     @Override
     public void mouseMoved(MouseEvent e) {
-        mouseNow = e.getPoint();
-
-        if (backBtnShape == null) {
-            return;
-        }
-        if (e.getSource() instanceof JPanel && ((JPanel) e.getSource()).getName().equals("btnPane")) {
-            backButOver = backBtnShape.contains(e.getPoint());
-        }
+        mouseNow = new Point(e.getX() - 32, e.getY() - (getHeight() - downArea.getBounds().height) + 32);
+        backButOver = backBtnShape.contains(mouseNow);
     }
-
     @Override
     public void mouseClicked(MouseEvent e) {
         if (answerList.locationToIndex(e.getPoint()) != -1) {
@@ -969,20 +879,17 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
                 return;
             }
             Print(GamePlay.class, LEVEL.DEBUG, "Был выбран вариант " + answerList.getSelectedValue());
-            if (answerList.getSelectedValue().equals("Далее...")) {
+            if (answerList.getSelectedValue() != null && answerList.getSelectedValue().equals("Далее...")) {
                 scenario.choice(-1);
             } else {
                 scenario.choice(answerList.getSelectedIndex());
             }
         }
     }
-
     public void mouseEntered(MouseEvent e) {
     }
-
     public void mouseExited(MouseEvent e) {
     }
-
     @Override
     public void windowClosing(WindowEvent e) {
         showExitRequest();
@@ -999,55 +906,25 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
     }
     public void windowDeactivated(WindowEvent e) {
     }
-
-
-    // THREAD:
-    private class StoryPlayThread implements Runnable {
-        @Override
-        public void run() {
-            if (userSave.getMusicPlayed() != null) {
-                musicPlayer.play(userSave.getMusicPlayed());
-            }
-            if (userSave.getBackgPlayed() != null) {
-                backgPlayer.play(userSave.getBackgPlayed());
-            }
-
-            isStoryPlayed = true;
-            needsUpdateRectangles = true;
-
-            Print(GamePlay.class, LEVEL.ACCENT, "GameFrame.StoryPlayedThread: Start now.");
-            while (isStoryPlayed) {
-                try {
-                    repaint();
-                    Thread.sleep(refDelay);
-                } catch (InterruptedException e) {
-                    System.out.println("Ошибка в потоке отрисовки: " + e.getMessage());
-                    Thread.currentThread().interrupt();
-                }
-            }
-            Print(GamePlay.class, LEVEL.ACCENT, "GameFrame.StoryPlayedThread: Stop!");
-        }
-    }
 }
-
-////		Полезные методы класса Choice:
+//// Полезные методы класса Choice:
 
 //Choice choice = new Choice();
 //choice.addItem("First");
 //choice.addItem("Second");
 //choice.addItem("Third");
 
-//countItems() - считать количество пунктов в списке; 
+//  countItems() - считать количество пунктов в списке;
 //	getItem(int) - возвратить строку с определенным номером в списке; 
 //	select(int) - выбрать строку с определенным номером; 
 //	select(String) - выбрать определенную строку текста из списка.
-//add(choice);
+//  add(choice);
 
-////        Альтернативный способ создания потока:
-//        java.util.Timer t = new java.util.Timer();
-//        t.schedule(new TimerTask() {
-//            @Override
-//            public void run() {
-//
-//            }
-//        }, autoSaveSeconds);
+//// Альтернативный способ создания потока:
+// java.util.Timer t = new java.util.Timer();
+// t.schedule(new TimerTask() {
+//    @Override
+//    public void run() {
+//      // ...
+//    }
+// }, autoSaveSeconds);

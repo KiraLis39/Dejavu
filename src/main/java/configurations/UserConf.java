@@ -24,7 +24,7 @@ public class UserConf implements JConfigurable {
     String userName;
     int userAge;
     int avatarIndex;
-    boolean isFullScreen;
+    boolean isFullScreen = true;
     boolean isAutoSkipping;
     boolean isTextAnimated = true;
 

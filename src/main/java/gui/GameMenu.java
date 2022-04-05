@@ -32,7 +32,7 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
     private static final GraphicsDevice gDevice = gEnv.getDefaultScreenDevice();
     private static final GraphicsConfiguration gc = gDevice.getDefaultConfiguration();
     private final Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
-    private BufferedImage[] exitImages, startImages, menuImages;
+    private BufferedImage[] exitImages, startImages;
     private BufferedImage centerImage, botTopImage, botRightImage, botLeftImage;
     private Point2D mouseWasOnScreen, frameWas;
     private JPanel basePane;
@@ -144,8 +144,6 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
             Print(GameMenu.class, LEVEL.DEBUG, "Preparing sprites...");
             startImages = FoxSpritesCombiner
                     .getSprites("PlayButtonSprite", (BufferedImage) cache.get("picPlayButtonSprite"), 3, 1);
-            menuImages = FoxSpritesCombiner
-                    .getSprites("MenuButtonSprite", (BufferedImage) cache.get("picMenuButtonSprite"), 3, 1);
             exitImages = FoxSpritesCombiner
                     .getSprites("ExitButtonSprite", (BufferedImage) cache.get("picExitButtonSprite"), 3, 1);
         } catch (Exception e) {
@@ -284,13 +282,13 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
                                         setOpaque(false);
 
                                         optionsButton = new JButton("Настройки") {
-                                            BufferedImage bImage = menuImages[0];
+                                            BufferedImage bImage = startImages[0];
 
                                             @Override
                                             public void paintComponent(Graphics g) {
-                                                if (menuImages != null) {
+                                                if (startImages != null) {
                                                     g.drawImage(bImage, 0, 0, getWidth(), getHeight(), this);
-                                                    if (bImage == menuImages[1]) {
+                                                    if (bImage == startImages[1]) {
                                                         g.drawString(getName(),
                                                                 (int) (getWidth() / 2 - FoxFontBuilder.getStringBounds(g, getName()).getWidth() / 2D) - 2,
                                                                 getHeight() / 2 + 6 + 2);
@@ -316,23 +314,23 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
                                                 addMouseListener(new MouseAdapter() {
                                                     public void mouseEntered(MouseEvent me) {
                                                         setStatusText("Настройки игры");
-                                                        bImage = menuImages[1];
+                                                        bImage = startImages[1];
                                                         repaint();
                                                     }
 
                                                     public void mouseExited(MouseEvent me) {
                                                         setStatusText(null);
-                                                        bImage = menuImages[0];
+                                                        bImage = startImages[0];
                                                         repaint();
                                                     }
 
                                                     public void mousePressed(MouseEvent me) {
-                                                        bImage = menuImages[2];
+                                                        bImage = startImages[2];
                                                         repaint();
                                                     }
 
                                                     public void mouseReleased(MouseEvent me) {
-                                                        bImage = menuImages[0];
+                                                        bImage = startImages[0];
                                                         repaint();
                                                     }
                                                 });
@@ -397,13 +395,13 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
 //                                };
 
                                         galleryButton = new JButton("Галерея") {
-                                            BufferedImage bImage = menuImages[0];
+                                            BufferedImage bImage = startImages[0];
 
                                             @Override
                                             public void paintComponent(Graphics g) {
-                                                if (menuImages != null) {
+                                                if (startImages != null) {
                                                     g.drawImage(bImage, 0, 0, getWidth(), getHeight(), this);
-                                                    if (bImage == menuImages[1]) {
+                                                    if (bImage == startImages[1]) {
                                                         g.drawString(getName(),
                                                                 (int) (getWidth() / 2 - FoxFontBuilder.getStringBounds(g, getName()).getWidth() / 2D) - 2,
                                                                 getHeight() / 2 + 6 + 2);
@@ -430,23 +428,23 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
                                                 addMouseListener(new MouseAdapter() {
                                                     public void mouseEntered(MouseEvent me) {
                                                         setStatusText("Галерея воспоминаний");
-                                                        bImage = menuImages[1];
+                                                        bImage = startImages[1];
                                                         repaint();
                                                     }
 
                                                     public void mouseExited(MouseEvent me) {
                                                         setStatusText(null);
-                                                        bImage = menuImages[0];
+                                                        bImage = startImages[0];
                                                         repaint();
                                                     }
 
                                                     public void mousePressed(MouseEvent me) {
-                                                        bImage = menuImages[2];
+                                                        bImage = startImages[2];
                                                         repaint();
                                                     }
 
                                                     public void mouseReleased(MouseEvent me) {
-                                                        bImage = menuImages[0];
+                                                        bImage = startImages[0];
                                                         repaint();
                                                     }
                                                 });
@@ -454,14 +452,14 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
                                         };
 
                                         aboutButton = new JButton("Об игре") {
-                                            BufferedImage bImage = menuImages[0];
+                                            BufferedImage bImage = startImages[0];
 
                                             @Override
                                             public void paintComponent(Graphics g) {
-                                                if (menuImages != null) {
+                                                if (startImages != null) {
                                                     g.drawImage(bImage, 0, 0, getWidth(), getHeight(), this);
 
-                                                    if (bImage == menuImages[1]) {
+                                                    if (bImage == startImages[1]) {
                                                         g.drawString(getName(),
                                                                 (int) (getWidth() / 2 - FoxFontBuilder.getStringBounds(g, getName()).getWidth() / 2D) - 2,
                                                                 getHeight() / 2 + 6 + 2);
@@ -488,23 +486,23 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
                                                 addMouseListener(new MouseAdapter() {
                                                     public void mouseEntered(MouseEvent me) {
                                                         setStatusText("Об игре и создателях");
-                                                        bImage = menuImages[1];
+                                                        bImage = startImages[1];
                                                         repaint();
                                                     }
 
                                                     public void mouseExited(MouseEvent me) {
                                                         setStatusText(null);
-                                                        bImage = menuImages[0];
+                                                        bImage = startImages[0];
                                                         repaint();
                                                     }
 
                                                     public void mousePressed(MouseEvent me) {
-                                                        bImage = menuImages[2];
+                                                        bImage = startImages[2];
                                                         repaint();
                                                     }
 
                                                     public void mouseReleased(MouseEvent me) {
-                                                        bImage = menuImages[0];
+                                                        bImage = startImages[0];
                                                         repaint();
                                                     }
                                                 });
