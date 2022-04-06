@@ -45,49 +45,37 @@ public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotion
 
     @Override
     public void paint(Graphics g) {
-        checkGraphics();
-
-        Graphics2D g2D = (Graphics2D) g;
-        FoxRender.setRender(g2D, FoxRender.RENDER.MED);
-        g2D.drawImage(baseBuffer.getSnapshot(), 0, 0, OptMenuFrame.this);
-
-        if (volumeOfSoundSlider != null) {
-            volumeOfSoundSlider.repaint();
-            volumeOfMusicSlider.repaint();
-            volumeOfBackgSlider.repaint();
-            volumeOfVoiceSlider.repaint();
-        }
-
-        g2D.dispose();
-    }
-
-    private void checkGraphics() {
-        if (baseBuffer.contentsLost() || baseBuffer.validate(getGraphicsConfiguration()) != VolatileImage.IMAGE_OK) {
-            reloadBaseBuffer();
-        }
-    }
-
-    private void reloadBaseBuffer() {
-        do {drawAll();
-        } while (baseBuffer.contentsLost());
-
-        int result = baseBuffer.validate(getGraphicsConfiguration());
-        if (result == VolatileImage.IMAGE_INCOMPATIBLE) {
-            System.err.println("< IMAGE INCOMPATIBLE >");
+//        do {
             baseBuffer = getGraphicsConfiguration().createCompatibleVolatileImage(WIDTH, HEIGHT);
-        }
+            int result = baseBuffer.validate(getGraphicsConfiguration());
+            if (result == VolatileImage.IMAGE_RESTORED) {
+                drawAll();
+            } else if (result == VolatileImage.IMAGE_INCOMPATIBLE) {
+                System.err.println("< IMAGE INCOMPATIBLE >");
+                baseBuffer = getGraphicsConfiguration().createCompatibleVolatileImage(WIDTH, HEIGHT);
+                drawAll();
+            }
 
-        if (result == VolatileImage.IMAGE_RESTORED) {
-            System.err.println("< IMAGE RESTORED >");
-        }
+            Graphics2D g2D = (Graphics2D) g;
+            g2D.drawImage(baseBuffer.getSnapshot(), 0, 0, OptMenuFrame.this);
+            baseBuffer.flush();
+            Toolkit.getDefaultToolkit().sync();
 
-        if (result == VolatileImage.IMAGE_OK) {
-            System.err.println("< IMAGE OK >");
-        }
+            if (volumeOfSoundSlider != null) {
+                volumeOfSoundSlider.repaint();
+                volumeOfMusicSlider.repaint();
+                volumeOfBackgSlider.repaint();
+                volumeOfVoiceSlider.repaint();
+            }
+
+            g2D.dispose();
+//        } while (baseBuffer.contentsLost());
     }
+
 
     private void drawAll() {
         Graphics2D g2D = baseBuffer.createGraphics();
+        FoxRender.setRender(g2D, FoxRender.RENDER.MED);
         g2D.setColor(Color.DARK_GRAY);
         g2D.fillRect(0, 0, getWidth(), getHeight());
         g2D.setColor(Color.BLACK);
@@ -347,6 +335,11 @@ public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotion
         pack();
         setLocationRelativeTo(null);
         Out.Print(OptMenuFrame.class, LEVEL.DEBUG, "Окно опций OptMenuFrame готово к отображению.");
+        SwingUtilities.invokeLater(() -> {
+            try {Thread.sleep(100);
+            } catch (InterruptedException e) {}
+            repaint();
+        });
         setVisible(true);
     }
 
@@ -464,7 +457,6 @@ public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotion
 
     @Override
     public void mouseEntered(MouseEvent e) {
-        reloadBaseBuffer();
         repaint();
     }
 
@@ -507,7 +499,6 @@ public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotion
         }
 
         soundPlayer.play("check", false);
-        reloadBaseBuffer();
         repaint();
     }
 
@@ -515,6 +506,4 @@ public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotion
     public void mouseExited(MouseEvent e) {}
     public void mouseDragged(MouseEvent e) {}
     public void mouseClicked(MouseEvent e) {}
-
-    public void windowActivated(WindowEvent e) {}
 }
