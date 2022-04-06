@@ -187,7 +187,6 @@ public class MainClass implements Cached {
         cache.add("curBlueCursor", toBImage(curDir + "/BlueCursor"));
         cache.add("curOrangeCursor", toBImage(curDir + "/OrangeCursor"));
 
-        cache.add("picSaveLoad", toBImage(picDir + "/backgrounds/saveLoad"));
         cache.add("picMenuBase", toBImage(picDir + "/backgrounds/menuBase"));
         cache.add("picAurora", toBImage(picDir + "/backgrounds/aurora"));
         cache.add("picGallery", toBImage(picDir + "/backgrounds/gallery"));
@@ -197,9 +196,6 @@ public class MainClass implements Cached {
         cache.add("picMenuBotLeft", toBImage(picDir + "/backgrounds/menu_bottomLeft"));
         cache.add("picMenuTop", toBImage(picDir + "/backgrounds/menu_top"));
         cache.add("picGamepane", toBImage(picDir + "/backgrounds/gamepaneUp"));
-//        cache.add("picGamepaneDL", toBImage(picDir + "/backgrounds/gamepaneDL"));
-//        cache.add("picGamepaneDC", toBImage(picDir + "/backgrounds/gamepaneDC"));
-//        cache.add("picGamepaneDR", toBImage(picDir + "/backgrounds/gamepaneDR"));
 
         // heroes:
         cache.add("0", toBImage(picDir + "/hero/0"));

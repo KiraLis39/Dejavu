@@ -60,6 +60,7 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
         setResizable(false);
         setCursor(Cursors.SimpleCursor.get());
         setAutoRequestFocus(true);
+        setPreferredSize(new Dimension(Double.valueOf(screen.getWidth() * 0.75d).intValue(), Double.valueOf(screen.getHeight() * 0.75d).intValue()));
 
         preLoading();
         inAc();
@@ -217,12 +218,12 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
         if (userConf.isFullScreen()) {
             getContentPane().setBackground(Color.BLACK);
             setExtendedState(MAXIMIZED_BOTH);
-//            gDevice.setFullScreenWindow(GameMenu.this);
+            gDevice.setFullScreenWindow(GameMenu.this);
         } else {
-//            gDevice.setFullScreenWindow(null);
-            setExtendedState(NORMAL);
             setBackground(new Color(0, 0, 0, 0));
-            setSize(new Dimension(Double.valueOf(screen.getWidth() * 0.75d).intValue(), Double.valueOf(screen.getHeight() * 0.75d).intValue()));
+            setExtendedState(NORMAL);
+            gDevice.setFullScreenWindow(null);
+            pack();
         }
 
         setVisible(true);

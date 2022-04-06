@@ -14,6 +14,12 @@ public class PlayInAcSetter {
     public PlayInAcSetter(GamePlay aim) {
         InputAction.add("game", aim); // SwingUtilities.getWindowAncestor(basePane));
 
+        InputAction.set(InputAction.FOCUS_TYPE.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT, "game", "showInfo", KeyEvent.VK_F1, 0, new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                aim.setShowInfo(!aim.isShowInfo());
+            }
+        });
         InputAction.set(InputAction.FOCUS_TYPE.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT, "game", "Ctrl+F4", KeyEvent.VK_F4, 512, new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {

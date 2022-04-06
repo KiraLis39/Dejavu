@@ -33,13 +33,9 @@ public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotion
     private final String stringTextAnimated = "Анимация текста:";
     private final String stringUseMods = "Искать моды:";
     private final String stringAutoSkipping = "Автопрокрутка:";
-    private final Rectangle musicMuteRect;
-    private final Rectangle soundMuteRect;
-    private final Rectangle backgMuteRect;
-    private final Rectangle voiceMuteRect;
-    private final Rectangle downBackFonRect;
+    private final Rectangle musicMuteRect, soundMuteRect, backgMuteRect, voiceMuteRect, downBackFonRect;
     private final int[] polygonsDot;
-    private VolatileImage baseBuffer;
+    private VolatileImage baseBuffer = getGraphicsConfiguration().createCompatibleVolatileImage(WIDTH, HEIGHT);
     private Boolean isSoundMuteOver = false, isMusicMuteOver = false, isBackgMuteOver = false, isVoiceMuteOver = false,
             isFullscreenOver = false, isModEnabledOver = false, isTextAnimation = false, isAutoSkippingOver = false;
     private JSlider volumeOfMusicSlider, volumeOfSoundSlider, volumeOfBackgSlider, volumeOfVoiceSlider;
@@ -49,13 +45,11 @@ public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotion
 
     @Override
     public void paint(Graphics g) {
-        if (baseBuffer == null) {
-            baseBuffer = getGraphicsConfiguration().createCompatibleVolatileImage(WIDTH, HEIGHT, VolatileImage.TRANSLUCENT);
-            reloadBaseBuffer();
-        }
+        checkGraphics();
 
         Graphics2D g2D = (Graphics2D) g;
-        g2D.drawImage(baseBuffer, 0, 0, OptMenuFrame.this);
+        FoxRender.setRender(g2D, FoxRender.RENDER.MED);
+        g2D.drawImage(baseBuffer.getSnapshot(), 0, 0, OptMenuFrame.this);
 
         if (volumeOfSoundSlider != null) {
             volumeOfSoundSlider.repaint();
@@ -67,15 +61,37 @@ public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotion
         g2D.dispose();
     }
 
-    private void reloadBaseBuffer() {
-        Graphics2D g2D = baseBuffer.createGraphics();
-        FoxRender.setRender(g2D, FoxRender.RENDER.MED);
+    private void checkGraphics() {
+        if (baseBuffer.contentsLost() || baseBuffer.validate(getGraphicsConfiguration()) != VolatileImage.IMAGE_OK) {
+            reloadBaseBuffer();
+        }
+    }
 
+    private void reloadBaseBuffer() {
+        do {drawAll();
+        } while (baseBuffer.contentsLost());
+
+        int result = baseBuffer.validate(getGraphicsConfiguration());
+        if (result == VolatileImage.IMAGE_INCOMPATIBLE) {
+            System.err.println("< IMAGE INCOMPATIBLE >");
+            baseBuffer = getGraphicsConfiguration().createCompatibleVolatileImage(WIDTH, HEIGHT);
+        }
+
+        if (result == VolatileImage.IMAGE_RESTORED) {
+            System.err.println("< IMAGE RESTORED >");
+        }
+
+        if (result == VolatileImage.IMAGE_OK) {
+            System.err.println("< IMAGE OK >");
+        }
+    }
+
+    private void drawAll() {
+        Graphics2D g2D = baseBuffer.createGraphics();
         g2D.setColor(Color.DARK_GRAY);
         g2D.fillRect(0, 0, getWidth(), getHeight());
         g2D.setColor(Color.BLACK);
         g2D.drawRect(5, 10, getWidth() - 10, getHeight() - 20);
-//		g2D.drawImage((BufferedImage) cache.get("picAurora"), 0, 0, getWidth(), getHeight(), OptMenuFrame.this);
 
         g2D.setFont(Registry.f3);
         if (titlePoint == null) {
@@ -92,7 +108,6 @@ public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotion
         drawDownMenu(g2D);
         drawCenterMenu(g2D);
         drawCheckBox(g2D);
-
         g2D.dispose();
     }
 
@@ -450,6 +465,7 @@ public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotion
     @Override
     public void mouseEntered(MouseEvent e) {
         reloadBaseBuffer();
+        repaint();
     }
 
     @Override
@@ -495,15 +511,10 @@ public class OptMenuFrame extends JDialog implements ChangeListener, MouseMotion
         repaint();
     }
 
-    public void mouseReleased(MouseEvent e) {
-    }
+    public void mouseReleased(MouseEvent e) {}
+    public void mouseExited(MouseEvent e) {}
+    public void mouseDragged(MouseEvent e) {}
+    public void mouseClicked(MouseEvent e) {}
 
-    public void mouseExited(MouseEvent e) {
-    }
-
-    public void mouseDragged(MouseEvent e) {
-    }
-
-    public void mouseClicked(MouseEvent e) {
-    }
+    public void windowActivated(WindowEvent e) {}
 }

@@ -35,7 +35,7 @@ public class ScenarioEngine {
     public void choice(int chosenVariantIndex) {
         String loadedScript = null;
 
-        if (chosenVariantIndex != -1 && allowedVariants == null && !lines.get(userSave.getLineIndex()).startsWith("nf ")) {
+        if (chosenVariantIndex != -1 && allowedVariants == null && userSave.getLineIndex() > -1 && !lines.get(userSave.getLineIndex()).startsWith("nf ")) {
             System.err.println("Быд выбран вариант, но лист вариантов пуст!");
             return;
         }

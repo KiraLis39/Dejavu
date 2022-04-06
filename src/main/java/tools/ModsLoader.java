@@ -110,13 +110,16 @@ public class ModsLoader extends ClassLoader {
             String jarEntryReplace = jarEntry.getName().replace('/', '.');
             String jarCutted = jarEntryReplace.substring(0, jarEntry.getName().length() - 6);
 
-            Class<?> clazz = null;
+            Class<?> clazz;
             try {
                 Out.Print(ModsLoader.class, LEVEL.INFO, "Try to define the class " + jarCutted + "...");
                 clazz = defineClass(jarCutted, classData, 0, classData.length);
+            } catch (NoClassDefFoundError ncde) {
+                Out.Print(ModsLoader.class, LEVEL.ERROR, "Ошибка при определении загруженного класса по имени: " + jarCutted + ": " + ncde.getMessage());
+                return;
             } catch (Exception c) {
-                Out.Print(ModsLoader.class, LEVEL.ERROR, "Ошибка при определении загруженного класса по имени: " + jarCutted);
-                c.printStackTrace();
+                Out.Print(ModsLoader.class, LEVEL.ERROR, "Ошибка при определении загруженного класса по имени: " + jarCutted + ": " + c.getMessage());
+                return;
             }
 
             if (clazz != null) {

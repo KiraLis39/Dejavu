@@ -10,6 +10,7 @@ import iom.JIOM;
 import logic.ScenarioEngine;
 import lombok.Data;
 import lombok.NonNull;
+import registry.Registry;
 import render.FoxRender;
 import secondGUI.OptMenuFrame;
 import tools.Cursors;
@@ -62,7 +63,7 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
     private long was = System.currentTimeMillis(), autoSaveSeconds = 15_000;
     private BufferedImage nullAvatar, gameImageUp, backButtons;
     private JPanel basePane, downCenterPane;
-    private boolean showQualityChanged, isStoryPlayed, backButOver, backButPressed, showDebugGraphic = false;
+    private boolean showQualityChanged, isStoryPlayed, backButOver, backButPressed, showDebugGraphic = false, isShowInfo;
     private int refDelay, infoShowedCycles = 100;
     private float fpsIterCount = 0;
     private double curFps;
@@ -71,6 +72,7 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
     private Color chapterColor = new Color(0.0f, 0.0f, 0.0f, 0.5f);
     private Polygon chapterPolygon;
     private Canvas canvas;
+    private ArrayList<String> infos;
 
     // DRAW CANVAS THREAD:
     private class StoryPlayThread implements Runnable {
@@ -101,11 +103,12 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
 
                 try {
                     bs = canvas.getBufferStrategy();
+
                     do {
                         do {
                             Graphics2D g2D = (Graphics2D) bs.getDrawGraphics();
-                            tr = g2D.getTransform();
                             FoxRender.setRender(g2D, userConf.getQuality());
+                            tr = g2D.getTransform();
 
                             drawScene(g2D);
                             drawNPC(g2D);
@@ -113,15 +116,18 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
                             drawUI(g2D);
                             updateAndDrawDialogZones(g2D);
 
-                            drawFPS(g2D);
                             drawOther(g2D);
+                            drawFPS(g2D);
 
                             g2D.dispose();
+
+                            if (needsUpdateRectangles) {
+                                needsUpdateRectangles = false;
+                            }
                         } while (bs.contentsRestored());
                     } while (bs.contentsLost());
 
                     bs.show();
-//                    Toolkit.getDefaultToolkit().sync();
                     Thread.sleep(refDelay);
                 } catch (Exception e) {
                     System.err.println("Ошибка в потоке отрисовки: " + e.getMessage());
@@ -135,7 +141,7 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
             if (dialogTextRect == null || needsUpdateRectangles) {
                 downArea = new RoundRectangle2D.Float(
                         0,0,
-                        getWidth() * 0.96f,getHeight() * 0.25f,
+                        getWidth() * 0.98f,getHeight() * 0.25f,
                         12f, 12f
                 );
 
@@ -161,15 +167,13 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
                         64);
 
                 answerList.setBounds(
-                        (int) (getWidth() * 0.832f),
+                        (int) (getWidth() * 0.825f),
                         (int) (getHeight() * 0.575f),
-                        (int) (getWidth() * 0.15f),
+                        (int) (getWidth() * 0.2f),
                         120);
-
-                needsUpdateRectangles = false;
             }
 
-            g2D.translate(getWidth() * 0.02f, getHeight() * 0.71f);
+            g2D.translate(getWidth() * 0.012f, getHeight() * 0.73f);
             {
                 drawDownArea(g2D);
                 drawAvatar(g2D);
@@ -300,16 +304,16 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
             try {
                 if (currentSceneImage == null) {
                     g2D.setColor(Color.BLACK);
-                    g2D.fillRect(30, 30, getWidth() - 60, getHeight() - 60);
+                    g2D.fillRect(10, 10, getWidth() - 20, getHeight() - 20);
                 } else {
                     g2D.drawImage(currentSceneImage,
-                            30, 30,
-                            getWidth() - 60, getHeight() - 60,
+                            10, 10,
+                            getWidth() - 20, getHeight() - 20,
                             canvas);
                 }
             } catch (Exception e) {
                 g2D.setColor(Color.DARK_GRAY);
-                g2D.fillRect(30, 30, getWidth() - 60, getHeight() - 60);
+                g2D.fillRect(10, 10, getWidth() - 20, getHeight() - 20);
                 g2D.setColor(Color.RED);
                 g2D.drawString("NO IMAGE",
                         (int) (getWidth() / 2 - FoxFontBuilder.getStringBounds(g2D, "NO IMAGE").getWidth() / 2),
@@ -318,7 +322,7 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
 
             if (showDebugGraphic) {
                 g2D.setColor(Color.CYAN);
-                g2D.drawRect(30, 30, getWidth() - 60, getHeight() - 60);
+                g2D.drawRect(10, 10, getWidth() - 20, getHeight() - 20);
             }
         }
 
@@ -360,12 +364,12 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
                 Rectangle2D chBW = FoxFontBuilder.getStringBounds(g2D, userSave.getChapter());
 
                 g2D.drawString(userSave.getChapter(),
-                        (int) (getWidth() - chapterPolygon.getBounds().width / 2 - chBW.getWidth() / 2 + 0.75d),
-                        (int) (chapterPolygon.getBounds().height / 2 + chBW.getHeight() / 2 - 0.5d));
+                        (int) (getWidth() - chapterPolygon.getBounds().width / 2 - chBW.getWidth() / 3) + 1,
+                        chapterPolygon.getBounds().height / 2 - 1);
 
                 g2D.drawString(secLine,
-                        (int) (getWidth() - chapterPolygon.getBounds().width / 2 + 0.5d),
-                        (int) (chapterPolygon.getBounds().height / 2 + FoxFontBuilder.getStringBounds(g2D, secLine).getHeight() * 1.45d));
+                        getWidth() - chapterPolygon.getBounds().width / 2 + 1,
+                        (int) (chapterPolygon.getBounds().height / 2 + FoxFontBuilder.getStringBounds(g2D, secLine).getHeight()) - 1);
 
                 g2D.setColor(isChapterUpdate ? Color.YELLOW : Color.WHITE);
                 if (isChapterUpdate) {
@@ -373,16 +377,38 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
                 }
 
                 g2D.drawString(userSave.getChapter(),
-                        (int) (getWidth() - chapterPolygon.getBounds().width / 2 - chBW.getWidth() / 2),
-                        (int) (chapterPolygon.getBounds().height / 2 + chBW.getHeight() / 2));
+                        (int) (getWidth() - chapterPolygon.getBounds().width / 2 - chBW.getWidth() / 3),
+                        chapterPolygon.getBounds().height / 2);
 
                 g2D.drawString(secLine,
                         getWidth() - chapterPolygon.getBounds().width / 2,
-                        (int) (chapterPolygon.getBounds().height / 2 + FoxFontBuilder.getStringBounds(g2D, secLine).getHeight() * 1.5d));
+                        (int) (chapterPolygon.getBounds().height / 2 + FoxFontBuilder.getStringBounds(g2D, secLine).getHeight()));
 
                 if (showDebugGraphic) {
                     g2D.setColor(Color.RED);
                     g2D.draw(chapterPolygon);
+                }
+            }
+        }
+
+        private void drawOther(Graphics g) {
+            if (showQualityChanged && infoShowedCycles > 0) {
+                g.setColor(Color.ORANGE);
+                g.setFont(fontDialog);
+                g.drawString("Качество установлено: " + userConf.getQuality().name(),
+                        120 - (infoShowedCycles / 10),
+                        60);
+                infoShowedCycles--;
+            } else if (infoShowedCycles == 0) {
+                showQualityChanged = false;
+                infoShowedCycles = 100;
+            }
+
+            if (isShowInfo) {
+                g.setFont(fontAnswers);
+                g.setColor(Color.ORANGE);
+                for (int i = 0; i < infos.size(); i++) {
+                    g.drawString(infos.get(i), 60, 45 * (i + 1));
                 }
             }
         }
@@ -396,20 +422,12 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
                     fpsIterCount = 0;
                 }
 
-                g.setColor(Color.GRAY);
-                g.drawString(String.format("%.0f", curFps), 10, 25);
-            }
-        }
+                g.setColor(Color.DARK_GRAY);
+                g.fillRect(20, 20, 30, 30);
 
-        private void drawOther(Graphics g) {
-            if (showQualityChanged && infoShowedCycles > 0) {
-                g.setColor(Color.ORANGE);
-                g.setFont(fontDialog);
-                g.drawString("Качество установлено: " + userConf.getQuality().name(), 100 - (infoShowedCycles / 10), 60);
-                infoShowedCycles--;
-            } else if (infoShowedCycles == 0) {
-                showQualityChanged = false;
-                infoShowedCycles = 100;
+                g.setFont(fontAnswers);
+                g.setColor(Color.WHITE);
+                g.drawString(String.format("%.0f", curFps), 23, 36);
             }
         }
     }
@@ -571,6 +589,18 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
         }
 
         setScene(userSave.getScreen(), null);
+
+        infos = new ArrayList<>() {
+            {
+                add("Помощь -> 'F1'");
+                add("Качество -> 'F3'");
+                add("FPS -> 'F11'");
+                add("Выход -> 'Alt+F4' или 'ESC'");
+                add("Выбор варианта -> '1'-'6'");
+                add("Далее -> 'Пробел'");
+                add("Полный экран -> 'F'");
+            }
+        };
     }
 
     private BufferedImage toBImage(@NonNull String path) {
@@ -600,7 +630,6 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
         setLocationRelativeTo(null);
 
         needsUpdateRectangles = true;
-
         Print(GamePlay.class, LEVEL.INFO, "GamePlay fullscreen checked. Thread: " + Thread.currentThread().getName());
     }
 
@@ -869,6 +898,7 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
     }
     @Override
     public void mouseMoved(MouseEvent e) {
+        if (downArea == null) {return;}
         mouseNow = new Point(e.getX() - 32, e.getY() - (getHeight() - downArea.getBounds().height) + 32);
         backButOver = backBtnShape.contains(mouseNow);
     }
