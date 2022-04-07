@@ -29,7 +29,6 @@ public class ScenarioEngine {
         Path scenario = Paths.get(blockPath + "\\" + scenarioFileName.trim() + sBlockExtension);
         lines = Files.readAllLines(scenario, charset).stream().filter(s -> !s.isBlank() && !s.startsWith("var ")).toList();
         variants = Files.readAllLines(scenario, charset).stream().filter(s -> !s.isBlank() && s.startsWith("var ")).toList();
-//        choice(-1);
     }
 
     public void choice(int chosenVariantIndex) {

@@ -40,6 +40,7 @@ public class Registry {
     public static final Path blockPath = Paths.get("data/db/");
     public static final Path scenesDir = Paths.get("resources/pictures/scenes/");
     public static final Path personasDir = Paths.get("resources/pictures/personas/");
+    public static final Path npcAvatarsDir = Paths.get("resources/pictures/npc/");
 
     // FILES:
     public static final Path globalConfigFile = Paths.get("data/configuration.json");

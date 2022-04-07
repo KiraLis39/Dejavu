@@ -58,7 +58,7 @@ public class GalleryFrame extends JDialog implements MouseListener, MouseMotionL
 
     private void inAc() {
         InputAction.add("gallery", this);
-        InputAction.set("gallery", "close", KeyEvent.VK_ESCAPE, 0, new AbstractAction() {
+        InputAction.set(InputAction.FOCUS_TYPE.WHEN_FOCUSED,"gallery", "close", KeyEvent.VK_ESCAPE, 0, new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 musicPlayer.play("musMainMenu", true);
@@ -66,7 +66,7 @@ public class GalleryFrame extends JDialog implements MouseListener, MouseMotionL
                 dispose();
             }
         });
-        InputAction.set("gallery", "fullscreen", KeyEvent.VK_F, 0, new AbstractAction() {
+        InputAction.set(InputAction.FOCUS_TYPE.WHEN_FOCUSED,"gallery", "fullscreen", KeyEvent.VK_F, 0, new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (GalleryFrame.this.getSize().getWidth() == toolk.getSize().getWidth()) {

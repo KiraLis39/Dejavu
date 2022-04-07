@@ -120,7 +120,7 @@ public class AuthorsFrame extends JDialog implements Cached {
         setLocationRelativeTo(null);
 
         InputAction.add("authors", this);
-        InputAction.set("authors", "close", KeyEvent.VK_ESCAPE, 0, new AbstractAction() {
+        InputAction.set(InputAction.FOCUS_TYPE.WHEN_FOCUSED,"authors", "close", KeyEvent.VK_ESCAPE, 0, new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 AuthorsFrame.this.dispose();

@@ -98,6 +98,7 @@ public class MainClass implements Cached {
                 scenesDir,
                 blockPath,
                 personasDir,
+                npcAvatarsDir,
                 audioDir,
                 audioBackgDir,
                 audioSoundDir,

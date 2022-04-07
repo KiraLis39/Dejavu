@@ -561,6 +561,15 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
             }
         }).start();
 
+        // add npc images:
+        try {
+            for (Path path : Files.list(npcAvatarsDir).toList()) {
+                cache.addIfAbsent(path.toFile().getName().replace(picExtension, ""),
+                        toBImage(path.toString().replace(picExtension, "")));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         // add scenes images:
         try {
             for (Path path : Files.list(scenesDir).toList()) {
