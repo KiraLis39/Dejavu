@@ -34,6 +34,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 import static fox.Out.LEVEL;
 import static fox.Out.Print;
@@ -76,6 +77,8 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
     private Polygon chapterPolygon;
     private Canvas canvas;
     private ArrayList<String> infos;
+    private double BORDER_RATIO = 0.75d;
+    private double WINDOW_RATIO = 0.75d;
 
     // DRAW CANVAS THREAD:
     private class StoryPlayThread implements Runnable {
@@ -444,11 +447,15 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
 
         setName("GamePlay");
         setUndecorated(true);
-        setPreferredSize(new Dimension(WINDOWED_WIDTH.intValue(), WINDOWED_HEIGHT.intValue()));
         setResizable(false);
         setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         setCursor(Cursors.PinkCursor.get());
         setAutoRequestFocus(true);
+
+        DisplayMode mode = gConfig.getDevice().getDisplayMode();
+        setLocation((int) (mode.getWidth() * BORDER_RATIO), (int) (mode.getHeight() * BORDER_RATIO));
+        setPreferredSize(new Dimension((int) (mode.getWidth() * WINDOW_RATIO), (int) (mode.getHeight() * WINDOW_RATIO)));
+//        setPreferredSize(new Dimension(WINDOWED_WIDTH.intValue(), WINDOWED_HEIGHT.intValue()));
 
         addWindowListener(this);
 
@@ -508,7 +515,6 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
         };
 
         add(canvas);
-        add(answerList);
 
         setVisible(true);
 
@@ -621,6 +627,12 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
             return;
         }
 
+//        if (getGraphicsConfiguration().getDevice().getFullScreenWindow() == GamePlay.this) {
+//            getGraphicsConfiguration().getDevice().setFullScreenWindow(null);
+//        } else {
+//            getGraphicsConfiguration().getDevice().setFullScreenWindow(GamePlay.this);
+//        }
+
         if (userConf.isFullScreen()) {
             getContentPane().setBackground(Color.BLACK);
             setExtendedState(MAXIMIZED_BOTH);
@@ -633,7 +645,13 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
         }
         setLocationRelativeTo(null);
 
-        needsUpdateRectangles = true;
+        SwingUtilities.invokeLater(() -> {
+            try {
+                TimeUnit.MILLISECONDS.sleep(250);
+                needsUpdateRectangles = true;
+            } catch (InterruptedException ignore) {
+            }
+        });
         Print(GamePlay.class, LEVEL.INFO, "GamePlay fullscreen checked. Thread: " + Thread.currentThread().getName());
     }
 
@@ -970,16 +988,14 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
     public void windowClosing(WindowEvent e) {
         showExitRequest();
     }
-    public void windowOpened(WindowEvent e) {
-    }
+    public void windowOpened(WindowEvent e) {}
     public void windowClosed(WindowEvent e) {
     }
     public void windowIconified(WindowEvent e) {
     }
     public void windowDeiconified(WindowEvent e) {
     }
-    public void windowActivated(WindowEvent e) {
-    }
+    public void windowActivated(WindowEvent e) {}
     public void windowDeactivated(WindowEvent e) {
     }
 }

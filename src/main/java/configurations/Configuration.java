@@ -13,9 +13,9 @@ import java.nio.file.Path;
 public class Configuration implements JConfigurable {
     Path source;
 
+    volatile boolean fpsShowed = false;
     boolean showLogo = true;
     boolean isLogEnabled = true;
-    boolean fpsShowed = false;
     int lastUserHash;
     String lastUserName;
     boolean useMods = false;

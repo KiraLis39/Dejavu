@@ -47,7 +47,8 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
     private final int refDelay;
     private float fpsCounter = 0;
     private long was = System.currentTimeMillis();
-
+    private double BORDER_RATIO = 0.75d;
+    private double WINDOW_RATIO = 0.75d;
 
     public GameMenu() {
         super("GameMenuParent", gc);
@@ -60,12 +61,16 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
         setResizable(false);
         setCursor(Cursors.SimpleCursor.get());
         setAutoRequestFocus(true);
-        setPreferredSize(new Dimension(Double.valueOf(screen.getWidth() * 0.75d).intValue(), Double.valueOf(screen.getHeight() * 0.75d).intValue()));
+
+        DisplayMode mode = gc.getDevice().getDisplayMode();
+        setLocation((int) (mode.getWidth() * BORDER_RATIO), (int) (mode.getHeight() * BORDER_RATIO));
+        setPreferredSize(new Dimension((int) (mode.getWidth() * WINDOW_RATIO), (int) (mode.getHeight() * WINDOW_RATIO)));
+//        setPreferredSize(new Dimension(Double.valueOf(screen.getWidth() * 0.75d).intValue(), Double.valueOf(screen.getHeight() * 0.75d).intValue()));
 
         preLoading();
         inAc();
 
-        add(buildBasePane());
+//        add(buildBasePane());
 
         addMouseListener(this);
         addMouseMotionListener(this);
@@ -94,7 +99,7 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
 
         new Thread(() -> {
             while (!Thread.currentThread().isInterrupted()) {
-                repaint();
+                basePane.repaint();
                 try {
                     Thread.sleep(refDelay);
                 } catch (InterruptedException e) {
@@ -110,30 +115,6 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
         musicPlayer.play("musMainMenu");
 
         downPane.setVisible(userSave != null && userSave.getToday() != 3);
-    }
-
-    @Override
-    public void paint(Graphics g) {
-        super.paint(g);
-        Graphics2D g2D = (Graphics2D) g;
-        FoxRender.setRender(g2D, userConf.getQuality() == null ? FoxRender.RENDER.MED : userConf.getQuality());
-
-        super.paintComponents(g2D);
-        if (configuration.isFpsShowed()) {
-            fpsCounter++;
-            if (System.currentTimeMillis() - was > 1000) {
-                curFps = Double.valueOf(Math.floor(fpsCounter)).intValue();
-                fpsCounter = 0;
-                was = System.currentTimeMillis();
-            }
-            drawFPS(g2D);
-        }
-        g2D.dispose();
-    }
-
-    private void drawFPS(Graphics2D g2D) {
-        g2D.setColor(Color.GRAY);
-        g2D.drawString(curFps.toString(), 10, 25);
     }
 
     private void preLoading() {
@@ -169,7 +150,7 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
     private void inAc() {
         Print(GameMenu.class, LEVEL.DEBUG, "Sets inAc...");
 
-        InputAction.add("MainMenu", GameMenu.this);
+        InputAction.add("MainMenu", menuFrame);
         InputAction.set("MainMenu", "Ctrl+F4", KeyEvent.VK_F4, 512, new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -182,11 +163,11 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
                 showExitRequest();
             }
         });
-        InputAction.set("MainMenu", "switchQuality", KeyEvent.VK_F3, 0, new AbstractAction() {
+        InputAction.set(InputAction.FOCUS_TYPE.WHEN_IN_FOCUSED_WINDOW, "MainMenu", "changeQuality", KeyEvent.VK_F3, 0, new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 userConf.nextQuality();
-                System.out.println("Quality: " + userConf.getQuality());
+                System.err.println("Changed quality to " + userConf.getQuality());
             }
         });
         InputAction.set("MainMenu", "switchFullscreen", KeyEvent.VK_F, 0, new AbstractAction() {
@@ -200,21 +181,22 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
             @Override
             public void actionPerformed(ActionEvent e) {
                 configuration.setFpsShowed(!configuration.isFpsShowed());
+                System.out.println("FPS showed: " + configuration.isFpsShowed());
             }
         });
     }
 
     private void checkFullscreen() {
-        if (isVisible() && (userConf.isFullScreen() && getExtendedState() == MAXIMIZED_BOTH || !userConf.isFullScreen() && getExtendedState() == NORMAL)) {
-            return;
-        }
+//        if (isVisible() && (userConf.isFullScreen() && getExtendedState() == MAXIMIZED_BOTH || !userConf.isFullScreen() && getExtendedState() == NORMAL)) {
+//            return;
+//        }
 
         Print(GameMenu.class, LEVEL.INFO, "\nGameMenu fullscreen switch...");
         dispose();
-
         if (basePane != null) {
             remove(basePane);
         }
+
         if (userConf.isFullScreen()) {
             getContentPane().setBackground(Color.BLACK);
             setExtendedState(MAXIMIZED_BOTH);
@@ -226,10 +208,11 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
             pack();
         }
 
-        setVisible(true);
         setLocationRelativeTo(null);
+        setVisible(true);
 
         add(buildBasePane());
+        revalidate();
         Print(GameMenu.class, LEVEL.INFO, "GameMenu fullscreen checked. Thread: " + Thread.currentThread().getName());
     }
 
@@ -237,27 +220,16 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
         Print(GameMenu.class, LEVEL.INFO, "Building the BasePane...");
 
         basePane = new JPanel(new BorderLayout(0, 0)) {
+            @Override
+            public void paintComponent(Graphics g) {
+                Graphics2D g2D = (Graphics2D) g;
+                FoxRender.setRender(g2D, userConf.getQuality() == null ? FoxRender.RENDER.HIGH : userConf.getQuality());
+                super.paintComponent(g2D);
+            }
+
             {
                 setName("basePane");
                 setOpaque(false);
-
-                JPanel upPlayPane = new JPanel(new BorderLayout(0, 0)) {
-                    @Override
-                    public void paintComponent(Graphics g) {
-                        g.drawImage(botTopImage, 0, 0, getWidth(), getHeight(), this);
-                    }
-
-                    {
-                        setOpaque(false);
-                        setPreferredSize(new Dimension(GameMenu.this.getWidth(), Double.valueOf(GameMenu.this.getHeight() * 0.10d).intValue()));
-                        setBorder(new EmptyBorder(
-                                Double.valueOf(GameMenu.this.getHeight() * 0.025d).intValue(),
-                                Double.valueOf(GameMenu.this.getWidth() * 0.02d).intValue(),
-                                Double.valueOf(GameMenu.this.getHeight() * 0.01d).intValue(),
-                                Double.valueOf(GameMenu.this.getWidth() * 0.02d).intValue()
-                        ));
-                    }
-                };
 
                 JPanel rightBottomPane = new JPanel(new BorderLayout(0, 0)) {
                     @Override
@@ -270,7 +242,7 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
                         setBorder(new EmptyBorder(
                                 Double.valueOf(GameMenu.this.getHeight() * 0.0175d).intValue(),
                                 Double.valueOf(GameMenu.this.getWidth() * 0.01425d).intValue(),
-                                Double.valueOf(GameMenu.this.getHeight() * 0.025d).intValue(),
+                                Double.valueOf(GameMenu.this.getHeight() * 0.035d).intValue(),
                                 Double.valueOf(GameMenu.this.getWidth() * 0.02425d).intValue()
                         ));
 
@@ -753,11 +725,31 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
                         } else {
                             super.paintComponent(g);
                         }
+
+                        if (configuration.isFpsShowed()) {
+                            fpsCounter++;
+                            if (System.currentTimeMillis() - was > 1000) {
+                                curFps = Double.valueOf(Math.floor(fpsCounter)).intValue();
+                                fpsCounter = 0;
+                                was = System.currentTimeMillis();
+                            }
+                            drawFPS(g);
+                        }
+                    }
+
+                    private void drawFPS(Graphics g) {
+                        g.setFont(fontName2);
+
+                        g.setColor(Color.WHITE);
+                        g.drawString(curFps.toString(), 9, 39);
+
+                        g.setColor(Color.BLACK);
+                        g.drawString(curFps.toString(), 10, 40);
                     }
 
                     {
                         setOpaque(false);
-                        setBorder(new EmptyBorder(0, 0, Double.valueOf(GameMenu.this.getHeight() * 0.0425d).intValue(), 0));
+                        setBorder(new EmptyBorder(0, 0, Double.valueOf(GameMenu.this.getHeight() * 0.05d).intValue(), 0));
 
                         downTextLabel = new JLabel() {
                             {
@@ -766,8 +758,8 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
                                 setFont(Registry.f6);
                                 setForeground(Color.WHITE);
                                 setHorizontalAlignment(0);
-//                                setVerticalAlignment(BOTTOM);
-//                                setAlignmentY(BOTTOM_ALIGNMENT);
+                                setVerticalAlignment(CENTER);
+                                setAlignmentY(CENTER_ALIGNMENT);
 
                                 addMouseListener(GameMenu.this);
                             }
@@ -777,7 +769,6 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
                     }
                 };
 
-                add(upPlayPane, BorderLayout.NORTH);
                 add(rightBottomPane, BorderLayout.EAST);
                 add(midLeftPane, BorderLayout.CENTER);
             }

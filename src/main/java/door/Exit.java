@@ -3,6 +3,7 @@ package door;
 import iom.JIOM;
 import fox.Out;
 import registry.Registry;
+import tools.ModsLoaderEngine;
 
 import java.awt.*;
 
@@ -24,6 +25,13 @@ public class Exit {
             musicPlayer.stop();
             soundPlayer.stop();
 //            voicePlayer.stop();
+        } catch (Exception e) {
+            i++;
+            e.printStackTrace();
+        }
+
+        try {
+            ModsLoaderEngine.stopMods();
         } catch (Exception e) {
             i++;
             e.printStackTrace();

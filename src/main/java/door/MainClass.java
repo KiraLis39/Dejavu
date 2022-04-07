@@ -169,48 +169,47 @@ public class MainClass implements Cached {
 
     private static void loadImages() {
         // other:
-        cache.add("picExitButtonSprite", toBImage(picDir + "/buttons/exits"));
-        cache.add("picPlayButtonSprite", toBImage(picDir + "/buttons/starts"));
+        cache.addIfAbsent("picExitButtonSprite", toBImage(picDir + "/buttons/exits"));
+        cache.addIfAbsent("picPlayButtonSprite", toBImage(picDir + "/buttons/starts"));
 
-        cache.add("picBackButBig", toBImage(picDir + "/buttons/butListG"));
-        cache.add("picMenuButtons", toBImage(picDir + "/buttons/butListM"));
+        cache.addIfAbsent("picBackButBig", toBImage(picDir + "/buttons/butListG"));
+        cache.addIfAbsent("picMenuButtons", toBImage(picDir + "/buttons/butListM"));
 
-        cache.add("picGameIcon", toBImage(picDir + "/32"));
+        cache.addIfAbsent("picGameIcon", toBImage(picDir + "/32"));
 
         // cursors & backgrounds:
-        cache.add("curSimpleCursor", toBImage(curDir + "/SimpleCursor"));
-        cache.add("curTextCursor", toBImage(curDir + "/TextCursor"));
-        cache.add("curGalleryCursor", toBImage(curDir + "/GalleryCursor"));
-        cache.add("curPinkCursor", toBImage(curDir + "/PinkCursor"));
-        cache.add("curOtherCursor", toBImage(curDir + "/OtherCursor"));
-        cache.add("curCrossCursor", toBImage(curDir + "/CrossCursor"));
-        cache.add("curBlueCursor", toBImage(curDir + "/BlueCursor"));
-        cache.add("curOrangeCursor", toBImage(curDir + "/OrangeCursor"));
+        cache.addIfAbsent("curSimpleCursor", toBImage(curDir + "/SimpleCursor"));
+        cache.addIfAbsent("curTextCursor", toBImage(curDir + "/TextCursor"));
+        cache.addIfAbsent("curGalleryCursor", toBImage(curDir + "/GalleryCursor"));
+        cache.addIfAbsent("curPinkCursor", toBImage(curDir + "/PinkCursor"));
+        cache.addIfAbsent("curOtherCursor", toBImage(curDir + "/OtherCursor"));
+        cache.addIfAbsent("curCrossCursor", toBImage(curDir + "/CrossCursor"));
+        cache.addIfAbsent("curBlueCursor", toBImage(curDir + "/BlueCursor"));
+        cache.addIfAbsent("curOrangeCursor", toBImage(curDir + "/OrangeCursor"));
 
-        cache.add("picMenuBase", toBImage(picDir + "/backgrounds/menuBase"));
-        cache.add("picAurora", toBImage(picDir + "/backgrounds/aurora"));
-        cache.add("picGallery", toBImage(picDir + "/backgrounds/gallery"));
-        cache.add("picAutrs", toBImage(picDir + "/backgrounds/autrs"));
-        cache.add("picGameMenu", toBImage(picDir + "/backgrounds/gameMenu"));
-        cache.add("picMenuBotRight", toBImage(picDir + "/backgrounds/menu_bottomRight"));
-        cache.add("picMenuBotLeft", toBImage(picDir + "/backgrounds/menu_bottomLeft"));
-        cache.add("picMenuTop", toBImage(picDir + "/backgrounds/menu_top"));
-        cache.add("picGamepane", toBImage(picDir + "/backgrounds/gamepaneUp"));
+        cache.addIfAbsent("picMenuBase", toBImage(picDir + "/backgrounds/menuBase"));
+        cache.addIfAbsent("picAurora", toBImage(picDir + "/backgrounds/aurora"));
+        cache.addIfAbsent("picGallery", toBImage(picDir + "/backgrounds/gallery"));
+        cache.addIfAbsent("picAutrs", toBImage(picDir + "/backgrounds/autrs"));
+        cache.addIfAbsent("picGameMenu", toBImage(picDir + "/backgrounds/gameMenu"));
+        cache.addIfAbsent("picMenuBotRight", toBImage(picDir + "/backgrounds/menu_bottomRight"));
+        cache.addIfAbsent("picMenuBotLeft", toBImage(picDir + "/backgrounds/menu_bottomLeft"));
+        cache.addIfAbsent("picGamepane", toBImage(picDir + "/backgrounds/gamepaneUp"));
 
         // heroes:
-        cache.add("0", toBImage(picDir + "/hero/0"));
+        cache.addIfAbsent("0", toBImage(picDir + "/hero/0"));
 
         // fema:
-        cache.add("1", toBImage(picDir + "/hero/1"));
-        cache.add("2", toBImage(picDir + "/hero/2"));
-        cache.add("3", toBImage(picDir + "/hero/3"));
-        cache.add("4", toBImage(picDir + "/hero/4"));
+        cache.addIfAbsent("1", toBImage(picDir + "/hero/1"));
+        cache.addIfAbsent("2", toBImage(picDir + "/hero/2"));
+        cache.addIfAbsent("3", toBImage(picDir + "/hero/3"));
+        cache.addIfAbsent("4", toBImage(picDir + "/hero/4"));
 
         // male:
-        cache.add("5", toBImage(picDir + "/hero/5"));
-        cache.add("6", toBImage(picDir + "/hero/6"));
-        cache.add("7", toBImage(picDir + "/hero/7"));
-        cache.add("8", toBImage(picDir + "/hero/8"));
+        cache.addIfAbsent("5", toBImage(picDir + "/hero/5"));
+        cache.addIfAbsent("6", toBImage(picDir + "/hero/6"));
+        cache.addIfAbsent("7", toBImage(picDir + "/hero/7"));
+        cache.addIfAbsent("8", toBImage(picDir + "/hero/8"));
     }
 
     private static BufferedImage toBImage(@NonNull String path) {

@@ -1,6 +1,5 @@
 package tools;
 
-import com.fasterxml.jackson.databind.util.ClassUtil;
 import lombok.NonNull;
 import mod.fomod.ModExample;
 import fox.Out;
@@ -23,7 +22,7 @@ import static registry.Registry.modsDir;
  */
 public class ModsLoaderEngine extends ClassLoader {
     private static final Map<String, Class<?>> cachedClassMap = new HashMap<>();
-    private static List<Entry<String, Class<?>>> allowedModsDoors;
+    private static List<ModExample> runnedModsList = new ArrayList<>();
 
     public ModsLoaderEngine() {
         super("ModLoader", getSystemClassLoader());
@@ -125,7 +124,7 @@ public class ModsLoaderEngine extends ClassLoader {
     }
 
     private void launchMods() throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
-        allowedModsDoors = cachedClassMap.entrySet().stream().filter(e -> e.getKey().endsWith("Core")).toList();
+        List<Entry<String, Class<?>>> allowedModsDoors = cachedClassMap.entrySet().stream().filter(e -> e.getKey().endsWith("Core")).toList();
         Out.Print(ModsLoaderEngine.class, LEVEL.ACCENT, "Одобрено модов: " + allowedModsDoors.size() + ". Начинаем подключение...");
 
         for (Entry allowedEntry : Collections.unmodifiableList(allowedModsDoors)) {
@@ -137,11 +136,21 @@ public class ModsLoaderEngine extends ClassLoader {
             while (mod.getType() == null) {
 
             }
+            runnedModsList.add(mod);
             Out.Print(ModsLoaderEngine.class, LEVEL.ACCENT, "Мод '" + mod.getName() + "' (" + mod.getDescription() + ") успешно запущен.");
         }
     }
 
+    public static void stopMods() throws Exception {
+        Out.Print(ModsLoaderEngine.class, LEVEL.INFO, "Остановка модов...");
+
+        for (ModExample runnedMod : Collections.unmodifiableList(runnedModsList)) {
+            runnedMod.stop();
+            Out.Print(ModsLoaderEngine.class, LEVEL.INFO, "Мод '" + runnedMod.getName() + "' (" + runnedMod.getDescription() + ") остановлен.");
+        }
+    }
+
     public static int getReadyModsCount() {
-        return allowedModsDoors != null ? allowedModsDoors.size() : 0;
+        return runnedModsList != null ? runnedModsList.size() : 0;
     }
 }

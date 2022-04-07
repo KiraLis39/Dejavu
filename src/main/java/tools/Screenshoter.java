@@ -9,6 +9,13 @@ public class Screenshoter {
 //    } catch (AWTException e) {
 //    }
 
+//    try {
+//        // "Вырезаем" часть изображения "рабочего стола"
+//        Robot robot = new Robot();
+//        capture = robot.createScreenCapture(
+//                new Rectangle(5, 5, window_w, window_h));
+//    } catch (Exception ex) { ex.printStackTrace(); }
+
 //		Out.Print("\nДанная программа использует " +
 //				(Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / 1048576 +
 //				"мб из " + Runtime.getRuntime().totalMemory() / 1048576 +

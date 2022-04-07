@@ -20,22 +20,23 @@ public class UserConf implements JConfigurable {
 
     Path source;
 
-    RENDER quality;
     String userName;
     int userAge;
     int avatarIndex;
-    boolean isFullScreen = true;
-    boolean isAutoSkipping;
-    boolean isTextAnimated = true;
 
-    int musicVolume;
-    boolean musicMuted;
-    int soundVolume;
-    boolean soundMuted;
-    int backgVolume;
-    boolean backgMuted;
-    int voiceVolume;
-    boolean voiceMuted;
+    volatile RENDER quality;
+    volatile boolean isFullScreen = true;
+    volatile boolean isAutoSkipping;
+    volatile boolean isTextAnimated = true;
+
+    volatile int musicVolume;
+    volatile boolean musicMuted;
+    volatile int soundVolume;
+    volatile boolean soundMuted;
+    volatile int backgVolume;
+    volatile boolean backgMuted;
+    volatile int voiceVolume;
+    volatile boolean voiceMuted;
 
     public UserConf(Path source) {
         this.source = source;
@@ -50,7 +51,7 @@ public class UserConf implements JConfigurable {
         return source;
     }
 
-    public void nextQuality() {
+    public synchronized void nextQuality() {
         int curQ = quality.ordinal();
         quality = RENDER.values().length > curQ + 1 ? RENDER.values()[curQ + 1] : RENDER.values()[0];
     }
