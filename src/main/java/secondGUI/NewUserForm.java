@@ -3,13 +3,13 @@ package secondGUI;
 import components.FOptionPane;
 import configurations.UserConf;
 import door.MainClass;
-import utils.FoxFontBuilder;
-import utils.InputAction;
 import fox.Out;
 import interfaces.Cached;
 import registry.Registry;
 import render.FoxRender;
 import tools.Cursors;
+import utils.FoxFontBuilder;
+import utils.InputAction;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -88,6 +88,7 @@ public class NewUserForm extends JDialog implements Cached, ListSelectionListene
                                 setForeground(Color.WHITE);
                                 setSelectionBackground(Color.BLUE.darker());
                                 setSelectionForeground(Color.ORANGE.brighter());
+                                setSelectedIndex(-1);
                                 addListSelectionListener(NewUserForm.this);
                             }
                         };
@@ -305,7 +306,10 @@ public class NewUserForm extends JDialog implements Cached, ListSelectionListene
     }
 
     private boolean validateUser() {
-        if (nameField.getText().isBlank()) {
+        if (avatarList.getSelectedValue() == null) {
+            new FOptionPane("Ошибка:", "Не выбран аватар!");
+            return false;
+        } else if (nameField.getText().isBlank()) {
             new FOptionPane("Ошибка:", "Не введен ник персонажа!");
             return false;
         } else if (Registry.configuration.getLastUserHash() == nameField.getText().hashCode()) {

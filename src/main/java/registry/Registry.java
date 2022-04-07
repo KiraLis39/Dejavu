@@ -3,9 +3,9 @@ package registry;
 import configurations.Configuration;
 import configurations.UserConf;
 import configurations.UserSave;
+import fox.player.FoxPlayer;
 import utils.FoxFontBuilder;
 import utils.FoxFontBuilder.FONT;
-import fox.player.FoxPlayer;
 
 import java.awt.*;
 import java.nio.charset.Charset;
@@ -21,7 +21,7 @@ public class Registry {
 //	public static final FoxPlayer voicePlayer = new FoxPlayer("Voice");
 
     // GLOBAL DATA:
-    public static final String version = "0.1.5.1";
+    public static final String version = "0.1.5.2";
     public static final Charset charset = StandardCharsets.UTF_8;
     public static final String picExtension = ".png";
     public static final String sBlockExtension = ".dingo";

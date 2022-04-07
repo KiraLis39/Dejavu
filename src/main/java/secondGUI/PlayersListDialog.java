@@ -4,9 +4,9 @@ import configurations.UserConf;
 import configurations.UserSave;
 import door.Exit;
 import door.MainClass;
-import utils.InputAction;
 import iom.JIOM;
 import registry.Registry;
+import utils.InputAction;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -83,7 +83,7 @@ public class PlayersListDialog extends JDialog implements ActionListener {
                 };
                 JScrollPane baseScroll = new JScrollPane(centerListPane) {
                     {
-//                        doLayout();
+                        doLayout();
                     }
                 };
 
@@ -149,7 +149,7 @@ public class PlayersListDialog extends JDialog implements ActionListener {
             MainClass.regNewbie();
             MainClass.postPlayerInit();
         }
-        if (e.getActionCommand().equals("choseSelected")) {
+        if (e.getActionCommand().equals("choseSelected") && playersList.getSelectedValue() != null) {
             UserConf userWas = Registry.userConf;
             UserConf selectedPlayer = playersList.getSelectedValue().getConfig();
             dispose();

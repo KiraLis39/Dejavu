@@ -1,9 +1,9 @@
 {
   "source" : "file:///D:/JavaProj/MyWorkspace/Dejavu_2019/data/configuration.json",
-  "fpsShowed" : true,
+  "fpsShowed" : false,
   "showLogo" : true,
-  "lastUserHash" : 1138020175,
-  "lastUserName" : "KiraLis39",
-  "useMods" : true,
+  "lastUserHash" : 1026725302,
+  "lastUserName" : "Кирилл",
+  "useMods" : false,
   "logEnabled" : true
 }

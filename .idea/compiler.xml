@@ -10,11 +10,11 @@
         <module name="FoxOut" />
         <module name="FoxGUI" />
         <module name="FoxGames" />
-        <module name="NpcCarmaMod" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
       <module name="MoodMod" target="17" />
+      <module name="NpcCarmaMod" target="17" />
     </bytecodeTargetLevel>
   </component>
 </project>

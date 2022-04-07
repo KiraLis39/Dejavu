@@ -1,10 +1,10 @@
 package secondGUI;
 
 import images.FoxCursor;
-import utils.FoxFontBuilder;
-import utils.InputAction;
 import interfaces.Cached;
 import registry.Registry;
+import utils.FoxFontBuilder;
+import utils.InputAction;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -100,7 +100,7 @@ public class AuthorsFrame extends JDialog implements Cached {
 
                 textHelp = new JTextArea() {
                     {
-                        setBorder(new EmptyBorder(3, 20, 10, 10));
+                        setBorder(new EmptyBorder(9, 26, 10, 10));
                         setBackground(new Color(0.0f, 0.0f, 0.0f, 0.0f));
                         setForeground(Color.ORANGE);
                         setFont(Registry.f10);

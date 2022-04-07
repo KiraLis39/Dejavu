@@ -1,15 +1,15 @@
 package door;
 
-import gui.GameMenu;
 import configurations.Configuration;
 import configurations.UserConf;
 import configurations.UserSave;
 import fox.FoxLogo;
-import iom.JIOM;
 import fox.Out;
 import fox.Out.LEVEL;
 import fox.player.FoxPlayer;
+import gui.GameMenu;
 import interfaces.Cached;
+import iom.JIOM;
 import lombok.NonNull;
 import secondGUI.NewUserForm;
 import tools.ModsLoaderEngine;
@@ -26,7 +26,6 @@ import java.nio.file.Paths;
 
 import static fox.Out.Print;
 import static registry.Registry.*;
-import static registry.Registry.userConf;
 
 public class MainClass implements Cached {
     private static boolean isLogEnabled = true;
@@ -188,9 +187,7 @@ public class MainClass implements Cached {
         cache.addIfAbsent("curOrangeCursor", toBImage(curDir + "/OrangeCursor"));
 
         cache.addIfAbsent("picMenuBase", toBImage(picDir + "/backgrounds/menuBase"));
-        cache.addIfAbsent("picAurora", toBImage(picDir + "/backgrounds/aurora"));
         cache.addIfAbsent("picGallery", toBImage(picDir + "/backgrounds/gallery"));
-        cache.addIfAbsent("picAutrs", toBImage(picDir + "/backgrounds/autrs"));
         cache.addIfAbsent("picGameMenu", toBImage(picDir + "/backgrounds/gameMenu"));
         cache.addIfAbsent("picMenuBotRight", toBImage(picDir + "/backgrounds/menu_bottomRight"));
         cache.addIfAbsent("picMenuBotLeft", toBImage(picDir + "/backgrounds/menu_bottomLeft"));
