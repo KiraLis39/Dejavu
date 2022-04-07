@@ -28,21 +28,23 @@ import static fox.Out.Print;
 import static registry.Registry.*;
 
 public class MainClass implements Cached {
-    private static boolean isLogEnabled = true;
+    private static boolean isLogEnabled;
     private static FoxLogo fl;
 
     private static void preInit() {
-        Out.setErrorLevel(LEVEL.INFO);
+        Out.setEnabled(true);
+        Out.setErrorLevel(LEVEL.DEBUG);
         Out.setLogsCountAllow(3);
 
         try {
             configuration = JIOM.fileToDto(globalConfigFile, Configuration.class);
             isLogEnabled = configuration.isLogEnabled();
+            Out.setEnabled(isLogEnabled);
         } catch (Exception e) {
+            Out.Print(MainClass.class, LEVEL.WARN,"Что-то не так с загрузкой конфигурации игры: " + e.getMessage());
             e.printStackTrace();
         }
 
-        Out.setEnabled(isLogEnabled);
         Out.Print(MainClass.class, LEVEL.INFO,
                 "\nКодировка системы: " + Charset.defaultCharset() +
                         "\nКодировка программы: " + charset + "\n");
@@ -60,7 +62,8 @@ public class MainClass implements Cached {
                         FoxLogo.IMAGE_STYLE.DEFAULT,
                         FoxLogo.BACK_STYLE.ASIS
                 );
-            } catch (IOException e) {
+            } catch (Exception e) {
+                Out.Print(MainClass.class, LEVEL.WARN,"Что-то не так с заставкой игры: " + e.getMessage());
                 e.printStackTrace();
             }
         }
@@ -79,16 +82,17 @@ public class MainClass implements Cached {
         loadAudio();
         connectMods();
 
-        Out.Print(MainClass.class, LEVEL.ACCENT, "Запуск MainMenu...");
+        Out.Print(MainClass.class, LEVEL.INFO, "Запуск MainMenu...");
         new GameMenu();
     }
 
     private static void existingDirectoriesCheck() {
+        Out.Print(MainClass.class, LEVEL.DEBUG,"Проверка директорий...");
         if (Files.notExists(dataDir)) {
             Exit.exit(14, "Error: Data directory is lost! Reinstall the game, please.");
         }
 
-        Path[] scanFiles = new Path[]{
+        Path[] scanFiles = new Path[] {
                 usersDir,
                 modsDir,
                 picDir,
@@ -119,6 +123,8 @@ public class MainClass implements Cached {
     }
 
     private static void playerCheck() {
+        Out.Print(MainClass.class, LEVEL.DEBUG,"Проверка профиля игрока...");
+
         try {
             int luHash = configuration.getLastUserHash();
             if (luHash == 0 || Files.notExists(Paths.get(usersDir + "/" + luHash + "/save.dto"))) {
@@ -167,6 +173,8 @@ public class MainClass implements Cached {
     }
 
     private static void loadImages() {
+        Out.Print(MainClass.class, LEVEL.DEBUG,"Загрузка изображений...");
+
         // other:
         cache.addIfAbsent("picExitButtonSprite", toBImage(picDir + "/buttons/exits"));
         cache.addIfAbsent("picPlayButtonSprite", toBImage(picDir + "/buttons/starts"));
@@ -207,6 +215,8 @@ public class MainClass implements Cached {
         cache.addIfAbsent("6", toBImage(picDir + "/hero/6"));
         cache.addIfAbsent("7", toBImage(picDir + "/hero/7"));
         cache.addIfAbsent("8", toBImage(picDir + "/hero/8"));
+
+        Out.Print(MainClass.class, LEVEL.DEBUG,"Загрузка изображений завершена.");
     }
 
     private static BufferedImage toBImage(@NonNull String path) {
@@ -245,7 +255,7 @@ public class MainClass implements Cached {
             return;
         }
 
-        Out.Print(MainClass.class, LEVEL.INFO, "Сканирование папки с модами " + modsDir);
+        Out.Print(MainClass.class, LEVEL.DEBUG, "Сканирование папки с модами " + modsDir);
         try {
             new ModsLoaderEngine();
             Out.Print(MainClass.class, LEVEL.ACCENT,
