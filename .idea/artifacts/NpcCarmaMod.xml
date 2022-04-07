@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="NpcCarmaMod">
+    <output-path>$PROJECT_DIR$/mod</output-path>
+    <root id="archive" name="NpcCarmaMod.jar">
+      <element id="module-output" name="NpcCarmaMod" />
+    </root>
+  </artifact>
+</component>

@@ -21,7 +21,7 @@ public class Registry {
 //	public static final FoxPlayer voicePlayer = new FoxPlayer("Voice");
 
     // GLOBAL DATA:
-    public static final String version = "0.1.4.8";
+    public static final String version = "0.1.4.9";
     public static final Charset charset = StandardCharsets.UTF_8;
     public static final String picExtension = ".png";
     public static final String sBlockExtension = ".dingo";
@@ -40,7 +40,6 @@ public class Registry {
     public static final Path blockPath = Paths.get("data/db/");
     public static final Path scenesDir = Paths.get("resources/pictures/scenes/");
     public static final Path personasDir = Paths.get("resources/pictures/personas/");
-    public static final Path npcAvatarsDir = Paths.get("resources/pictures/npc/");
 
     // FILES:
     public static final Path globalConfigFile = Paths.get("data/configuration.json");

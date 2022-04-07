@@ -9,8 +9,8 @@ import interfaces.Cached;
 import iom.JIOM;
 import logic.ScenarioEngine;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NonNull;
-import registry.Registry;
 import render.FoxRender;
 import secondGUI.OptMenuFrame;
 import tools.Cursors;
@@ -40,7 +40,9 @@ import static fox.Out.Print;
 import static registry.Registry.*;
 
 @Data
+@EqualsAndHashCode(callSuper = true)
 public class GamePlay extends JFrame implements MouseListener, MouseMotionListener, WindowListener, Cached {
+    private static GamePlay instance;
     public enum MONTH {июнь, июль, август}
     private Double WINDOWED_WIDTH = Toolkit.getDefaultToolkit().getScreenSize().getWidth() * 0.75D;
     private Double WINDOWED_HEIGHT = Toolkit.getDefaultToolkit().getScreenSize().getHeight() * 0.9D;
@@ -63,7 +65,8 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
     private long was = System.currentTimeMillis(), autoSaveSeconds = 15_000;
     private BufferedImage nullAvatar, gameImageUp, backButtons;
     private JPanel basePane, downCenterPane;
-    private boolean showQualityChanged, isStoryPlayed, backButOver, backButPressed, showDebugGraphic = false, isShowInfo;
+    public static boolean isStoryPlayed;
+    private boolean showQualityChanged, backButOver, backButPressed, showDebugGraphic = false, isShowInfo;
     private int refDelay, infoShowedCycles = 100;
     private float fpsIterCount = 0;
     private double curFps;
@@ -125,9 +128,9 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
                                 needsUpdateRectangles = false;
                             }
                         } while (bs.contentsRestored());
+                        bs.show();
                     } while (bs.contentsLost());
 
-                    bs.show();
                     Thread.sleep(refDelay);
                 } catch (Exception e) {
                     System.err.println("Ошибка в потоке отрисовки: " + e.getMessage());
@@ -434,6 +437,7 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
 
     public GamePlay(GraphicsConfiguration gConfig, UserSave loader) {
         super("GamePlayParent", gConfig);
+        instance = this;
         new PlayInAcSetter(this);
         refDelay = (int) (1000f / gConfig.getDevice().getDisplayMode().getRefreshRate() - 0.5f);
         userSave = loader;
@@ -557,15 +561,6 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
             }
         }).start();
 
-        // add npc images:
-        try {
-            for (Path path : Files.list(npcAvatarsDir).toList()) {
-                cache.addIfAbsent(path.toFile().getName().replace(picExtension, ""),
-                        toBImage(path.toString().replace(picExtension, "")));
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
         // add scenes images:
         try {
             for (Path path : Files.list(scenesDir).toList()) {
@@ -831,13 +826,12 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
                 null,
                 true).get();
 
-        switch (closeQ) {
-            case 0 -> stopGame();
-            default -> {
-                System.out.println("Response = " + closeQ);
-                setVisible(true);
-                isStoryPlayed = true;
-            }
+        if (closeQ == 0) {
+            stopGame();
+        } else {
+            System.out.println("Response = " + closeQ);
+            setVisible(true);
+            isStoryPlayed = true;
         }
     }
 
@@ -870,6 +864,49 @@ public class GamePlay extends JFrame implements MouseListener, MouseMotionListen
         if (textAnimateThread != null) {
             textAnimateThread.interrupt();
         }
+    }
+
+
+    // GETTERS & SETTERS:
+    public static boolean isStoryPlayed() {
+        return isStoryPlayed;
+    }
+
+    public static int getCarma(String npcName) {
+        switch (npcName) {
+            case "Ann" -> {
+                return userSave.getCarmaAnn();
+            }
+            case "Dmi" -> {
+                return userSave.getCarmaDmi();
+            }
+            case "Kur" -> {
+                return userSave.getCarmaKur();
+            }
+            case "Olg" -> {
+                return userSave.getCarmaOlg();
+            }
+            case "Ole" -> {
+                return userSave.getCarmaOle();
+            }
+            case "Oks" -> {
+                return userSave.getCarmaOks();
+            }
+            case "Mar" -> {
+                return userSave.getCarmaMar();
+            }
+            case "Msh" -> {
+                return userSave.getCarmaMsh();
+            }
+            case "Lis" -> {
+                return userSave.getCarmaLis();
+            }
+            default -> {return -1;}
+        }
+    }
+
+    public static JFrame getInstance() {
+        return instance;
     }
 
 

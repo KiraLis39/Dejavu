@@ -12,7 +12,7 @@ import fox.player.FoxPlayer;
 import interfaces.Cached;
 import lombok.NonNull;
 import secondGUI.NewUserForm;
-import tools.ModsLoader;
+import tools.ModsLoaderEngine;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -33,7 +33,7 @@ public class MainClass implements Cached {
     private static FoxLogo fl;
 
     private static void preInit() {
-        Out.setErrorLevel(LEVEL.DEBUG);
+        Out.setErrorLevel(LEVEL.INFO);
         Out.setLogsCountAllow(3);
 
         try {
@@ -97,7 +97,6 @@ public class MainClass implements Cached {
                 dataDir,
                 scenesDir,
                 blockPath,
-                npcAvatarsDir,
                 personasDir,
                 audioDir,
                 audioBackgDir,
@@ -249,14 +248,13 @@ public class MainClass implements Cached {
             return;
         }
 
-        Out.Print(MainClass.class, LEVEL.INFO, "Сканирование папки mods...");
+        Out.Print(MainClass.class, LEVEL.INFO, "Сканирование папки с модами " + modsDir);
         try {
-            new ModsLoader(modsDir);
-            if (ModsLoader.getReadyModsCount() > 0) {
-                Out.Print(MainClass.class, LEVEL.ACCENT, "Обнаружены возможные моды в количестве шт: " + ModsLoader.getReadyModsCount());
-            } else {
-                Out.Print(MainClass.class, LEVEL.INFO, "Моды не обнаружены. Продолжение работы...");
-            }
+            new ModsLoaderEngine();
+            Out.Print(MainClass.class, LEVEL.ACCENT,
+                    ModsLoaderEngine.getReadyModsCount() > 0 ?
+                            "Обнаружены возможные моды в количестве шт: " + ModsLoaderEngine.getReadyModsCount() :
+                            "Моды не обнаружены. Продолжение работы...");
         } catch (Exception e) {
             Out.Print(MainClass.class, LEVEL.WARN, "Загрузка модов провалилась! Ошибка: " + e.getMessage());
         }
