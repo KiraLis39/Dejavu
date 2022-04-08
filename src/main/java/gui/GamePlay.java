@@ -62,7 +62,7 @@ public final class GamePlay extends JFrame implements MouseListener, MouseMotion
     private BufferedImage nullAvatar, gameImageUp, backButtons, avatar;
     private boolean showQualityChanged;
     private boolean backButOver;
-    private final boolean showDebugGraphic = true;
+    private final boolean showDebugGraphic = false;
     private boolean isShowInfo;
     private final int refDelay;
     private int infoShowedCycles = 100;
@@ -82,27 +82,25 @@ public final class GamePlay extends JFrame implements MouseListener, MouseMotion
 
         try {
             do {
-                do {
-                    Graphics2D g2D = (Graphics2D) bs.getDrawGraphics();
-                    FoxRender.setRender(g2D, userConf.getQuality());
-                    tr = g2D.getTransform();
+                Graphics2D g2D = (Graphics2D) bs.getDrawGraphics();
+                FoxRender.setRender(g2D, userConf.getQuality());
+                tr = g2D.getTransform();
 
-                    drawScene(g2D);
-                    drawNPC(g2D);
-                    drawChapterAndDay(g2D);
-                    drawUI(g2D);
-                    updateAndDrawDialogZones(g2D);
+                drawScene(g2D);
+                drawNPC(g2D);
+                drawChapterAndDay(g2D);
+                drawUI(g2D);
+                updateAndDrawDialogZones(g2D);
 
-                    drawOther(g2D);
-                    drawFPS(g2D);
+                drawOther(g2D);
+                drawFPS(g2D);
 
-                    g2D.dispose();
+                g2D.dispose();
 
-                    if (needsUpdateRectangles) {
-                        needsUpdateRectangles = false;
-                    }
-                } while (bs.contentsRestored());
-            } while (bs.contentsLost());
+                if (needsUpdateRectangles) {
+                    needsUpdateRectangles = false;
+                }
+            } while (bs.contentsRestored() || bs.contentsLost());
 
             bs.show();
         } catch (Exception e) {
@@ -206,7 +204,7 @@ public final class GamePlay extends JFrame implements MouseListener, MouseMotion
     private void drawAutoDialog(Graphics2D g2D) {
         g2D.setFont(fontDialog);
         if (charWidth == null || charHeight == null) {
-            charWidth = g2D.getFontMetrics().getMaxCharBounds(g2D).getWidth();
+            charWidth = FoxFontBuilder.getStringBounds(g2D, "W").getWidth();
             charHeight = g2D.getFontMetrics().getMaxCharBounds(g2D).getHeight();
         }
 
@@ -362,10 +360,8 @@ public final class GamePlay extends JFrame implements MouseListener, MouseMotion
                     getWidth() - chapterPolygon.getBounds().width / 2,
                     (int) (chapterPolygon.getBounds().height / 2 + FoxFontBuilder.getStringBounds(g2D, secLine).getHeight()));
 
-            if (showDebugGraphic) {
-                g2D.setColor(Color.RED);
-                g2D.draw(chapterPolygon);
-            }
+            g2D.setColor(Color.DARK_GRAY);
+            g2D.draw(chapterPolygon);
         }
     }
 
@@ -492,7 +488,17 @@ public final class GamePlay extends JFrame implements MouseListener, MouseMotion
 
         add(canvas);
         setVisible(true);
-        canvas.createBufferStrategy(3);
+
+        BufferCapabilities bufCap = new BufferCapabilities(
+                new ImageCapabilities(true),
+                new ImageCapabilities(true),
+                BufferCapabilities.FlipContents.COPIED);
+
+        try {
+            canvas.createBufferStrategy(3, bufCap);
+        } catch (Exception ex) {
+            canvas.createBufferStrategy(3);
+        }
         bs = canvas.getBufferStrategy();
 
         new Thread(new StoryPlayThread()) {
@@ -714,7 +720,7 @@ public final class GamePlay extends JFrame implements MouseListener, MouseMotion
         }
 
         // text:
-        if (textAnimateThread != null) {
+        if (textAnimateThread != null && textAnimateThread.isAlive()) {
             textAnimateThread.interrupt();
         }
         textAnimateThread = new Thread(() -> {
@@ -724,13 +730,13 @@ public final class GamePlay extends JFrame implements MouseListener, MouseMotion
                 try {
                     StringBuilder sb = new StringBuilder(dialogText);
                     dialogChars = new char[dialogText.length()];
+                    isDialogAnimated = true;
 
                     int shift = 0, i = 0;
-                    isDialogAnimated = true;
                     while (isDialogAnimated && i < dialogText.length()) {
                         shift++;
 
-                        if (charWidth * shift > dialogTextRect.getBounds().width - charWidth * 4) {
+                        if (charWidth * shift >= dialogTextRect.getBounds().getWidth()) {
                             for (int k = i; k > 0; k--) {
                                 if ((int) dialogChars[k] == 32) {
                                     sb.setCharAt(k, (char) 10);
