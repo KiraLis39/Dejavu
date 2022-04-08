@@ -1,6 +1,5 @@
-package logic;
+package gui;
 
-import gui.GamePlay;
 import components.FOptionPane;
 import lombok.Data;
 import lombok.NonNull;
@@ -18,12 +17,18 @@ import java.util.Random;
 import static registry.Registry.*;
 
 @Data
-public class ScenarioEngine {
+public class Scenario {
+    private GamePlay play;
     private final Random rand = new Random();
+
     private List<String> lines;
     private List<String> variants;
     private ArrayList<String> allowedVariants;
     private boolean isChoice;
+
+    public Scenario(GamePlay play) {
+        this.play = play;
+    }
 
     public void load(@NonNull String scenarioFileName) throws IOException {
         Path scenario = Paths.get(blockPath + "\\" + scenarioFileName.trim() + sBlockExtension);
@@ -52,9 +57,7 @@ public class ScenarioEngine {
         }
 
         if (isChoice) {
-            if (chosenVariantIndex == -1) {
-                System.out.println("Denied there. Need to choice.");
-            } else if (chosenVariantIndex <= allowedVariants.size()) {
+            if (chosenVariantIndex != -1 && chosenVariantIndex <= allowedVariants.size()) {
                 isChoice = false;
                 try {
                     loadedScript = allowedVariants.get(chosenVariantIndex).split("R ")[1];
@@ -87,7 +90,7 @@ public class ScenarioEngine {
                 variants.stream().filter(s -> Integer.parseInt(s.split(" ")[1]) <= userSave.getCycleCount()).toList()
                         .stream().map(s -> s.split("R ")[1].replace("\"", "").trim()
                                 + " R " + s.split("R ")[2].replace("\"", "").trim()).toList());
-        GamePlay.setAnswers(allowedVariants);
+        play.setAnswers(allowedVariants);
     }
 
     private void lineParser(@NonNull String line) {
@@ -168,8 +171,8 @@ public class ScenarioEngine {
             }
         }
 
-        GamePlay.setScene(sceneName, npcImage);
-        GamePlay.setDialog(dialogOwner, dialogText, carma);
+        play.setScene(sceneName, npcImage);
+        play.setDialog(dialogOwner, dialogText, carma);
     }
 
     private String switchNpc(String[] lineData) {
@@ -179,17 +182,17 @@ public class ScenarioEngine {
         }
 
         File[] variants = new File(Registry.personasDir + "/" + lineData[0] + "/" + lineData[1] + "/" + lineData[2]).listFiles();
-        return variants[rand.nextInt(variants.length)].getName().replace(picExtension, "");
+        return variants == null ? "Scenario.switchNpc: null variants array!" : variants[rand.nextInt(variants.length)].getName().replace(picExtension, "");
     }
 
     private void metaProcessor(String[] meta) {
         String chapter = meta[0].trim();
-        boolean isNextDay = Boolean.valueOf(meta[1].trim());
+        boolean isNextDay = Boolean.parseBoolean(meta[1].trim());
         if (!chapter.equals("-")) {
-            GamePlay.setChapter(chapter);
+            play.setChapter(chapter);
         }
         if (isNextDay) {
-            GamePlay.dayAdd();
+            play.dayAdd();
         }
     }
 

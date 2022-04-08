@@ -5,16 +5,19 @@ import utils.InputAction;
 import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
+import java.io.Serial;
 
 import static registry.Registry.configuration;
 import static registry.Registry.userConf;
 
-public class PlayInAcSetter {
-
-    public PlayInAcSetter(GamePlay aim) {
+public class GamePlayInAc {
+    public GamePlayInAc(GamePlay aim) {
         InputAction.add("game", aim); // SwingUtilities.getWindowAncestor(basePane));
 
         InputAction.set(InputAction.FOCUS_TYPE.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT, "game", "showInfo", KeyEvent.VK_F1, 0, new AbstractAction() {
+            @Serial
+            private static final long serialVersionUID = 7358871727076047886L;
+
             @Override
             public void actionPerformed(ActionEvent e) {
                 aim.setShowInfo(!aim.isShowInfo());
@@ -50,7 +53,7 @@ public class PlayInAcSetter {
             public void actionPerformed(ActionEvent e) {
                 userConf.nextQuality();
                 System.out.println("Quality: " + userConf.getQuality());
-                aim.setShowQualityChanged(true);
+                aim.showQualityChanged(true);
             }
         });
 

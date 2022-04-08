@@ -10,6 +10,7 @@
         <module name="FoxOut" />
         <module name="FoxGUI" />
         <module name="FoxGames" />
+        <module name="Dejavu_2019" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>

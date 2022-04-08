@@ -2,38 +2,38 @@ package gui;
 
 import components.FOptionPane;
 import components.FoxConsole;
-import components.FoxTip;
 import door.Exit;
-import utils.FoxFontBuilder;
-import utils.InputAction;
 import images.FoxSpritesCombiner;
 import interfaces.Cached;
 import registry.Registry;
 import render.FoxRender;
-import secondGUI.*;
+import secondGUI.AuthorsFrame;
+import secondGUI.GalleryFrame;
+import secondGUI.OptMenuFrame;
+import secondGUI.PlayersListDialog;
 import tools.Cursors;
+import utils.FoxFontBuilder;
+import utils.InputAction;
 
-import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
-import java.io.File;
 
 import static fox.Out.LEVEL;
 import static fox.Out.Print;
 import static registry.Registry.*;
 
 public class GameMenu extends JFrame implements MouseListener, MouseMotionListener, ActionListener, Cached {
-    private static GameMenu menuFrame;
-    private static final GraphicsEnvironment gEnv = GraphicsEnvironment.getLocalGraphicsEnvironment();
-    private static final GraphicsDevice gDevice = gEnv.getDefaultScreenDevice();
+    private final GameMenu menuFrame;
+    private static final GraphicsDevice gDevice = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
     private static final GraphicsConfiguration gc = gDevice.getDefaultConfiguration();
-    private final Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
     private BufferedImage[] exitImages, startImages;
-    private BufferedImage centerImage, botTopImage, botRightImage, botLeftImage;
+    private BufferedImage centerImage;
+    private BufferedImage botRightImage;
+    private BufferedImage botLeftImage;
     private Point2D mouseWasOnScreen, frameWas;
     private JPanel basePane;
     private static JPanel downPane;
@@ -41,14 +41,13 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
     private static JButton continueBtn;
     private JLabel downTextLabel;
 //    private FoxTip cd, cd2;
-
     private String downText;
     private Integer curFps = 0;
     private final int refDelay;
     private float fpsCounter = 0;
     private long was = System.currentTimeMillis();
-    private double BORDER_RATIO = 0.75d;
-    private double WINDOW_RATIO = 0.75d;
+    private final double BORDER_RATIO = 0.75d;
+    private final double WINDOW_RATIO = 0.75d;
 
     public GameMenu() {
         super("GameMenuParent", gc);
@@ -62,15 +61,12 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
         setCursor(Cursors.SimpleCursor.get());
         setAutoRequestFocus(true);
 
-        DisplayMode mode = gc.getDevice().getDisplayMode();
+        DisplayMode mode = gDevice.getDisplayMode();
         setLocation((int) (mode.getWidth() * BORDER_RATIO), (int) (mode.getHeight() * BORDER_RATIO));
         setPreferredSize(new Dimension((int) (mode.getWidth() * WINDOW_RATIO), (int) (mode.getHeight() * WINDOW_RATIO)));
-//        setPreferredSize(new Dimension(Double.valueOf(screen.getWidth() * 0.75d).intValue(), Double.valueOf(screen.getHeight() * 0.75d).intValue()));
 
         preLoading();
         inAc();
-
-//        add(buildBasePane());
 
         addMouseListener(this);
         addMouseMotionListener(this);
@@ -109,14 +105,6 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
         }).start();
     }
 
-    public static void setVisible() {
-        menuFrame.setVisible(true);
-        backgPlayer.play("fonKricket");
-        musicPlayer.play("musMainMenu");
-
-        downPane.setVisible(userSave != null && userSave.getToday() != 3);
-    }
-
     private void preLoading() {
         Thread.currentThread().setName("=== MAIN THREAD ===");
 
@@ -135,7 +123,7 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
         try {
             Print(GameMenu.class, LEVEL.DEBUG, "Preparing images...");
             centerImage = (BufferedImage) cache.get("picMenuBase");
-            botTopImage = (BufferedImage) cache.get("picMenuTop");
+            BufferedImage botTopImage = (BufferedImage) cache.get("picMenuTop");
             botRightImage = (BufferedImage) cache.get("picMenuBotRight");
             botLeftImage = (BufferedImage) cache.get("picMenuBotLeft");
         } catch (Exception e) {
@@ -199,11 +187,9 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
 
         if (userConf.isFullScreen()) {
             getContentPane().setBackground(Color.BLACK);
-            setExtendedState(MAXIMIZED_BOTH);
             gDevice.setFullScreenWindow(GameMenu.this);
         } else {
             setBackground(new Color(0, 0, 0, 0));
-            setExtendedState(NORMAL);
             gDevice.setFullScreenWindow(null);
             pack();
         }
@@ -212,6 +198,13 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
         setVisible(true);
 
         add(buildBasePane());
+
+//        if (downPane != null) {
+//            downPane.setVisible(userSave != null && userSave.getToday() != 3);
+//            continueBtn.setVisible(downPane.isVisible());
+//            downPane.revalidate();
+//        }
+
         revalidate();
         Print(GameMenu.class, LEVEL.INFO, "GameMenu fullscreen checked. Thread: " + Thread.currentThread().getName());
     }
@@ -849,11 +842,11 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
             case "playNew" -> {
                 // начинаем новую игру:
                 userSave.reset();
-                new GamePlay(gc, userSave);
+                new GamePlay(getGraphicsConfiguration(), userSave, menuFrame);
                 dispose();
             }
             case "continue" -> {
-                new GamePlay(gc, userSave);
+                new GamePlay(getGraphicsConfiguration(), userSave, menuFrame);
                 dispose();
             }
             case "exit" -> showExitRequest();
@@ -866,5 +859,9 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
             default -> {
             }
         }
+    }
+
+    public void showFrame() {
+        checkFullscreen();
     }
 }
