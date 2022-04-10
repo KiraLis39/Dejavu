@@ -262,8 +262,8 @@ public final class GamePlay extends JFrame implements MouseListener, MouseMotion
         Rectangle bbe = backBtnShape.getBounds();
         if (backButOver) {
             g2D.drawImage(backButtons,
-                    bbe.x + 3, bbe.y + 3,
-                    bbe.width - 6, bbe.height - 6,
+                    bbe.x - 3, bbe.y - 3,
+                    bbe.width + 6, bbe.height + 6,
                     canvas);
         } else {
             g2D.drawImage(backButtons,
@@ -288,7 +288,7 @@ public final class GamePlay extends JFrame implements MouseListener, MouseMotion
         g2D.setFont(fontAnswers);
         if (dlm.elements().nextElement().equals("Далее...")) {
             isJustNext = true;
-            g2D.translate(dialogTextRect.getBounds().width * 1.025f, getHeight() - 53);
+            g2D.translate(dialogTextRect.getBounds().width * 1.025f, getHeight() - 56);
         } else {
             g2D.translate(answersZone.getBounds().getX(), answersZone.getBounds().getY());
         }
@@ -1054,9 +1054,10 @@ public final class GamePlay extends JFrame implements MouseListener, MouseMotion
     @Override
     public void mouseMoved(MouseEvent e) {
         if (downArea == null) {
+            e.consume();
             return;
         }
-        mouseNow = new Point(e.getX() - 32, e.getY() - (getHeight() - downArea.getBounds().height) + 32);
+        mouseNow = new Point(e.getX() - 20, e.getY() - (getHeight() - downArea.getBounds().height) + 20);
         backButOver = backBtnShape.contains(mouseNow);
 
         isAnyOvered = false;
