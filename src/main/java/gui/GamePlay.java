@@ -141,10 +141,11 @@ public final class GamePlay extends JFrame implements MouseListener, MouseMotion
                     64,
                     64);
 
+            // регулировка поля ответов:
             answersZone = new Rectangle(
-                    (int) (getWidth() * 0.78f),
+                    (int) (getWidth() * 0.77f),
                     (int) (getHeight() * 0.575f),
-                    (int) (getWidth() * 0.2f),
+                    (int) (getWidth() * 0.21f),
                     120);
         }
 
@@ -277,6 +278,7 @@ public final class GamePlay extends JFrame implements MouseListener, MouseMotion
         }
     }
 
+    int answerHeight = 35;
     private void drawAnswers(Graphics2D g2D) {
         boolean isJustNext = false;
         if (showDebugGraphic) {
@@ -286,7 +288,7 @@ public final class GamePlay extends JFrame implements MouseListener, MouseMotion
         g2D.setFont(fontAnswers);
         if (dlm.elements().nextElement().equals("Далее...")) {
             isJustNext = true;
-            g2D.translate(dialogTextRect.getBounds().width * 1.025f, getHeight() - 52);
+            g2D.translate(dialogTextRect.getBounds().width * 1.025f, getHeight() - 53);
         } else {
             g2D.translate(answersZone.getBounds().getX(), answersZone.getBounds().getY());
         }
@@ -301,53 +303,65 @@ public final class GamePlay extends JFrame implements MouseListener, MouseMotion
             btnRects.clear();
         }
 
-        // draw answers shapes:
+        // fill answers shapes:
         RoundRectangle2D r;
-        Rectangle2D b;
         for (int i = 0; i < answrs.size(); i++) {
-            b = FoxFontBuilder.getStringBounds(g2D, answrs.get(i));
-            r = new RoundRectangle2D.Float(0, i * 30, isJustNext ? 120 : answersZone.getBounds().width, 28, 28, 28);
+            r = new RoundRectangle2D.Float(0, i * answerHeight, isJustNext ? 120 : answersZone.getBounds().width, answerHeight - 3, 26, 26);
 
             if (i != answerOverIndex) {
-                g2D.setColor(new Color(0.75f, 0.75f, 0.75f, 0.3f));
+                g2D.setColor(new Color(0.5f, 0.65f, 0.55f, 0.35f));
             } else {
-                g2D.setColor(new Color(0.75f, 0.75f, 0.85f, 0.35f));
+                g2D.setColor(new Color(0.7f, 0.7f, 0.85f, 0.55f));
             }
             g2D.fill(r);
 
             if (btnRects.size() != answrs.size()) {
                 btnRects.add(i, new Rectangle2D.Double(
                         g2D.getTransform().getTranslateX() - 1,
-                        isJustNext ? getHeight() - 48 : getHeight() * 0.575f + i * 30,
+                        isJustNext ? getHeight() - 48 : getHeight() * 0.575f + i * answerHeight,
                         r.getWidth() + 1, r.getHeight() + 1
                 ));
             }
 
-            g2D.setColor(Color.DARK_GRAY);
-            if (!isJustNext) {
-                g2D.drawString((i + 1) + ". ",
-                        8,
-                        Double.valueOf(r.getCenterY() + b.getHeight() / 4 - 1).floatValue()
-                );
-            }
-            g2D.drawString(answrs.get(i),
-                    Double.valueOf(r.getCenterX() - b.getWidth() / 2).floatValue() + (isJustNext ? 11 : 0),
-                    Double.valueOf(r.getCenterY() + b.getHeight() / 4 - 1).floatValue()
-            );
+            // and draw answers text:
+            drawAnswersText(g2D, i, answrs.get(i), isJustNext, r);
+        }
+    }
 
-            g2D.setColor(Color.WHITE);
-            g2D.draw(r);
-            if (!isJustNext) {
-                g2D.drawString((i + 1) + ". ",
-                        6,
-                        Double.valueOf(r.getCenterY() + b.getHeight() / 4).floatValue()
-                );
-            }
-            g2D.drawString(answrs.get(i),
-                    Double.valueOf(r.getCenterX() - b.getWidth() / 2).floatValue() + (isJustNext ? 9 : 0),
+    private void drawAnswersText(Graphics2D g2D, int index, String text, boolean isJustNext, RoundRectangle2D r) {
+        Rectangle2D b = FoxFontBuilder.getStringBounds(g2D, text);
+
+        // shadow color:
+        if (index != answerOverIndex) {
+            g2D.setColor(Color.GRAY);
+        } else {
+            g2D.setColor(Color.DARK_GRAY);
+        }
+        if (!isJustNext) {
+            g2D.drawString((index + 1) + ". ",
+                    6.5f,
+                    Double.valueOf(r.getCenterY() + b.getHeight() / 4d - 1.2d).floatValue());
+        }
+        g2D.drawString(text,
+                Double.valueOf(r.getCenterX() - b.getWidth() / 2d).floatValue() + (isJustNext ? 10f : 0.5f),
+                Double.valueOf(r.getCenterY() + b.getHeight() / 4d - 1.2d).floatValue());
+
+        // front color:
+        if (index != answerOverIndex) {
+            g2D.setColor(Color.ORANGE);
+        } else {
+            g2D.setColor(Color.GREEN);
+        }
+        g2D.draw(r);
+        if (!isJustNext) {
+            g2D.drawString((index + 1) + ". ",
+                    6,
                     Double.valueOf(r.getCenterY() + b.getHeight() / 4).floatValue()
             );
         }
+        g2D.drawString(text,
+                Double.valueOf(r.getCenterX() - b.getWidth() / 2).floatValue() + (isJustNext ? 9 : 0),
+                Double.valueOf(r.getCenterY() + b.getHeight() / 4).floatValue());
     }
 
     private void drawScene(Graphics2D g2D) {
@@ -1066,7 +1080,7 @@ public final class GamePlay extends JFrame implements MouseListener, MouseMotion
         for (int i = 0; i < btnRects.size(); i++) {
             if (btnRects.get(i).contains(e.getPoint())) {
                 Print(GamePlay.class, LEVEL.DEBUG, "Был выбран вариант " + answerOverIndex);
-                scenario.choice(ScenarioBase.VARIANTS.values()[answerOverIndex]);
+                scenario.choice(ScenarioBase.VARIANTS.values()[answerOverIndex + 1]);
             }
         }
     }

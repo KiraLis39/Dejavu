@@ -68,6 +68,7 @@ public class GamePlayInAc {
                 aim.answerList.clearSelection();
             }
         });
+
         InputAction.set(InputAction.FOCUS_TYPE.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT, "game", "answer_1", KeyEvent.VK_1, 0, new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -84,6 +85,7 @@ public class GamePlayInAc {
                 aim.getScenario().choice(ScenarioBase.VARIANTS.VAR_ONE);
             }
         });
+
         InputAction.set(InputAction.FOCUS_TYPE.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT, "game", "answer_2", KeyEvent.VK_2, 0, new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
