@@ -35,6 +35,12 @@ public class Scenario {
         Path scenario = Paths.get(blockPath + "\\" + scenarioFileName.trim() + sBlockExtension);
         lines = Files.readAllLines(scenario, charset).stream().filter(s -> !s.isBlank() && !s.startsWith("var ") && !s.startsWith("logic ")).toList();
         variants = Files.readAllLines(scenario, charset).stream().filter(s -> !s.isBlank() && s.startsWith("var ")).toList();
+
+        switch (scenarioFileName) {
+            case "00FirstAwaked" -> userSave.setCycleCount(0);
+            case "00SecondAwaked" -> userSave.setCycleCount(1);
+            case "00FullAwaked" -> userSave.setCycleCount(2);
+        }
     }
 
     public void choice(int chosenVariantIndex) {

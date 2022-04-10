@@ -215,7 +215,7 @@ public final class GamePlay extends JFrame implements MouseListener, MouseMotion
     private void drawAutoDialog(Graphics2D g2D) {
         g2D.setFont(fontDialog);
         if (charWidth == null || charHeight == null) {
-            charWidth = FoxFontBuilder.getStringBounds(g2D, "W").getWidth() - 1.5d;
+            charWidth = FoxFontBuilder.getStringBounds(g2D, "У").getWidth() - 2d;
             charHeight = g2D.getFontMetrics().getMaxCharBounds(g2D).getHeight();
         }
 
