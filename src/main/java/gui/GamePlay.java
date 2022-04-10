@@ -308,10 +308,10 @@ public final class GamePlay extends JFrame implements MouseListener, MouseMotion
         for (int i = 0; i < answrs.size(); i++) {
             r = new RoundRectangle2D.Float(0, i * answerHeight, isJustNext ? 120 : answersZone.getBounds().width, answerHeight - 3, 26, 26);
 
-            if (i != answerOverIndex) {
-                g2D.setColor(new Color(0.5f, 0.65f, 0.55f, 0.35f));
+            if (i == answerOverIndex) {
+                g2D.setColor(new Color(0.3f, 0.3f, 0.4f, 0.65f));
             } else {
-                g2D.setColor(new Color(0.7f, 0.7f, 0.85f, 0.55f));
+                g2D.setColor(new Color(0.3f, 0.3f, 0.3f, 0.35f));
             }
             g2D.fill(r);
 
@@ -332,10 +332,10 @@ public final class GamePlay extends JFrame implements MouseListener, MouseMotion
         Rectangle2D b = FoxFontBuilder.getStringBounds(g2D, text);
 
         // shadow color:
-        if (index != answerOverIndex) {
-            g2D.setColor(Color.GRAY);
-        } else {
+        if (index == answerOverIndex) {
             g2D.setColor(Color.DARK_GRAY);
+        } else {
+            g2D.setColor(Color.GRAY);
         }
         if (!isJustNext) {
             g2D.drawString((index + 1) + ". ",
@@ -347,12 +347,11 @@ public final class GamePlay extends JFrame implements MouseListener, MouseMotion
                 Double.valueOf(r.getCenterY() + b.getHeight() / 4d - 1.2d).floatValue());
 
         // front color:
-        if (index != answerOverIndex) {
-            g2D.setColor(Color.ORANGE);
+        if (index == answerOverIndex) {
+            g2D.setColor(new Color(1.0f, 0.85f, 0.25f, 1.0f));
         } else {
-            g2D.setColor(Color.GREEN);
+            g2D.setColor(new Color(1f, 1f, 1f, 0.75f));
         }
-        g2D.draw(r);
         if (!isJustNext) {
             g2D.drawString((index + 1) + ". ",
                     6,
@@ -362,6 +361,15 @@ public final class GamePlay extends JFrame implements MouseListener, MouseMotion
         g2D.drawString(text,
                 Double.valueOf(r.getCenterX() - b.getWidth() / 2).floatValue() + (isJustNext ? 9 : 0),
                 Double.valueOf(r.getCenterY() + b.getHeight() / 4).floatValue());
+
+        // draw answer shape:
+        g2D.setStroke(new BasicStroke(2.0f));
+        if (index == answerOverIndex) {
+            g2D.setColor(new Color(1f, 1f, 1f, 0.5f));
+        } else {
+            g2D.setColor(new Color(1f, 1f, 1f, 0.35f));
+        }
+        g2D.draw(r);
     }
 
     private void drawScene(Graphics2D g2D) {

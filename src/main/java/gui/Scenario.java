@@ -36,7 +36,6 @@ public class Scenario extends ScenarioBase {
         checkCycleCount(scenarioFileName);
 
         userSave.setScript(scenarioFileName);
-        userSave.setLineIndex(0);
     }
 
     private void checkCycleCount(String scenarioName) {

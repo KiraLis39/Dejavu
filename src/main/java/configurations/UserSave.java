@@ -75,6 +75,6 @@ public class UserSave implements JConfigurable {
         voicePlayed = null;
 
         script = "00_INIT_SCENARIO";
-        lineIndex = -1;
+        lineIndex = 0;
     }
 }
