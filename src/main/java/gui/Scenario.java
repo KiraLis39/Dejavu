@@ -13,6 +13,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.stream.IntStream;
 
 import static registry.Registry.*;
 
@@ -32,7 +33,7 @@ public class Scenario {
 
     public void load(@NonNull String scenarioFileName) throws IOException {
         Path scenario = Paths.get(blockPath + "\\" + scenarioFileName.trim() + sBlockExtension);
-        lines = Files.readAllLines(scenario, charset).stream().filter(s -> !s.isBlank() && !s.startsWith("var ")).toList();
+        lines = Files.readAllLines(scenario, charset).stream().filter(s -> !s.isBlank() && !s.startsWith("var ") && !s.startsWith("logic ")).toList();
         variants = Files.readAllLines(scenario, charset).stream().filter(s -> !s.isBlank() && s.startsWith("var ")).toList();
     }
 
@@ -40,20 +41,22 @@ public class Scenario {
         String loadedScript = null;
 
         if (chosenVariantIndex != -1 && allowedVariants == null && userSave.getLineIndex() > -1 && !lines.get(userSave.getLineIndex()).startsWith("nf ")) {
-            System.err.println("Быд выбран вариант, но лист вариантов пуст!");
+            System.err.println("Был выбран вариант, но лист вариантов пуст!");
             return;
         }
 
         try {
-            if (!isChoice && userSave.getLineIndex() > -1 && lines.get(userSave.getLineIndex() + 1).startsWith("nf ")) {
-                loadedScript = lines.get(userSave.getLineIndex() + 1).replace("nf ", "");
-                load(loadedScript);
-                userSave.setScript(loadedScript);
-                userSave.setLineIndex(-1);
+            if (!isChoice && userSave.getLineIndex() > -1) {
+                if (lines.size() > userSave.getLineIndex() + 1 && lines.get(userSave.getLineIndex() + 1).startsWith("nf ")) {
+                    nextFile(userSave.getLineIndex() + 1);
+                } else if (lines.get(userSave.getLineIndex()).startsWith("logic")) {
+                    logicChoice(userSave.getLineIndex());
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
-            new FOptionPane("Ошибка сценария:", "Не удалось загрузить файл сценария: " + loadedScript);
+            new FOptionPane("Ошибка сценария:", "Не удалось загрузить файл сценария: " + e.getMessage());
+            return;
         }
 
         if (isChoice) {
@@ -64,7 +67,7 @@ public class Scenario {
                     load(loadedScript);
                     userSave.setScript(loadedScript);
                     userSave.setLineIndex(-1);
-                    choice(userSave.getLineIndex());
+                    choice(-1);
                 } catch (Exception e) {
                     e.printStackTrace();
                     new FOptionPane("Ошибка сценария:", "Не удалось загрузить файл сценария: " + loadedScript);
@@ -79,10 +82,63 @@ public class Scenario {
                 if (userSave.getLineIndex() == lines.size() - 1 && (variants != null && variants.size() > 0)) {
                     lineParser(lines.get(userSave.getLineIndex()));
                     takeAnswers();
+                } else {
+                    choice(-1);
                 }
-                isChoice = true;
+                if (!lines.get(userSave.getLineIndex()).startsWith("logic")) {
+                    isChoice = true;
+                }
             }
         }
+    }
+
+    private void logicChoice(int index) throws IOException {
+        String loadedScript = null;
+        String[] logicData = lines.get(index).split(" ");
+        int carmNeed = Integer.parseInt(logicData[0].split("\\(")[1].replace(")", ""));
+        int[] arr = new int[] {
+                userSave.getCarmaAnn(),
+                userSave.getCarmaKur(),
+                userSave.getCarmaMar(),
+                userSave.getCarmaOlg()
+        };
+        int max = IntStream.of(arr).distinct().max().getAsInt();
+
+        for (String logicDatum : logicData) {
+            if (logicDatum.startsWith("Ann") && userSave.getCarmaAnn() >= carmNeed && userSave.getCarmaAnn() == max) {
+                loadedScript = logicDatum.split("=")[1];
+            }
+            if (logicDatum.startsWith("Kuro") && userSave.getCarmaKur() >= carmNeed && userSave.getCarmaKur() == max) {
+                loadedScript = logicDatum.split("=")[1];
+            }
+            if (logicDatum.startsWith("Mary") && userSave.getCarmaMar() >= carmNeed && userSave.getCarmaMar() == max) {
+                loadedScript = logicDatum.split("=")[1];
+            }
+            if (logicDatum.startsWith("Olga") && userSave.getCarmaOlg() >= carmNeed && userSave.getCarmaOlg() == max) {
+                loadedScript = logicDatum.split("=")[1];
+            }
+            if (logicDatum.startsWith("Oksana") && userSave.getCarmaOks() >= carmNeed && userSave.getCarmaOks() == max) {
+                loadedScript = logicDatum.split("=")[1];
+            }
+            if (logicDatum.startsWith("Lissa") && userSave.getCarmaLis() >= carmNeed && userSave.getCarmaLis() == max) {
+                loadedScript = logicDatum.split("=")[1];
+            }
+        }
+
+        if (loadedScript == null) {
+            loadedScript = lines.get(index).split(" Else=")[1];
+        }
+
+        load(loadedScript);
+        userSave.setScript(loadedScript);
+        userSave.setLineIndex(-1);
+    }
+
+    private void nextFile(int index) throws IOException {
+        String loadedScript = lines.get(index).replace("nf ", "");
+        load(loadedScript);
+        userSave.setScript(loadedScript);
+        userSave.setLineIndex(-1);
     }
 
     private void takeAnswers() {

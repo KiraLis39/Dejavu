@@ -4,7 +4,6 @@ import components.FOptionPane;
 import configurations.UserSave;
 import door.MainClass;
 import fox.Out;
-import images.FoxCursor;
 import interfaces.Cached;
 import iom.JIOM;
 import lombok.NonNull;
@@ -15,7 +14,6 @@ import utils.FoxFontBuilder;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
-import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.geom.AffineTransform;
@@ -26,10 +24,12 @@ import java.awt.image.BufferStrategy;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.io.Serial;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
@@ -38,32 +38,35 @@ import static fox.Out.Print;
 import static registry.Registry.*;
 
 public final class GamePlay extends JFrame implements MouseListener, MouseMotionListener, WindowListener, Cached {
+    @Serial
+    private static final long serialVersionUID = -7726136582922838048L;
+
     private static GamePlay instance;
-    private volatile static boolean isStoryPlayed;
-    private final Double WINDOWED_WIDTH = Toolkit.getDefaultToolkit().getScreenSize().getWidth() * 0.75D;
-    private final Double WINDOWED_HEIGHT = Toolkit.getDefaultToolkit().getScreenSize().getHeight() * 0.9D;
     private final double BORDER_RATIO = 0.75d;
     private final double WINDOW_RATIO = 0.75d;
-    private final long defaultDialogDefaultDelay = 48;
     private final Color chapterColor = new Color(0.0f, 0.0f, 0.0f, 0.5f);
     public DefaultListModel<String> dlm;
     public JList<String> answerList;
-    public long dialogDelaySpeed = 32;
-    public volatile boolean isDialogAnimated;
     private final GameMenu menu;
     private Thread textAnimateThread;
+
     private long was = System.currentTimeMillis();
+    private final long defaultDialogDefaultDelay = 48;
+    public long dialogDelaySpeed = 32;
+
     private volatile BufferedImage currentSceneImage, currentNpcImage, currentHeroAvatar;
+
+    public volatile boolean isDialogAnimated;
+    private volatile static boolean isStoryPlayed;
     private volatile boolean isChapterUpdate, needsUpdateRectangles;
+    private boolean showQualityChanged, backButOver, isShowInfo;
+    private final boolean showDebugGraphic = false;
+
     private char[] dialogChars;
     private Double charWidth, charHeight;
     private String dialogOwner;
-    private Shape dialogTextRect, downArea, avatarRect, backBtnShape;
+    private Shape dialogTextRect, downArea, avatarRect, backBtnShape, answersZone;
     private BufferedImage nullAvatar, gameImageUp, backButtons, avatar;
-    private boolean showQualityChanged;
-    private boolean backButOver;
-    private final boolean showDebugGraphic = false;
-    private boolean isShowInfo;
     private final int refDelay;
     private int infoShowedCycles = 100;
     private float fpsIterCount = 0;
@@ -75,6 +78,7 @@ public final class GamePlay extends JFrame implements MouseListener, MouseMotion
     private ArrayList<String> infos;
     private final BufferStrategy bs;
     private AffineTransform tr;
+    private ArrayList<Shape> btnRects = new ArrayList();
 
     @Override
     public void paint(Graphics g) {
@@ -137,8 +141,8 @@ public final class GamePlay extends JFrame implements MouseListener, MouseMotion
                     64,
                     64);
 
-            answerList.setBounds(
-                    (int) (getWidth() * 0.825f),
+            answersZone = new Rectangle(
+                    (int) (getWidth() * 0.78f),
                     (int) (getHeight() * 0.575f),
                     (int) (getWidth() * 0.2f),
                     120);
@@ -154,6 +158,13 @@ public final class GamePlay extends JFrame implements MouseListener, MouseMotion
         g2D.setTransform(tr);
         drawAnswers(g2D);
         g2D.setTransform(tr);
+
+        if (showDebugGraphic) {
+            for (int i = 0; i < btnRects.size(); i++) {
+                g2D.setColor(Color.YELLOW);
+                g2D.draw(btnRects.get(i));
+            }
+        }
     }
 
     private void drawDownArea(Graphics2D g2D) {
@@ -204,7 +215,7 @@ public final class GamePlay extends JFrame implements MouseListener, MouseMotion
     private void drawAutoDialog(Graphics2D g2D) {
         g2D.setFont(fontDialog);
         if (charWidth == null || charHeight == null) {
-            charWidth = FoxFontBuilder.getStringBounds(g2D, "W").getWidth();
+            charWidth = FoxFontBuilder.getStringBounds(g2D, "W").getWidth() - 1.5d;
             charHeight = g2D.getFontMetrics().getMaxCharBounds(g2D).getHeight();
         }
 
@@ -217,20 +228,20 @@ public final class GamePlay extends JFrame implements MouseListener, MouseMotion
                     line++;
 
                     for (int i = mem; i < dialogChars.length; i++) {
-                        if (dialogChars[i] == 10) {
+                        if (dialogChars[i] == 10 || String.valueOf(dialogChars[i]).equals("\n")) {
                             mem = i + 1;
                             break;
                         } // next line marker detector (\n)
                         g2D.setColor(Color.DARK_GRAY);
                         g2D.drawString(String.valueOf(dialogChars[i]),
-                                Double.valueOf(dialogTextRect.getBounds().x + (shift * charWidth) + 1.0d).floatValue(),
-                                Double.valueOf(dialogTextRect.getBounds().y + (line * charHeight) + 1.0f).floatValue()
+                                Double.valueOf(dialogTextRect.getBounds().x + shift * charWidth + 1.0d).floatValue(),
+                                Double.valueOf(dialogTextRect.getBounds().y + line * charHeight + 1.0f).floatValue()
                         );
 
                         g2D.setColor(Color.WHITE);
                         g2D.drawString(String.valueOf(dialogChars[i]),
-                                Double.valueOf(dialogTextRect.getBounds().x + (shift * charWidth)).floatValue(),
-                                Double.valueOf(dialogTextRect.getBounds().y + (line * charHeight)).floatValue()
+                                Double.valueOf(dialogTextRect.getBounds().getX() + shift * charWidth).floatValue(),
+                                Double.valueOf(dialogTextRect.getBounds().getY() + line * charHeight).floatValue()
                         );
 
                         shift++;
@@ -267,13 +278,76 @@ public final class GamePlay extends JFrame implements MouseListener, MouseMotion
     }
 
     private void drawAnswers(Graphics2D g2D) {
-        Rectangle alr = answerList.getBounds();
-        g2D.translate(alr.getX(), alr.getY());
+        boolean isJustNext = false;
         if (showDebugGraphic) {
-            g2D.setColor(Color.ORANGE);
-            g2D.draw(alr);
+            g2D.draw(answersZone);
         }
-        answerList.paint(g2D);
+
+        g2D.setFont(fontAnswers);
+        if (dlm.elements().nextElement().equals("Далее...")) {
+            isJustNext = true;
+            g2D.translate(dialogTextRect.getBounds().width * 1.025f, getHeight() - 52);
+        } else {
+            g2D.translate(answersZone.getBounds().getX(), answersZone.getBounds().getY());
+        }
+
+        Enumeration<String> answersEn = dlm.elements();
+        ArrayList<String> answrs = new ArrayList<>();
+        while (answersEn.hasMoreElements()) {
+            answrs.add(answersEn.nextElement());
+        }
+
+        if (needsUpdateRectangles) {
+            btnRects.clear();
+        }
+
+        // draw answers shapes:
+        RoundRectangle2D r;
+        Rectangle2D b;
+        for (int i = 0; i < answrs.size(); i++) {
+            b = FoxFontBuilder.getStringBounds(g2D, answrs.get(i));
+            r = new RoundRectangle2D.Float(0, i * 30, isJustNext ? 120 : answersZone.getBounds().width, 28, 28, 28);
+
+            if (i != answerOverIndex) {
+                g2D.setColor(new Color(0.75f, 0.75f, 0.75f, 0.3f));
+            } else {
+                g2D.setColor(new Color(0.75f, 0.75f, 0.85f, 0.35f));
+            }
+            g2D.fill(r);
+
+            if (btnRects.size() != answrs.size()) {
+                btnRects.add(i, new Rectangle2D.Double(
+                        g2D.getTransform().getTranslateX() - 1,
+                        isJustNext ? getHeight() - 48 : getHeight() * 0.575f + i * 30,
+                        r.getWidth() + 1, r.getHeight() + 1
+                ));
+            }
+
+            g2D.setColor(Color.DARK_GRAY);
+            if (!isJustNext) {
+                g2D.drawString((i + 1) + ". ",
+                        8,
+                        Double.valueOf(r.getCenterY() + b.getHeight() / 4 - 1).floatValue()
+                );
+            }
+            g2D.drawString(answrs.get(i),
+                    Double.valueOf(r.getCenterX() - b.getWidth() / 2).floatValue() + (isJustNext ? 11 : 0),
+                    Double.valueOf(r.getCenterY() + b.getHeight() / 4 - 1).floatValue()
+            );
+
+            g2D.setColor(Color.WHITE);
+            g2D.draw(r);
+            if (!isJustNext) {
+                g2D.drawString((i + 1) + ". ",
+                        6,
+                        Double.valueOf(r.getCenterY() + b.getHeight() / 4).floatValue()
+                );
+            }
+            g2D.drawString(answrs.get(i),
+                    Double.valueOf(r.getCenterX() - b.getWidth() / 2).floatValue() + (isJustNext ? 9 : 0),
+                    Double.valueOf(r.getCenterY() + b.getHeight() / 4).floatValue()
+            );
+        }
     }
 
     private void drawScene(Graphics2D g2D) {
@@ -456,24 +530,10 @@ public final class GamePlay extends JFrame implements MouseListener, MouseMotion
 
         dlm = new DefaultListModel<>();
         answerList = new JList<>(dlm) {
-            {
-                setFocusable(false);
-                setPreferredSize(new Dimension(0, 60));
-                setBorder(new EmptyBorder(3, 3, 3, 3));
-                setFont(fontAnswers);
-
-                setForeground(Color.WHITE);
-                setOpaque(false);
-                setBackground(new Color(0, 0, 0, 0));
-
-                setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-                setSelectionBackground(new Color(1.0f, 1.0f, 1.0f, 0.2f));
-                setSelectionForeground(new Color(1.0f, 1.0f, 0.0f, 1.0f));
-                setVisibleRowCount(6);
-
-                setCursor(FoxCursor.createCursor((BufferedImage) cache.get("curTextCursor"), "textCursor"));
-                addMouseListener(GamePlay.this);
-            }
+//            setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+//            setSelectionBackground(new Color(1.0f, 1.0f, 1.0f, 0.2f));
+//            setSelectionForeground(new Color(1.0f, 1.0f, 0.0f, 1.0f));
+//            setVisibleRowCount(6);
 
             @Override
             public int locationToIndex(Point location) {
@@ -664,15 +724,27 @@ public final class GamePlay extends JFrame implements MouseListener, MouseMotion
             return;
         }
 
+//        DisplayMode oldDisplayMode = getGraphicsConfiguration().getDevice().getDisplayMode();
         if (userConf.isFullScreen()) {
             getContentPane().setBackground(Color.BLACK);
-            getGraphicsConfiguration().getDevice().setFullScreenWindow(GamePlay.this);
+
+            if (getGraphicsConfiguration().getDevice().isFullScreenSupported()) {
+//            Window win = new Window(GamePlay.this);
+                getGraphicsConfiguration().getDevice().setFullScreenWindow(GamePlay.this);
+//            win.validate();
+//            getGraphicsConfiguration().getDevice().setDisplayMode(newDisplayMode);
+            } else {
+                setExtendedState(MAXIMIZED_BOTH);
+                setSize(new Dimension(Toolkit.getDefaultToolkit().getScreenSize().width, Toolkit.getDefaultToolkit().getScreenSize().height));
+                setLocationRelativeTo(null);
+            }
         } else {
             getContentPane().setBackground(new Color(0.0f, 0.0f, 0.0f, 0.0f));
+//            getGraphicsConfiguration().getDevice().setDisplayMode(oldDisplayMode);
             getGraphicsConfiguration().getDevice().setFullScreenWindow(null);
             pack();
+            setLocationRelativeTo(null);
         }
-        setLocationRelativeTo(null);
 
         SwingUtilities.invokeLater(() -> {
             try {
@@ -736,14 +808,14 @@ public final class GamePlay extends JFrame implements MouseListener, MouseMotion
                     while (isDialogAnimated && i < dialogText.length()) {
                         shift++;
 
-                        if (charWidth * shift >= dialogTextRect.getBounds().getWidth()) {
+                        if (charWidth * shift >= dialogTextRect.getBounds().getWidth() - 6d) {
                             for (int k = i; k > 0; k--) {
                                 if ((int) dialogChars[k] == 32) {
                                     sb.setCharAt(k, (char) 10);
+                                    shift = 0;
                                     break;
                                 }
                             }
-                            shift = 0;
                         }
                         sb.getChars(0, i + 1, dialogChars, 0);
                         if (userConf.isTextAnimated()) {
@@ -773,8 +845,9 @@ public final class GamePlay extends JFrame implements MouseListener, MouseMotion
         }
 
         dlm.clear();
+        btnRects.clear();
+        answerOverIndex = -1;
         answerList.setForeground(Color.WHITE);
-        needsUpdateRectangles = true;
         if (answers == null) {
             dlm.addElement("Далее...");
             return;
@@ -787,8 +860,9 @@ public final class GamePlay extends JFrame implements MouseListener, MouseMotion
 
         answerList.setForeground(Color.YELLOW);
         for (String answer : answers) {
-            dlm.addElement(getCountUnicodeChar(dlm.size() + 1) + " " + answer.split("R")[0]);
+            dlm.addElement(answer.split("R")[0]);
         }
+        needsUpdateRectangles = true;
     }
 
     public void setChapter(String _chapter) {
@@ -953,6 +1027,8 @@ public final class GamePlay extends JFrame implements MouseListener, MouseMotion
         }
     }
 
+    int answerOverIndex;
+    boolean isAnyOvered;
     @Override
     public void mouseMoved(MouseEvent e) {
         if (downArea == null) {
@@ -960,28 +1036,43 @@ public final class GamePlay extends JFrame implements MouseListener, MouseMotion
         }
         mouseNow = new Point(e.getX() - 32, e.getY() - (getHeight() - downArea.getBounds().height) + 32);
         backButOver = backBtnShape.contains(mouseNow);
-    }
 
-    @Override
-    public void mouseClicked(MouseEvent e) {
-        if (answerList.locationToIndex(e.getPoint()) != -1) {
-            if (scenario == null) {
-                return;
+        isAnyOvered = false;
+        for (int i = 0; i < btnRects.size(); i++) {
+            if (btnRects.get(i).contains(e.getPoint())) {
+                answerOverIndex = i;
+                isAnyOvered = true;
+                if (getCursor() != Cursors.TextCursor.get()) {
+                    setCursor(Cursors.TextCursor.get());
+                }
             }
-            Print(GamePlay.class, LEVEL.DEBUG, "Был выбран вариант " + answerList.getSelectedValue());
-            if (answerList.getSelectedValue() != null && answerList.getSelectedValue().equals("Далее...")) {
-                scenario.choice(-1);
-            } else {
-                scenario.choice(answerList.getSelectedIndex());
+        }
+
+        if (!isAnyOvered) {
+            answerOverIndex = -1;
+            if (getCursor() != Cursors.PinkCursor.get()) {
+                setCursor(Cursors.PinkCursor.get());
             }
         }
     }
 
-    public void mouseEntered(MouseEvent e) {
+    @Override
+    public void mouseClicked(MouseEvent e) {
+        if (scenario == null) {
+            e.consume();
+            return;
+        }
+
+        for (int i = 0; i < btnRects.size(); i++) {
+            if (btnRects.get(i).contains(e.getPoint())) {
+                Print(GamePlay.class, LEVEL.DEBUG, "Был выбран вариант " + answerOverIndex);
+                scenario.choice(answerOverIndex);
+            }
+        }
     }
 
-    public void mouseExited(MouseEvent e) {
-    }
+    public void mouseEntered(MouseEvent e) {}
+    public void mouseExited(MouseEvent e) {}
 
     @Override
     public void windowClosing(WindowEvent e) {
