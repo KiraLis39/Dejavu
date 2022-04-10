@@ -96,14 +96,12 @@ public class Scenario extends ScenarioBase {
      *  "Логический + Следующий скрипт", если требуется автоматический расчет следующего скрипта.
      */
     private void defaultNext() throws IOException, ArrayIndexOutOfBoundsException {
-        if (userSave.getLineIndex() >= lines.size()) {
-            return;
-        }
-
         if (isNextFileLine()) {
             nextFile();
         } else if (isLogicLine()) {
             logicChoice();
+        } else if (isLastLine()) {
+            isChoice = true;
         } else {
             lineParser(lines.get(userSave.getLineIndex()));
             userSave.setLineIndex(userSave.getLineIndex() + 1);
@@ -119,6 +117,9 @@ public class Scenario extends ScenarioBase {
         isChoice = false;
         String loadedScript = lines.get(userSave.getLineIndex()).replace("nf ", "");
         load(loadedScript);
+
+        isChoice = false;
+        userSave.setLineIndex(0);
         choice(VARIANTS.NEXT);
     }
 
@@ -135,7 +136,9 @@ public class Scenario extends ScenarioBase {
         try {
             String loadedScript = varsList.get(answerIndex).split("R ")[1];
             load(loadedScript);
+
             isChoice = false;
+            userSave.setLineIndex(0);
             choice(VARIANTS.NEXT);
         } catch (Exception e) {
             e.printStackTrace();
@@ -181,6 +184,8 @@ public class Scenario extends ScenarioBase {
         }
 
         load(loadedScript);
+        isChoice = false;
+        userSave.setLineIndex(0);
         choice(VARIANTS.NEXT);
     }
 
