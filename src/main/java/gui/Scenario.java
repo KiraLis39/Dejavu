@@ -12,20 +12,13 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 import java.util.stream.IntStream;
 
 import static registry.Registry.*;
 
 @Data
-public class Scenario {
+public class Scenario extends ScenarioBase {
     private GamePlay play;
-    private final Random rand = new Random();
-
-    private List<String> lines;
-    private List<String> variants;
-    private ArrayList<String> allowedVariants;
-    private boolean isChoice;
 
     public Scenario(GamePlay play) {
         this.play = play;
@@ -34,73 +27,126 @@ public class Scenario {
     public void load(@NonNull String scenarioFileName) throws IOException {
         Path scenario = Paths.get(blockPath + "\\" + scenarioFileName.trim() + sBlockExtension);
         lines = Files.readAllLines(scenario, charset).stream().filter(s -> !s.isBlank() && !s.startsWith("var ") && !s.startsWith("logic ")).toList();
-        variants = Files.readAllLines(scenario, charset).stream().filter(s -> !s.isBlank() && s.startsWith("var ")).toList();
+        List<String> allVarsList = Files.readAllLines(scenario, charset).stream().filter(s -> !s.isBlank() && s.startsWith("var ")).toList();
+        varsList = new ArrayList<>(
+                allVarsList.stream().filter(s -> Integer.parseInt(s.split(" ")[1]) <= userSave.getCycleCount()).toList()
+                        .stream().map(s -> s.split("R ")[1].replace("\"", "").trim()
+                                + " R " + s.split("R ")[2].replace("\"", "").trim()).toList());
 
-        switch (scenarioFileName) {
-            case "00FirstAwaked" -> userSave.setCycleCount(0);
-            case "00SecondAwaked" -> userSave.setCycleCount(1);
-            case "00FullAwaked" -> userSave.setCycleCount(2);
+        checkCycleCount(scenarioFileName);
+
+        userSave.setScript(scenarioFileName);
+        userSave.setLineIndex(0);
+    }
+
+    private void checkCycleCount(String scenarioName) {
+        if (scenarioName.trim().contains("00_INIT_SCENARIO")) {
+            userSave.setCycleCount(0);
+            userSave.setToday(3);
+            userSave.setMonth(GamePlay.MONTH.июнь);
+        } else if (scenarioName.trim().contains("00SecondAwaked")) {
+            userSave.setCycleCount(1);
+            userSave.setToday(3);
+            userSave.setMonth(GamePlay.MONTH.июнь);
+        } else if (scenarioName.trim().contains("00FullAwaked")) {
+            userSave.setCycleCount(userSave.getCycleCount() + 1);
+            userSave.setToday(3);
+            userSave.setMonth(GamePlay.MONTH.июнь);
         }
     }
 
-    public void choice(int chosenVariantIndex) {
-        String loadedScript = null;
-
-        if (chosenVariantIndex != -1 && allowedVariants == null && userSave.getLineIndex() > -1 && !lines.get(userSave.getLineIndex()).startsWith("nf ")) {
-            System.err.println("Был выбран вариант, но лист вариантов пуст!");
-            return;
-        }
-
+    /**
+     * Сюда может придти либо -1 как "Далее" по умолчанию,
+     * либо вариант ответа от 0 до 5.
+     *
+     * В зависимости от типа скрипта (окончания) выполняется следующая обработка:
+     *  "Следующая линия", если скрипт еще не завершен;
+     *  "Следующий скрипт", если скрипт кончается на nf <путь_к_скрипту>;
+     *  "Логический + Следующий скрипт", если требуется автоматический расчет следующего скрипта.
+     *  всё это обрабатывает метод {@see this.defaultNext()}
+     *
+     *  "Режим ответа", если требуется ввод одного из вариантов ответов;
+     *  это уже обрабатывает метод {@link this.choseControl(ScenarioBase.VARIANTS)}
+     *
+     * @param answer - индекс ответа пользователя от -1 до 5
+     */
+    public void choice(VARIANTS answer) {
         try {
-            if (!isChoice && userSave.getLineIndex() > -1) {
-                if (lines.size() > userSave.getLineIndex() + 1 && lines.get(userSave.getLineIndex() + 1).startsWith("nf ")) {
-                    nextFile(userSave.getLineIndex() + 1);
-                } else if (lines.get(userSave.getLineIndex()).startsWith("logic")) {
-                    logicChoice(userSave.getLineIndex());
-                }
+            if (answer.index <= VARIANTS.VAR_ONE.index && !isChoice) {
+                // default nest line:
+                defaultNext();
+            } else if (answer.index >= 0 && isChoice) {
+                // choose a variant:
+                choseControl(answer.index);
             }
         } catch (Exception e) {
             e.printStackTrace();
             new FOptionPane("Ошибка сценария:", "Не удалось загрузить файл сценария: " + e.getMessage());
             return;
         }
+    }
 
-        if (isChoice) {
-            if (chosenVariantIndex != -1 && chosenVariantIndex <= allowedVariants.size()) {
-                isChoice = false;
-                try {
-                    loadedScript = allowedVariants.get(chosenVariantIndex).split("R ")[1];
-                    load(loadedScript);
-                    userSave.setScript(loadedScript);
-                    userSave.setLineIndex(-1);
-                    choice(-1);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    new FOptionPane("Ошибка сценария:", "Не удалось загрузить файл сценария: " + loadedScript);
-                }
-            }
+    /**
+     * Сюда может придти либо -1 как "Далее" по умолчанию,
+     * либо вариант ответа от 0 с аналогичным воздействием (если пользователь
+     * нажал цифру "1" вместо пробела, мало ли ему так проще.
+     *
+     * В зависимости от типа скрипта (окончания) выполняется следующая обработка:
+     *  "Следующая линия", если скрипт еще не завершен;
+     *  "Следующий скрипт", если скрипт кончается на nf <путь_к_скрипту>;
+     *  "Логический + Следующий скрипт", если требуется автоматический расчет следующего скрипта.
+     */
+    private void defaultNext() throws IOException, ArrayIndexOutOfBoundsException {
+        if (userSave.getLineIndex() >= lines.size()) {
+            return;
+        }
+
+        if (isNextFileLine()) {
+            nextFile();
+        } else if (isLogicLine()) {
+            logicChoice();
         } else {
-            if (userSave.getLineIndex() < lines.size() - 2) {
-                userSave.setLineIndex(userSave.getLineIndex() + 1);
-                lineParser(lines.get(userSave.getLineIndex()));
-            } else {
-                userSave.setLineIndex(userSave.getLineIndex() + 1);
-                if (userSave.getLineIndex() == lines.size() - 1 && (variants != null && variants.size() > 0)) {
-                    lineParser(lines.get(userSave.getLineIndex()));
-                    takeAnswers();
-                } else {
-                    choice(-1);
-                }
-                if (!lines.get(userSave.getLineIndex()).startsWith("logic")) {
-                    isChoice = true;
-                }
+            lineParser(lines.get(userSave.getLineIndex()));
+            userSave.setLineIndex(userSave.getLineIndex() + 1);
+
+            if (isLastLine() && varsList.size() > 0) {
+                play.setAnswers(varsList);
+                isChoice = true;
             }
         }
     }
 
-    private void logicChoice(int index) throws IOException {
+    private void nextFile() throws IOException {
+        isChoice = false;
+        String loadedScript = lines.get(userSave.getLineIndex()).replace("nf ", "");
+        load(loadedScript);
+        choice(VARIANTS.NEXT);
+    }
+
+    /**
+     * Сюда может придти либо вариант ответа от 0 до 5.
+     *
+     * @param answerIndex - индекс ответа пользователя от 0 до 5
+     */
+    private void choseControl(int answerIndex) {
+        if (answerIndex >= varsList.size()) {
+            return;
+        }
+
+        try {
+            String loadedScript = varsList.get(answerIndex).split("R ")[1];
+            load(loadedScript);
+            isChoice = false;
+            choice(VARIANTS.NEXT);
+        } catch (Exception e) {
+            e.printStackTrace();
+            new FOptionPane("Ошибка сценария:", "Не удалось загрузить файл сценария: " + e.getMessage());
+        }
+    }
+
+    private void logicChoice() throws IOException {
         String loadedScript = null;
-        String[] logicData = lines.get(index).split(" ");
+        String[] logicData = lines.get(userSave.getLineIndex()).split(" ");
         int carmNeed = Integer.parseInt(logicData[0].split("\\(")[1].replace(")", ""));
         int[] arr = new int[] {
                 userSave.getCarmaAnn(),
@@ -132,27 +178,11 @@ public class Scenario {
         }
 
         if (loadedScript == null) {
-            loadedScript = lines.get(index).split(" Else=")[1];
+            loadedScript = lines.get(userSave.getLineIndex()).split(" Else=")[1];
         }
 
         load(loadedScript);
-        userSave.setScript(loadedScript);
-        userSave.setLineIndex(-1);
-    }
-
-    private void nextFile(int index) throws IOException {
-        String loadedScript = lines.get(index).replace("nf ", "");
-        load(loadedScript);
-        userSave.setScript(loadedScript);
-        userSave.setLineIndex(-1);
-    }
-
-    private void takeAnswers() {
-        allowedVariants = new ArrayList<>(
-                variants.stream().filter(s -> Integer.parseInt(s.split(" ")[1]) <= userSave.getCycleCount()).toList()
-                        .stream().map(s -> s.split("R ")[1].replace("\"", "").trim()
-                                + " R " + s.split("R ")[2].replace("\"", "").trim()).toList());
-        play.setAnswers(allowedVariants);
+        choice(VARIANTS.NEXT);
     }
 
     private void lineParser(@NonNull String line) {
@@ -266,5 +296,18 @@ public class Scenario {
 
 //        currentLineIndex = -1;
 //        lines.clear();
+    }
+
+
+    private boolean isNextFileLine() {
+        return lines.get(userSave.getLineIndex()).startsWith("nf ");
+    }
+
+    private boolean isLogicLine() {
+        return lines.get(userSave.getLineIndex()).startsWith("logic");
+    }
+
+    private boolean isLastLine() {
+        return userSave.getLineIndex() == lines.size();
     }
 }

@@ -39,7 +39,7 @@ public class UserSave implements JConfigurable {
     String voicePlayed = null;
 
     String script = "00_INIT_SCENARIO";
-    int lineIndex = -1;
+    int lineIndex = 0;
 
     public UserSave(Path source) {
         this.source = source;

@@ -64,7 +64,7 @@ public class GamePlayInAc {
                     aim.dialogDelaySpeed = 0;
                     return;
                 }
-                aim.getScenario().choice(-1);
+                aim.getScenario().choice(ScenarioBase.VARIANTS.NEXT);
                 aim.answerList.clearSelection();
             }
         });
@@ -77,11 +77,11 @@ public class GamePlayInAc {
                 } else if (aim.dlm.size() == 1 && aim.answerList.getSelectedValue().startsWith("Далее")) {
                     aim.dialogDelaySpeed = 0;
                     aim.answerList.setSelectedIndex(1);
-                    aim.getScenario().choice(-1);
+                    aim.getScenario().choice(ScenarioBase.VARIANTS.NEXT);
                 }
                 aim.isDialogAnimated = false;
                 aim.answerList.setSelectedIndex(0);
-                aim.getScenario().choice(0);
+                aim.getScenario().choice(ScenarioBase.VARIANTS.VAR_ONE);
             }
         });
         InputAction.set(InputAction.FOCUS_TYPE.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT, "game", "answer_2", KeyEvent.VK_2, 0, new AbstractAction() {
@@ -92,7 +92,7 @@ public class GamePlayInAc {
                 }
                 aim.dialogDelaySpeed = 0;
                 aim.answerList.setSelectedIndex(1);
-                aim.getScenario().choice(1);
+                aim.getScenario().choice(ScenarioBase.VARIANTS.VAR_TWO);
             }
         });
         InputAction.set(InputAction.FOCUS_TYPE.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT, "game", "answer_3", KeyEvent.VK_3, 0, new AbstractAction() {
@@ -103,7 +103,7 @@ public class GamePlayInAc {
                 }
                 aim.dialogDelaySpeed = 0;
                 aim.answerList.setSelectedIndex(2);
-                aim.getScenario().choice(2);
+                aim.getScenario().choice(ScenarioBase.VARIANTS.VAR_THREE);
             }
         });
         InputAction.set(InputAction.FOCUS_TYPE.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT, "game", "answer_4", KeyEvent.VK_4, 0, new AbstractAction() {
@@ -114,7 +114,7 @@ public class GamePlayInAc {
                 }
                 aim.dialogDelaySpeed = 0;
                 aim.answerList.setSelectedIndex(3);
-                aim.getScenario().choice(3);
+                aim.getScenario().choice(ScenarioBase.VARIANTS.VAR_FOUR);
             }
         });
         InputAction.set(InputAction.FOCUS_TYPE.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT, "game", "answer_5", KeyEvent.VK_5, 0, new AbstractAction() {
@@ -125,7 +125,7 @@ public class GamePlayInAc {
                 }
                 aim.dialogDelaySpeed = 0;
                 aim.answerList.setSelectedIndex(4);
-                aim.getScenario().choice(4);
+                aim.getScenario().choice(ScenarioBase.VARIANTS.VAR_FIVE);
             }
         });
         InputAction.set(InputAction.FOCUS_TYPE.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT, "game", "answer_6", KeyEvent.VK_6, 0, new AbstractAction() {
@@ -136,7 +136,7 @@ public class GamePlayInAc {
                 }
                 aim.dialogDelaySpeed = 0;
                 aim.answerList.setSelectedIndex(5);
-                aim.getScenario().choice(5);
+                aim.getScenario().choice(ScenarioBase.VARIANTS.VAR_SIX);
             }
         });
 

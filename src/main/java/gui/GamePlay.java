@@ -1066,7 +1066,7 @@ public final class GamePlay extends JFrame implements MouseListener, MouseMotion
         for (int i = 0; i < btnRects.size(); i++) {
             if (btnRects.get(i).contains(e.getPoint())) {
                 Print(GamePlay.class, LEVEL.DEBUG, "Был выбран вариант " + answerOverIndex);
-                scenario.choice(answerOverIndex);
+                scenario.choice(ScenarioBase.VARIANTS.values()[answerOverIndex]);
             }
         }
     }
