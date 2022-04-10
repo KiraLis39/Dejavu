@@ -700,10 +700,10 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
                         if (centerImage != null) {
                             g.drawImage(botLeftImage, 0, 0, getWidth(), getHeight(), this);
                             g.drawImage(centerImage,
-                                    Double.valueOf(GameMenu.this.getWidth() * 0.0268d).intValue(),
+                                    Double.valueOf(GameMenu.this.getWidth() * 0.0264d).intValue(),
                                     Double.valueOf(GameMenu.this.getHeight() * 0.009d).intValue(),
-                                    getWidth() - (Double.valueOf(GameMenu.this.getWidth() * 0.044d).intValue()),
-                                    getHeight() - (Double.valueOf(GameMenu.this.getHeight() * 0.12d).intValue()),
+                                    getWidth() - (Double.valueOf(GameMenu.this.getWidth() * 0.040d).intValue()),
+                                    getHeight() - (Double.valueOf(GameMenu.this.getHeight() * 0.13d).intValue()),
                                     this);
 
                             g.setColor(Color.BLACK);

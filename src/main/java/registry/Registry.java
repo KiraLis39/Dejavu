@@ -21,7 +21,7 @@ public class Registry {
 //	public static final FoxPlayer voicePlayer = new FoxPlayer("Voice");
 
     // GLOBAL DATA:
-    public static final String version = "0.1.5.3";
+    public static final String version = "0.1.5.4";
     public static final Charset charset = StandardCharsets.UTF_8;
     public static final String picExtension = ".png";
     public static final String sBlockExtension = ".dingo";
