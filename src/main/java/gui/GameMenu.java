@@ -234,7 +234,7 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
                         setOpaque(false);
                         setBorder(new EmptyBorder(
                                 Double.valueOf(GameMenu.this.getHeight() * 0.0175d).intValue(),
-                                Double.valueOf(GameMenu.this.getWidth() * 0.01425d).intValue(),
+                                Double.valueOf(GameMenu.this.getWidth() * 0.0142d).intValue(),
                                 Double.valueOf(GameMenu.this.getHeight() * 0.035d).intValue(),
                                 Double.valueOf(GameMenu.this.getWidth() * 0.02425d).intValue()
                         ));
@@ -510,7 +510,7 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
                                                 addMouseListener(new MouseAdapter() {
                                                     public void mouseEntered(MouseEvent me) {
 //                                                        cd2.showTip();
-                                                        setStatusText("Начать/продолжить игру");
+                                                        setStatusText("Начать новую игру");
                                                         bImage = startImages[1];
                                                         repaint();
                                                     }
@@ -536,7 +536,7 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
 
 
                                         add(optionsButton);
-//                                add(saveLoadButton);
+//                                      add(saveLoadButton);
                                         add(galleryButton);
                                         add(aboutButton);
                                         add(newGameBtn);
@@ -546,7 +546,11 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
                                 downPane = new JPanel(new BorderLayout(0,0)) {
                                     {
                                         setOpaque(false);
-                                        setBorder(new EmptyBorder(0,0,20,0));
+                                        setBorder(new EmptyBorder(
+                                                0,
+                                                0,
+                                                Double.valueOf(GameMenu.this.getHeight() * 0.025d).intValue(),
+                                                0));
 
                                         continueBtn = new JButton("Продолжить") {
                                             BufferedImage bImage2 = startImages[0];
@@ -556,10 +560,22 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
                                                 if (startImages != null) {
                                                     g.drawImage(bImage2, 0, 0, getWidth(), getHeight(), null, null);
                                                     if (bImage2 == startImages[1]) {
+                                                        g.setColor(Color.DARK_GRAY);
+                                                        g.drawString(getName(),
+                                                                (int) (getWidth() / 2 - FoxFontBuilder.getStringBounds(g, getName()).getWidth() / 2D) - 3,
+                                                                getHeight() / 2 + 9);
+
+                                                        g.setColor(Color.WHITE);
                                                         g.drawString(getName(),
                                                                 (int) (getWidth() / 2 - FoxFontBuilder.getStringBounds(g, getName()).getWidth() / 2D) - 2,
                                                                 getHeight() / 2 + 10);
                                                     } else {
+                                                        g.setColor(Color.DARK_GRAY);
+                                                        g.drawString(getName(),
+                                                                (int) (getWidth() / 2 - FoxFontBuilder.getStringBounds(g, getName()).getWidth() / 2D - 2),
+                                                                getHeight() / 2 + 7);
+
+                                                        g.setColor(Color.WHITE);
                                                         g.drawString(getName(),
                                                                 (int) (getWidth() / 2 - FoxFontBuilder.getStringBounds(g, getName()).getWidth() / 2D),
                                                                 getHeight() / 2 + 8);
@@ -577,7 +593,7 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
                                                 setFocusPainted(false);
                                                 setFocusable(false);
                                                 setOpaque(false);
-                                                setPreferredSize(new Dimension(0, 60));
+                                                setPreferredSize(new Dimension(0, 65));
 
                                                 setActionCommand("continue");
                                                 addActionListener(GameMenu.this);
@@ -698,13 +714,13 @@ public class GameMenu extends JFrame implements MouseListener, MouseMotionListen
                     @Override
                     public void paintComponent(Graphics g) {
                         if (centerImage != null) {
-                            g.drawImage(botLeftImage, 0, 0, getWidth(), getHeight(), this);
                             g.drawImage(centerImage,
                                     Double.valueOf(GameMenu.this.getWidth() * 0.0264d).intValue(),
                                     Double.valueOf(GameMenu.this.getHeight() * 0.009d).intValue(),
                                     getWidth() - (Double.valueOf(GameMenu.this.getWidth() * 0.040d).intValue()),
                                     getHeight() - (Double.valueOf(GameMenu.this.getHeight() * 0.13d).intValue()),
                                     this);
+                            g.drawImage(botLeftImage, 0, 0, getWidth(), getHeight(), this);
 
                             g.setColor(Color.BLACK);
                             g.drawString("v." + Registry.version, Double.valueOf(GameMenu.this.getWidth() * 0.04d).intValue(),
